@@ -56,6 +56,13 @@ class Atom():
     def getDescription(self):
         return self.description
     
+    def getUnitCell(self):
+        return self.unit_Cell
+    
     def __str__(self):
         return self.getDescription().rstrip() + " at " + str(self.getPosition()) + " in " + self.unit_Cell.__str__()
+    
+    def getIndexNumber(self):
+        """Returns the Atom's Index Number in the Unit Cell"""
+        return self.unit_Cell.getAtomIndex(self) 
         

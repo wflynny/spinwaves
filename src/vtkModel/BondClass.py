@@ -7,7 +7,7 @@ import numpy
 
 class Bond():
     def __init__(self, Cell, Atom1, Atom2, r = 0,g = 0,b = 1):
-        """Cell is the Unit Cell if this bond is in a unit Cell or the Magnetic Cell if it is between Unit Cells"""
+        """Cell is the Unit Cell if this bond is in a unit Cell or None Otherwise"""
         self.r = r#color
         self.g = g
         self.b = b
@@ -101,7 +101,8 @@ class Bond():
         self.Atom2 = atom
 
     def createSymmetryBonds(self, space_Group):
-        """returns list of new bonds formed from space_group symOps
+        """returns list of new bonds within the same cell formed from space_group symOps
+        Can Only be used on a Bond that is contained within a cell (not for bonds between cells)
         -Should only really be used on original unit Cell"""
         newBonds = []
         

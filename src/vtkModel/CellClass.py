@@ -71,8 +71,8 @@ class Cell():
         
         print "here  in translate cell atoms done"
         for bondn in self.Bonds:
-            newAtom1 = new_cell.Atoms[ self.Atoms.index(bondn.getAtom1()) ]
-            newAtom2 = new_cell.Atoms[ self.Atoms.index(bondn.getAtom2()) ]
+            newAtom1 = new_cell.atomAtIndex( self.getAtomIndex(bondn.getAtom1()) )
+            newAtom2 = new_cell.atomAtIndex( self.getAtomIndex(bondn.getAtom2()) )
             new_cell.addBond(Bond(new_cell, newAtom1, newAtom2, bondn.getRGBColor()))
         
         return new_cell
@@ -82,3 +82,9 @@ class Cell():
         
     def test(self):
         return Cell()
+    
+    def atomAtIndex(self, i):
+        return self.Atoms[i]
+    
+    def getAtomIndex(self, atom):
+        return self.Atoms.index(atom)

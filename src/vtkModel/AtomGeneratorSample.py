@@ -40,6 +40,12 @@ def pick(obj, Event):
                     if bond.getActor() == SelectedActor:
                         print bond
                         break
+                else: #the unit cell bond is not found so check intercellular bonds
+                    for bond in MagCell.getIntercellularBonds():
+                        if bond.getActor() == SelectedActor:
+                            print bond
+                            break
+
 
 
 
@@ -49,7 +55,7 @@ if __name__=='__main__':
     
     
     unitcell = Cell()
-    Space_Group = sg225
+    Space_Group = sg65
 
     # a renderer for the data
     ren1 = vtkRenderer()
@@ -65,12 +71,13 @@ if __name__=='__main__':
     iren.SetRenderWindow(renWin)
     
         
-    #Space_Group = str(raw_input("Enter Space Group Number:"))
+
+    #generate Unit Cell
     randGen = random.Random()
-    choice = int(raw_input("""Enter Option Number:
+    choice = int(raw_input("""Unit Cell:\nEnter Option Number:
     1) Add Atom
     2) Add Bond
-    3) Draw"""))
+    3) Generate Magenetic Cell"""))
     
     
     #Gather Information
@@ -90,20 +97,41 @@ if __name__=='__main__':
             for eachBond in bond.createSymmetryBonds(Space_Group):
                 unitcell.addBond(eachBond)
         
-        choice = int(raw_input("""Enter Option Number:
+        choice = int(raw_input("""Unit Cell:\nEnter Option Number:
     1) Add Atom
     2) Add Bond
-    3) Draw"""))
+    3) Generate Magnetic Cell"""))
     
     na = int(raw_input("N(a):"))
     nb = int(raw_input("N(b):"))
     nc = int(raw_input("N(c):"))
     
     #create the Magnetic Cell and add it to the Renderer
-    MagCell = MagneticCell(unitcell, na, nb, nc)
+    MagCell = MagneticCell(unitcell, na, nb, nc, Space_Group)
+    
+    
+    #Add Bonds between Cells
+    choice = int(raw_input("""Magnetic Cell:
+     1) Add Bond Between Cells
+     2) Draw"""))
+    
+    AllAtoms = MagCell.getAllAtoms()
+    #Gather Information
+    while choice < 2 :
+        if choice == 1 :
+            for i in range(0,len(AllAtoms)):
+                print i, ") " + AllAtoms[i].__str__()
+            MagCell.addInterCellularBond(AllAtoms[int(raw_input("First atom number:\n"))], AllAtoms[int(raw_input("Second atom number:\n"))])
+            
+        
+        choice = int(raw_input("""Magnetic Cell:
+     1) Add Bond Between Cells
+     2) Draw"""))
+    
     MagCell.drawCell(ren1)
-    
-    
+    for bond in MagCell.getIntercellularBonds():
+        print bond 
+     
     
     interactor = vtkInteractorStyleSwitch()
     interactor.SetCurrentStyleToTrackballCamera()
