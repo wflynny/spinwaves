@@ -49,7 +49,7 @@ class MagneticCell():
             pos1[mask1] -= translation
             pos2[mask1] -= translation  #Uses same translation to translate other atom
             
-            #if the second atom is not in the unit cell, do another translation so that it is
+            #if the second atom is not in the magntic cell, do another translation so that it is
             if pos2[0] < 0 or pos2[1] < 0 or pos2[2] < 0:
                 mask2 = pos2 < 0.0
                 translation = numpy.floor(pos2[mask2])  #translates the first atom back to cell at (0,0,0)
@@ -61,16 +61,20 @@ class MagneticCell():
                 atomAtPos1 = self.unit_cell.atomAtPosition(pos1) #first Position was translated to the first cell (0,0,0)
                 atomAtPos2 = self.atomAtPosition(pos2)
             
-
+            print "symmop:\n", symop
+            print "position1:", pos1
+            if atomAtPos1 != None:
+                print atomAtPos1.getPosition()
+            print "position2:", pos2
+            if atomAtPos2 != None:
+                print atomAtPos2.getPosition()
 #            translation = numpy.floor(pos1)
 #            pos1 -= numpy.floor(pos1)
 #            pos2 -= numpy.floor(pos1)
             
-
-
             
             #Right Now this allows Bonds to be created within a Unit Cell and stored as intercellular
-            if atomAtPos2 != None:  #the Second Atom could be translated outside the bounds of the Magnetic Cell
+            if atomAtPos2 != None and atomAtPos1 != None:  #Both Atoms could be translated outside the bounds of the Magnetic Cell
                 newBond = Bond(None, atomAtPos1, atomAtPos2)
                 #check if the bond already exists
                 for currentBond in newBonds:
@@ -93,6 +97,7 @@ class MagneticCell():
                     
                                 translatedAtom1 = translatedCell1.atomAtIndex(originalAtom1.getIndexNumber())
                                 translatedAtom2 = translatedCell2.atomAtIndex(originalAtom2.getIndexNumber())
+                                print "translated:"
                                 self.IntercellularBonds.append(Bond(None,translatedAtom1, translatedAtom2))
     
     def drawCell(self, Renderer):

@@ -47,31 +47,7 @@ def pick(obj, Event):
                             break
 
 
-
-
-
-
-if __name__=='__main__':
-    
-    
-    unitcell = Cell()
-    Space_Group = sg65
-
-    # a renderer for the data
-    ren1 = vtkRenderer()
-    ren1.SetBackground(1,1,1)
-
-    # a render window to display the contents
-    renWin = vtkRenderWindow()
-    renWin.AddRenderer(ren1)
-    renWin.SetSize(700,700)
-
-    # an interactor to allow control of the objects
-    iren = vtkRenderWindowInteractor()
-    iren.SetRenderWindow(renWin)
-    
-        
-
+def menu():
     #generate Unit Cell
     randGen = random.Random()
     choice = int(raw_input("""Unit Cell:\nEnter Option Number:
@@ -131,7 +107,47 @@ if __name__=='__main__':
     MagCell.drawCell(ren1)
     for bond in MagCell.getIntercellularBonds():
         print bond 
-     
+    
+    return MagCell
+
+
+
+if __name__=='__main__':
+    
+    
+    unitcell = Cell()
+    Space_Group = sg65
+    atomPos = [.25, .25, .5]
+
+    # a renderer for the data
+    ren1 = vtkRenderer()
+    ren1.SetBackground(1,1,1)
+
+    # a render window to display the contents
+    renWin = vtkRenderWindow()
+    renWin.AddRenderer(ren1)
+    renWin.SetSize(700,700)
+
+    # an interactor to allow control of the objects
+    iren = vtkRenderWindowInteractor()
+    iren.SetRenderWindow(renWin)
+    
+    
+#    MagCell = menu()
+    randGen = random.Random()
+    generateAtoms(atomPos, "atom1" , .05, randGen.uniform(0,1), randGen.uniform(0,1), randGen.uniform(0,1))
+#    bond = Bond(unitcell, atoms[0], atoms[5], randGen.uniform(0,1), randGen.uniform(0,1), randGen.uniform(0,1))
+#    ren1.AddActor(bond.getActor())
+ #   unitcell.addBond(bond)
+ #   for eachBond in bond.createSymmetryBonds(Space_Group):
+  #      unitcell.addBond(eachBond)
+    
+    
+    MagCell = MagneticCell(unitcell, 1, 2, 3, Space_Group)
+    AllAtoms = MagCell.getAllAtoms()
+    MagCell.addInterCellularBond(AllAtoms[0], AllAtoms[9])
+    MagCell.drawCell(ren1)
+    
     
     interactor = vtkInteractorStyleSwitch()
     interactor.SetCurrentStyleToTrackballCamera()
@@ -139,10 +155,52 @@ if __name__=='__main__':
     picker = vtkPropPicker()
     iren.SetPicker(picker)
     
+    #Add Axes
+    axes = vtkAxes()
+    axes.SetOrigin(0,0,0)
+    axesMapper = vtkPolyDataMapper()
+    axesMapper.SetInputConnection(axes.GetOutputPort())
+    axesActor = vtkActor()
+    axesActor.SetMapper(axesMapper)
+    ren1.AddActor(axesActor)
+    xLabel = vtkVectorText()
+    yLabel = vtkVectorText()
+    zLabel = vtkVectorText()
+    xLabel.SetText("x")
+    yLabel.SetText("y")
+    zLabel.SetText("z")
+    xLabelMapper = vtkPolyDataMapper()
+    yLabelMapper = vtkPolyDataMapper()
+    zLabelMapper = vtkPolyDataMapper()
+    xLabelMapper.SetInputConnection(xLabel.GetOutputPort())
+    yLabelMapper.SetInputConnection(yLabel.GetOutputPort())
+    zLabelMapper.SetInputConnection(zLabel.GetOutputPort())
+    xLabelActor = vtkFollower()
+    yLabelActor = vtkFollower()
+    zLabelActor = vtkFollower()
+    xLabelActor.SetMapper(xLabelMapper)
+    yLabelActor.SetMapper(yLabelMapper)
+    zLabelActor.SetMapper(zLabelMapper)
+    xLabelActor.SetScale(0.1,0.1,0.1)
+    yLabelActor.SetScale(0.1,0.1,0.1)
+    zLabelActor.SetScale(0.1,0.1,0.1)
+    xLabelActor.AddPosition(1,0,0)
+    yLabelActor.AddPosition(0,1,0)
+    zLabelActor.AddPosition(0,0,1)
+    xLabelActor.GetProperty().SetColor(0,0,0)
+    yLabelActor.GetProperty().SetColor(0,0,0)
+    zLabelActor.GetProperty().SetColor(0,0,0)
+    ren1.AddActor(xLabelActor)
+    ren1.AddActor(yLabelActor)
+    ren1.AddActor(zLabelActor)
+    
     
     SelectedActor = None  #used by the picker
     iren.AddObserver("LeftButtonPressEvent", pick)
     
     
-    renWin.Render()
+    renWin.Render()    
+    xLabelActor.SetCamera(ren1.GetActiveCamera())
+    yLabelActor.SetCamera(ren1.GetActiveCamera())
+    zLabelActor.SetCamera(ren1.GetActiveCamera())
     iren.Start()

@@ -212,7 +212,7 @@ def expandPosition(spacegroup, xyz, sgoffset=[0,0,0], eps=epsilon):
         if not tpl in site_symops:
             pos_is_new = True
             site_symops[tpl] = []
-            # double check if there is any position nearby
+            # double check if there is any position rby
             if positions:
                 nearpos = positions[nearestSiteIndex(positions, pos)]
                 # is it an equivalent position?

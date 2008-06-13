@@ -24,10 +24,23 @@ class Cell():
     
     #functions
     def atomAtPosition(self,position):  #untested
-        positionList = []
-        for atom in self.Atoms:
-            positionList.append(atom.getPosition())
-        return self.Atoms[SymmetryUtilities.nearestSiteIndex(positionList,position)]
+        """Returns the atom at the position if one exists, None otherwise"""
+        if self.positionIsInCell(position):
+            positionList = []
+            for atom in self.Atoms:
+                positionList.append(atom.getPosition())
+            closest = self.Atoms[SymmetryUtilities.nearestSiteIndex(positionList,position)]
+            if SymmetryUtilities.equalPositions(closest.getPosition(), position):
+                return closest
+        return None
+    
+    def positionIsInCell(self, position):
+        if self.PosX <= position[0] and (self.PosX+1) > position[0]: #check x
+            if self.PosY <= position[1] and (self.PosY+1) > position[1]: #check y
+                if self.PosZ <= position[2] and (self.PosZ+1) > position[2]: #check z
+                    return True
+        return False
+    
     
     def addAtom(self, Atom):
         self.Atoms.append(Atom)
@@ -57,19 +70,35 @@ class Cell():
         for atomn in self.Atoms:
             renderer.AddActor(atomn.getActor())
         for bondn in self.Bonds:
-#           x,y,z = bondn.getActor().GetPosition()
-#            bondn.getActor().SetPosition(x + self.PosX, y + self.PosY, z + self.PosZ)
             renderer.AddActor(bondn.getActor())
+            
+        #draw very Light Box 
+        #Create "Cube" Source
+        box = vtkCubeSource()
+        box.SetXLength(1)
+        box.SetYLength(1)
+        box.SetZLength(1)
+        
+        boxMap = vtkPolyDataMapper()
+        boxMap.SetInput(box.GetOutput())
+        
+        #create actor
+        abox = vtkActor()
+        abox.SetMapper(boxMap)
+        abox.GetProperty().SetColor(0,.1,.6)
+        abox.GetProperty().SetOpacity(.1)
+        abox.SetPosition(self.PosX + .5, self.PosY + .5, self.PosZ + .5)
+        
+        renderer.AddActor(abox)
+            
             
     def translateCell(self, a, b, c):
         new_cell = Cell(a,b,c)
         for atomn in self.Atoms:  #should preserve order of Atoms
-            print "this"
             position = atomn.getPosition()
             color = atomn.getActor().GetProperty().GetColor()
             new_cell.addAtom(Atom(new_cell, position[0], position[1], position[2], atomn.getDescription(), atomn.getSource().GetRadius(), color[0], color[1], color[2]))
-        
-        print "here  in translate cell atoms done"
+
         for bondn in self.Bonds:
             newAtom1 = new_cell.atomAtIndex( self.getAtomIndex(bondn.getAtom1()) )
             newAtom2 = new_cell.atomAtIndex( self.getAtomIndex(bondn.getAtom2()) )
