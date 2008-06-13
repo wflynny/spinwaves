@@ -67,11 +67,6 @@ class Cell():
         return (self.PosX, self.PosY, self.PosZ)
          
     def drawCell(self, renderer):
-        for atomn in self.Atoms:
-            renderer.AddActor(atomn.getActor())
-        for bondn in self.Bonds:
-            renderer.AddActor(bondn.getActor())
-            
         #draw very Light Box 
         #Create "Cube" Source
         box = vtkCubeSource()
@@ -88,8 +83,17 @@ class Cell():
         abox.GetProperty().SetColor(0,.1,.6)
         abox.GetProperty().SetOpacity(.1)
         abox.SetPosition(self.PosX + .5, self.PosY + .5, self.PosZ + .5)
+        abox.PickableOff()
         
+        #Add the actor to the renderer 
         renderer.AddActor(abox)
+        
+        #Add the Atoms and Bonds to the renderer
+        for atomn in self.Atoms:
+            renderer.AddActor(atomn.getActor())
+        for bondn in self.Bonds:
+            renderer.AddActor(bondn.getActor())
+            
             
             
     def translateCell(self, a, b, c):
