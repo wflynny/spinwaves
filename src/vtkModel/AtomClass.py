@@ -2,7 +2,12 @@ from vtk import *
 
 class Atom():
     def __init__(self, unit_Cell, x,y,z, description = "", radius=.05,r = 1,g=0,b = 0):
-        """x,y,z are fractional coordinates in the unit cell"""
+        """
+        x,y,z are fractional coordinates in the unit cell
+        unit_Cell is the unit cell containing the atom (instance of Cell class)
+        radius is the radius of the sphere actor
+        r,g,b are the red, green, blue values of the actor
+        """
         self.description = description
         
         if x<1 and y<1 and z<1: 

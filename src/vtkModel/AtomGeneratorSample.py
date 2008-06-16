@@ -40,11 +40,12 @@ def pick(obj, Event):
                     if bond.getActor() == SelectedActor:
                         print bond
                         break
-                else: #the unit cell bond is not found so check intercellular bonds
-                    for bond in MagCell.getIntercellularBonds():
-                        if bond.getActor() == SelectedActor:
-                            print bond
-                            break
+        else: #the unit cell bond is not found so check intercellular bonds
+            for bond1 in MagCell.getIntercellularBonds():
+                if bond1.getActor() == SelectedActor:
+                    print bond1
+                    break
+
 
 
 def menu():
@@ -145,7 +146,7 @@ if __name__=='__main__':
     
     MagCell = MagneticCell(unitcell, 1, 2, 3, Space_Group)
     AllAtoms = MagCell.getAllAtoms()
-    MagCell.addInterCellularBond(AllAtoms[0], AllAtoms[9])
+    MagCell.addInterCellularBond(AllAtoms[0], AllAtoms[6])
     MagCell.drawCell(ren1)
     
     
@@ -197,7 +198,6 @@ if __name__=='__main__':
     
     SelectedActor = None  #used by the picker
     iren.AddObserver("LeftButtonPressEvent", pick)
-    
     
     renWin.Render()    
     xLabelActor.SetCamera(ren1.GetActiveCamera())

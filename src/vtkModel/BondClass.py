@@ -7,7 +7,9 @@ import numpy
 
 class Bond():
     def __init__(self, Cell, Atom1, Atom2, r = 0,g = 0,b = 1):
-        """Cell is the Unit Cell if this bond is in a unit Cell or None Otherwise"""
+        """Cell is the Unit Cell if this bond is in a unit Cell or None Otherwise.
+        Atom1 and Atom2 are the atoms that this bond connects.
+        r,g,b are the color of the actor."""
         self.r = r#color
         self.g = g
         self.b = b
@@ -22,13 +24,15 @@ class Bond():
 
     
     def crossProduct(self, x1,y1,z1,x2,y2,z2):
+        """x,y,z represent vector coordinates"""
         i = (y1*z2) - (z1*y2)
         j = (x1*z2) - (z1*x2)
         k = (x1*y2) - (y1*x2)
         return i,j,k
 
     def makeCylinder (self, SphereOne, SphereTwo, rad_One, rad_Two):
-        """SphereOne and SphereTwo are two spherical actors rad_One and rad_Two are the radii of the spheres  returns a cylindrical Actor"""
+        """SphereOne and SphereTwo are two spherical actors rad_One and rad_Two are the radii of the spheres
+        returns a cylindrical Actor"""
         
         posOne = SphereOne.GetPosition()
         posTwo = SphereTwo.GetPosition()
@@ -129,6 +133,7 @@ class Bond():
         return newBonds
 
     def sameBond(self, otherBond):
+        """returns true if otherBond connects the same atoms"""
         if self.getAtom1() == otherBond.getAtom1() or self.getAtom1() == otherBond.getAtom2():
             if self.getAtom2() == otherBond.getAtom1() or self.getAtom2() == otherBond.getAtom2():
                 return True
@@ -138,6 +143,7 @@ class Bond():
         return "Bond between " + self.Atom1.__str__() + " and " + self.Atom2.__str__()
     
     def dotProduct(self, x1,y1,z1,x2,y2,z2):
+        """x,y,z represent vector coordinates"""
         return (x1*x2 + y1*y2 + z1*z2)
     
     def getRGBColor(self):

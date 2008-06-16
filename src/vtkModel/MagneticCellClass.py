@@ -97,8 +97,9 @@ class MagneticCell():
                     
                                 translatedAtom1 = translatedCell1.atomAtIndex(originalAtom1.getIndexNumber())
                                 translatedAtom2 = translatedCell2.atomAtIndex(originalAtom2.getIndexNumber())
-                                print "translated:"
                                 self.IntercellularBonds.append(Bond(None,translatedAtom1, translatedAtom2))
+
+                                
     
     def drawCell(self, Renderer):
         #draw all Cells

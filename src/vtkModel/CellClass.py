@@ -4,17 +4,17 @@ from AtomClass import *
 from BondClass import *
 
 class Cell():
-    def  __init__(self, PosX = 0, PosY = 0, PosZ = 0, DimX = 1, DimY = 1, DimZ = 1):
-        
+    def  __init__(self, PosX = 0, PosY = 0, PosZ = 0):
+        """PosX, PosY, PosZ are the fractional coordinates of the cell - they should all be integers"""
         #These should be integers
         self.PosX = PosX#position world coordinates in vtk renderer
         self.PosY = PosY
         self.PosZ = PosZ
         
         #Dimensions
-        self.DimX = DimX
-        self.DimY = DimY
-        self.DimZ = DimZ
+#        self.DimX = DimX
+#        self.DimY = DimY
+#        self.DimZ = DimZ
         
         self.Atoms = []
         self.Bonds = []
