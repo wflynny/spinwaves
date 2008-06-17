@@ -8,7 +8,7 @@ from CellClass import *
 from MagneticCellClass import *
 
 
-def generateAtoms(position, description, radius, r,g,b):
+def generateAtoms(Space_Group, unitcell, position, description, radius, r,g,b):
     locations = expandPosition(Space_Group, numpy.array([position[0],position[1], position[2]]))[0]
     for coord in locations:
         print coord[0], coord[1], coord[2]
@@ -136,7 +136,7 @@ if __name__=='__main__':
     
 #    MagCell = menu()
     randGen = random.Random()
-    generateAtoms(atomPos, "atom1" , .05, randGen.uniform(0,1), randGen.uniform(0,1), randGen.uniform(0,1))
+    generateAtoms(Space_Group, unitcell, atomPos, "atom1" , .05, randGen.uniform(0,1), randGen.uniform(0,1), randGen.uniform(0,1))
 #    bond = Bond(unitcell, atoms[0], atoms[5], randGen.uniform(0,1), randGen.uniform(0,1), randGen.uniform(0,1))
 #    ren1.AddActor(bond.getActor())
  #   unitcell.addBond(bond)

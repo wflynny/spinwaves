@@ -8025,11 +8025,3 @@ def GetSpaceGroup(name):
 
     ## return P1
     return sg1
-
-print "start"
-gen =  sg225.iter_equivalent_positions([.25, .25, .25])
-print gen.next()
-print gen.next()
-print gen.next()
-print gen.next()
-print "done"
