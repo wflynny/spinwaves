@@ -4,8 +4,10 @@ from AtomClass import *
 from BondClass import *
 
 class Cell():
-    def  __init__(self, PosX = 0, PosY = 0, PosZ = 0):
+    def  __init__(self, Space_Group, PosX = 0, PosY = 0, PosZ = 0):
         """PosX, PosY, PosZ are the fractional coordinates of the cell - they should all be integers"""
+        self.Space_Group = Space_Group
+        
         #These should be integers
         self.PosX = PosX#position world coordinates in vtk renderer
         self.PosY = PosY
@@ -97,7 +99,7 @@ class Cell():
             
             
     def translateCell(self, a, b, c):
-        new_cell = Cell(a,b,c)
+        new_cell = Cell(self.Space_Group,a,b,c)
         for atomn in self.Atoms:  #should preserve order of Atoms
             position = atomn.getPosition()
             color = atomn.getActor().GetProperty().GetColor()
@@ -112,12 +114,17 @@ class Cell():
 
     def __str__(self):
         return "unit cell at (" + str(self.PosX) + ", " + str(self.PosY) + ", " + str(self.PosZ) + ")"
-        
-    def test(self):
-        return Cell()
     
     def atomAtIndex(self, i):
         return self.Atoms[i]
     
     def getAtomIndex(self, atom):
         return self.Atoms.index(atom)
+    
+    def generateAtoms(self, position, description, radius, r,g,b):
+        locations = SymmetryUtilities.expandPosition(self.Space_Group, numpy.array([position[0],position[1], position[2]]))[0]
+        for coord in locations:
+            print coord[0], coord[1], coord[2]
+    #        r,g,b = atom1.getActor().GetProperty().GetColor()
+            atom = Atom(self, coord[0], coord[1], coord [2], description, radius, r,g,b)
+            self.addAtom(atom)

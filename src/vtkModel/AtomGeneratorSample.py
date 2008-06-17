@@ -8,14 +8,6 @@ from CellClass import *
 from MagneticCellClass import *
 
 
-def generateAtoms(Space_Group, unitcell, position, description, radius, r,g,b):
-    locations = expandPosition(Space_Group, numpy.array([position[0],position[1], position[2]]))[0]
-    for coord in locations:
-        print coord[0], coord[1], coord[2]
-#        r,g,b = atom1.getActor().GetProperty().GetColor()
-        atom = Atom(unitcell, coord[0], coord[1], coord [2], description, radius, r,g,b)
-        unitcell.addAtom(atom)
-
 
 def pick(obj, Event):
     global SelectedActor
@@ -116,7 +108,7 @@ def menu():
 if __name__=='__main__':
     
     
-    unitcell = Cell()
+    unitcell = Cell(sg65)
     Space_Group = sg65
     atomPos = [.25, .25, .5]
 
@@ -136,7 +128,7 @@ if __name__=='__main__':
     
 #    MagCell = menu()
     randGen = random.Random()
-    generateAtoms(Space_Group, unitcell, atomPos, "atom1" , .05, randGen.uniform(0,1), randGen.uniform(0,1), randGen.uniform(0,1))
+    unitcell.generateAtoms(atomPos, "atom1" , .05, randGen.uniform(0,1), randGen.uniform(0,1), randGen.uniform(0,1))
 #    bond = Bond(unitcell, atoms[0], atoms[5], randGen.uniform(0,1), randGen.uniform(0,1), randGen.uniform(0,1))
 #    ren1.AddActor(bond.getActor())
  #   unitcell.addBond(bond)

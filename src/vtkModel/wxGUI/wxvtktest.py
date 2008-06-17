@@ -3,6 +3,7 @@
 """This is a test of wxVTKRenderWindow"""
 
 import wx
+from picker import Picker
 from wxVTKRenderWindowInteractor import *
 from vtkModel.AtomGeneratorSample import *
 
@@ -35,10 +36,19 @@ class Frame(wx.Frame):
     
         
         #My Code
-        unitcell = Cell()
         Space_Group = sg65
+        unitcell = Cell(Space_Group)
         atomPos = [.25, .25, .5]
     
+        #Create the unit cell
+        randGen = random.Random()
+        unitcell.generateAtoms(atomPos, "atom1" , .05, randGen.uniform(0,1), randGen.uniform(0,1), randGen.uniform(0,1))
+        
+        #Create the Magnetic Cell
+        MagCell = MagneticCell(unitcell, 1,2,3, Space_Group)
+        AllAtoms = MagCell.getAllAtoms()
+        MagCell.addInterCellularBond(AllAtoms[0], AllAtoms[6])
+         
         # a renderer for the data
         ren1 = vtkRenderer()
         ren1.SetBackground(1,1,1)
@@ -46,31 +56,12 @@ class Frame(wx.Frame):
         # a render window to display the contents
         renWin = self.window.GetRenderWindow()
         renWin.AddRenderer(ren1)
-    
-        # an interactor to allow control of the objects
-#        iren = vtkRenderWindowInteractor()
-#        iren.SetRenderWindow(renWin)
         
-    #    MagCell = menu()
-        randGen = random.Random()
-        generateAtoms(Space_Group, unitcell, atomPos, "atom1" , .05, randGen.uniform(0,1), randGen.uniform(0,1), randGen.uniform(0,1))
-    #    bond = Bond(unitcell, atoms[0], atoms[5], randGen.uniform(0,1), randGen.uniform(0,1), randGen.uniform(0,1))
-    #    ren1.AddActor(bond.getActor())
-     #   unitcell.addBond(bond)
-     #   for eachBond in bond.createSymmetryBonds(Space_Group):
-      #      unitcell.addBond(eachBond)
-        
-        
-        MagCell = MagneticCell(unitcell, 1,2,3, Space_Group)
-        AllAtoms = MagCell.getAllAtoms()
-        MagCell.addInterCellularBond(AllAtoms[0], AllAtoms[6])
+        #Add my picker
+        Picker(MagCell, self.window._Iren, ren1)
+            
+        #Draw the Magnetic Cell
         MagCell.drawCell(ren1)
-        
-        interactor = vtkInteractorStyleSwitch()
-        interactor.SetCurrentStyleToTrackballCamera()
-        self.window._Iren.SetInteractorStyle(interactor)
-        picker = vtkPropPicker()
-        self.window._Iren.SetPicker(picker)
         
         #Add Axes
         axes = vtkAxes()
@@ -111,9 +102,6 @@ class Frame(wx.Frame):
         ren1.AddActor(yLabelActor)
         ren1.AddActor(zLabelActor)
         
-        
-        SelectedActor = None  #used by the picker
-        self.window._Iren.AddObserver("LeftButtonPressEvent", pick)
 
         
  #       xLabelActor.SetCamera(ren1.GetActiveCamera())
@@ -132,7 +120,7 @@ class Frame(wx.Frame):
 
 class App(wx.App):
     
-    def OnInit(self, redirect = True, filename = None):
+    def OnInit(self, redirect = False, filename = None):
         wx.App.__init__(self, redirect, filename)
         self.frame = Frame(None, -1)
         self.frame.Show()
