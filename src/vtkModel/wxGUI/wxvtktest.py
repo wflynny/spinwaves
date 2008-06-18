@@ -5,8 +5,11 @@
 import wx
 from picker import Picker
 from wxVTKRenderWindowInteractor import *
-from vtkModel.AtomGeneratorSample import *
-import time
+from vtkModel.SpaceGroups import *
+from vtkModel.VTKDrawer import *
+from vtkModel.MagneticCellClass import *
+from vtkModel.CellClass import *
+import random
 
 class Frame(wx.Frame):
     def __init__(self, parent, id):
@@ -65,26 +68,25 @@ class Frame(wx.Frame):
         self.MagCell.addInterCellularBond(AllAtoms[0], AllAtoms[6])
          
         # a renderer for the data
-        self.ren1 = vtkRenderer()
-        self.ren1.SetBackground(1,1,1)
-    
-        # a render window to display the contents
-        renWin = self.window.GetRenderWindow()
-        renWin.AddRenderer(self.ren1)
-        
+        ren1 = vtkRenderer()
+        ren1.SetBackground(1,1,1)
+       
         #Add my picker
-        Picker(self.MagCell, self.window._Iren, self.ren1)
+        Picker(self.MagCell, self.window._Iren, ren1)
             
+        #Create vtkDrawer
+        self.drawer = vtkDrawer(ren1)
+        
         #Draw the Magnetic Cell
-        self.MagCell.drawCell(self.ren1)
+        self.drawer.drawMagneticCell(self.MagCell)
         
         
     def afterRender(self):
         """Does everythinng that must be done after hte first render,
         such as creating the axes and atom labels"""
         
-        self.MagCell.addAxes(self.ren1)
-        self.MagCell.labelAtoms(self.ren1)
+        self.drawer.addAxes()
+#        self.MagCell.labelAtoms()
 
 
 

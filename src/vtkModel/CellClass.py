@@ -44,7 +44,6 @@ class Cell():
                     return True
         return False
     
-    
     def addAtom(self, Atom):
         self.Atoms.append(Atom)
     
@@ -68,43 +67,13 @@ class Cell():
         
     def getPosition(self):
         return (self.PosX, self.PosY, self.PosZ)
-         
-    def drawCell(self, renderer):
-        #draw very Light Box 
-        #Create "Cube" Source
-        box = vtkCubeSource()
-        box.SetXLength(1)
-        box.SetYLength(1)
-        box.SetZLength(1)
-        
-        boxMap = vtkPolyDataMapper()
-        boxMap.SetInput(box.GetOutput())
-        
-        #create actor
-        abox = vtkActor()
-        abox.SetMapper(boxMap)
-        abox.GetProperty().SetColor(0,.1,.6)
-        abox.GetProperty().SetOpacity(.1)
-        abox.SetPosition(self.PosX + .5, self.PosY + .5, self.PosZ + .5)
-        abox.PickableOff()
-        
-        #Add the actor to the renderer 
-        renderer.AddActor(abox)
-        
-        #Add the Atoms and Bonds to the renderer
-        for atomn in self.Atoms:
-            renderer.AddActor(atomn.getActor())
-        for bondn in self.Bonds:
-            renderer.AddActor(bondn.getActor())
-            
-            
-            
+                   
     def translateCell(self, a, b, c):
         new_cell = Cell(self.Space_Group,a,b,c)
         for atomn in self.Atoms:  #should preserve order of Atoms
             position = atomn.getPosition()
-            color = atomn.getActor().GetProperty().GetColor()
-            new_cell.addAtom(Atom(new_cell, position[0], position[1], position[2], atomn.getDescription(), atomn.getSource().GetRadius(), color[0], color[1], color[2]))
+            color = atomn.getColor()
+            new_cell.addAtom(Atom(new_cell, position[0], position[1], position[2], atomn.getDescription(), atomn.getRadius(), color[0], color[1], color[2]))
 
         for bondn in self.Bonds:
             newAtom1 = new_cell.atomAtIndex( self.getAtomIndex(bondn.getAtom1()) )
@@ -126,25 +95,7 @@ class Cell():
         locations = SymmetryUtilities.expandPosition(self.Space_Group, numpy.array([position[0],position[1], position[2]]))[0]
         for coord in locations:
             print coord[0], coord[1], coord[2]
-    #        r,g,b = atom1.getActor().GetProperty().GetColor()
+    #        r,g,b = atom1.getColor()
             atom = Atom(self, coord[0], coord[1], coord [2], description, radius, r,g,b)
             self.addAtom(atom)
 
-    def labelAtoms(self, renderer):
-        """This should only be called after the image has been renderered, otherwise strange camera effects have been cuased"""
-        for index in range(0, len(self.Atoms)):
-            atom = self.Atoms[index]
-            label = vtkVectorText()
-            label.SetText(str(index + 1))
-            labelMapper = vtkPolyDataMapper()
-            labelMapper.SetInputConnection(label.GetOutputPort())
-            labelActor = vtkFollower()
-            labelActor.SetMapper(labelMapper)
-            labelActor.SetScale(0.1,0.1,0.1)
-            x,y,z = atom.getPosition()
-            x += atom.getSource().GetRadius()
-            labelActor.AddPosition(x,y,z)
-            labelActor.GetProperty().SetColor(0,0,0)
-
-            renderer.AddActor(labelActor)
-            labelActor.SetCamera(renderer.GetActiveCamera())

@@ -1,5 +1,6 @@
 import copy
 from BondClass import *
+import numpy
 
 class MagneticCell():
     
@@ -101,11 +102,6 @@ class MagneticCell():
 
                                 
     
-    def drawCell(self, Renderer):
-        #draw all Cells
-        for cell in self.AllUnitCells:
-            cell.drawCell(Renderer)
-        self.drawIntercellularBonds(Renderer)
     
     def getAllUnitCells(self):
         return self.AllUnitCells
@@ -124,10 +120,6 @@ class MagneticCell():
         if cell != None:
             return cell.atomAtPosition(Position)
         return None #If there is no Cell there are no Atoms
-    
-    def drawIntercellularBonds(self, renderer):
-        for bond in self.IntercellularBonds:
-            renderer.AddActor(bond.getActor())
             
     def getAllAtoms(self):
         atoms = []
@@ -137,58 +129,3 @@ class MagneticCell():
     
     def getIntercellularBonds(self):
         return self.IntercellularBonds
-    
-    def addAxes(self, renderer):
-        """needs to be run after the window is rendered"""
-        
-        #Add Axes
-        axes = vtkAxes()
-        axes.SetOrigin(0,0,0)
-        axesMapper = vtkPolyDataMapper()
-        axesMapper.SetInputConnection(axes.GetOutputPort())
-        axesActor = vtkActor()
-        axesActor.SetMapper(axesMapper)
-        renderer.AddActor(axesActor)
-        xLabel = vtkVectorText()
-        yLabel = vtkVectorText()
-        zLabel = vtkVectorText()
-        xLabel.SetText("x")
-        yLabel.SetText("y")
-        zLabel.SetText("z")
-        xLabelMapper = vtkPolyDataMapper()
-        yLabelMapper = vtkPolyDataMapper()
-        zLabelMapper = vtkPolyDataMapper()
-        xLabelMapper.SetInputConnection(xLabel.GetOutputPort())
-        yLabelMapper.SetInputConnection(yLabel.GetOutputPort())
-        zLabelMapper.SetInputConnection(zLabel.GetOutputPort())
-        xLabelActor = vtkFollower()
-        yLabelActor = vtkFollower()
-        zLabelActor = vtkFollower()
-        xLabelActor.SetMapper(xLabelMapper)
-        yLabelActor.SetMapper(yLabelMapper)
-        zLabelActor.SetMapper(zLabelMapper)
-        xLabelActor.SetScale(0.1,0.1,0.1)
-        yLabelActor.SetScale(0.1,0.1,0.1)
-        zLabelActor.SetScale(0.1,0.1,0.1)
-        xLabelActor.AddPosition(1,0,0)
-        yLabelActor.AddPosition(0,1,0)
-        zLabelActor.AddPosition(0,0,1)
-        xLabelActor.GetProperty().SetColor(0,0,0)
-        yLabelActor.GetProperty().SetColor(0,0,0)
-        zLabelActor.GetProperty().SetColor(0,0,0)
-        renderer.AddActor(xLabelActor)
-        renderer.AddActor(yLabelActor)
-        renderer.AddActor(zLabelActor)
-        
-        #These must be called after ren1 has a camera, otherwise it makes one that is not satisfactory
-        #Without them though, 'x','y','z' labels will not be visible from some angles
-        xLabelActor.SetCamera(renderer.GetActiveCamera())
-        yLabelActor.SetCamera(renderer.GetActiveCamera())
-        zLabelActor.SetCamera(renderer.GetActiveCamera())
-
-
-    def labelAtoms(self, renderer):
-        """The labels should only be created after the window has been rendered, otherwise the camera has been created in the wrong place."""
-        for cell in self.AllUnitCells:
-            cell.labelAtoms(renderer)
-

@@ -22,13 +22,13 @@ class Picker():
     def pick(self, obj, event):
         Mouse_Position = self.iren.GetEventPosition()
         self.picker.PickProp(Mouse_Position[0],Mouse_Position[1], self.ren1)
-        if(self.SelectedActor == self.picker.GetActor()):
+        if(self.SelectedActor == self.picker.GetActor()): #the actor is already picked
             return
         if(self.SelectedActor != None):
-            self.SelectedActor.GetProperty().SetAmbient(0)
+            self.SelectedActor.GetProperty().SetAmbient(0) #unhighlight old picked actor
         self.SelectedActor = self.picker.GetActor()
         if self.SelectedActor != None:
-            self.SelectedActor.GetProperty().SetAmbient(1)
+            self.SelectedActor.GetProperty().SetAmbient(1)#make the selected actor stand out
             self.iren.GetRenderWindow().Render()
             #find the Atom at this position and print its description
             for celln in self.MagCell.getAllUnitCells():   

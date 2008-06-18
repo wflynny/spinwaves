@@ -1,8 +1,6 @@
 import AtomClass
 from vtk import *
-import scipy
-import math
-import numpy
+
 
 
 class Bond():
@@ -17,80 +15,7 @@ class Bond():
         self.Atom1 = Atom1
         self.Atom2 = Atom2
         self.Cell = Cell
-        self.cylinder_actor = self.makeCylinder(Atom1.getActor(), Atom2.getActor(), Atom1.getSource().GetRadius(), Atom2.getSource().GetRadius())
-    
 
-    defualtRadius = .025
-
-    
-    def crossProduct(self, x1,y1,z1,x2,y2,z2):
-        """x,y,z represent vector coordinates"""
-        i = (y1*z2) - (z1*y2)
-        j = (x1*z2) - (z1*x2)
-        k = (x1*y2) - (y1*x2)
-        return i,j,k
-
-    def makeCylinder (self, SphereOne, SphereTwo, rad_One, rad_Two):
-        """SphereOne and SphereTwo are two spherical actors rad_One and rad_Two are the radii of the spheres
-        returns a cylindrical Actor"""
-        
-        posOne = SphereOne.GetPosition()
-        posTwo = SphereTwo.GetPosition()
-        #coordinates of vector pointing from SphereTwo to SphereOne
-        x = posTwo[0] - posOne[0]
-        y = posTwo[1] - posOne[1]
-        z = posTwo[2] - posOne[2]
-        distance = ((x**2 + y**2 + z**2)**.5 -rad_One - rad_Two)
-        
-        #create cylinder
-        cylinder = vtkCylinderSource()
-        cylinder.SetRadius(self.defualtRadius)
-        cylinder.SetResolution(100)
-        
-        #map to another map
-        cylinderMap = vtkPolyDataMapper()
-        cylinderMap.SetInput(cylinder.GetOutput())
-        
-        #create cylinder actor
-        aCylinder = vtkActor()
-        aCylinder.SetMapper(cylinderMap)
-        aCylinder.GetProperty().SetColor(0,.1,.6)
-        aCylinder.SetScale(.2,distance,.2)
-        
-        #to get the center point between the surfaces of the two spheres
-        #create a unit vector and multiply it by the distance/2
-        
-        #create unit vetor
-        vectLength = (x**2 + y**2 + z**2)**.5
-        print vectLength
-        print posOne
-        print posTwo
-        unitX = x/vectLength
-        unitY = y/vectLength
-        unitZ = z/vectLength
-    
-        #get center coordinates (center point between two sphere surfaces)
-        centerX = (unitX * (rad_One + distance/2)) + posOne[0]
-        centerY = (unitY * (rad_One + distance/2)) + posOne[1]
-        centerZ = (unitZ * (rad_One + distance/2)) + posOne[2]
-        aCylinder.SetPosition(centerX, centerY, centerZ)
-        
-        
-        #Angle
-        #cross product of Unit vectors cylinder direction and desired orientation
-        i,j,k = self.crossProduct(0,1,0,unitX,unitY,unitZ)  #default orientation for the cylinder is along y axis
-        theta = scipy.arcsin((i**2+j**2+k**2)**.5)*180/math.pi
-        
-        #if the angle is obtuse, theta must be corrected
-        if self.dotProduct(0,1,0,unitX,unitY,unitZ) >= 0:
-            aCylinder.RotateWXYZ(theta,i,j,k)
-        else:
-            aCylinder.RotateWXYZ(theta,-i,-j,-k)
-        
-        return aCylinder
-    
-    def getActor(self):
-        return self.cylinder_actor
     
     def getAtom1(self):
         return self.Atom1
@@ -141,10 +66,6 @@ class Bond():
     
     def __str__(self):
         return "Bond between " + self.Atom1.__str__() + " and " + self.Atom2.__str__()
-    
-    def dotProduct(self, x1,y1,z1,x2,y2,z2):
-        """x,y,z represent vector coordinates"""
-        return (x1*x2 + y1*y2 + z1*z2)
     
     def getRGBColor(self):
         return self.r, self.g, self.b

@@ -1,5 +1,3 @@
-from vtk import *
-
 class Atom():
     def __init__(self, unit_Cell, x,y,z, description = "", radius=.05,r = 1,g=0,b = 0):
         """
@@ -9,6 +7,8 @@ class Atom():
         r,g,b are the red, green, blue values of the actor
         """
         self.description = description
+        self.radius = radius
+        self.color = [r,g,b]
         
         if x<1 and y<1 and z<1: 
             #coordinates  (within cell) - Actor will contain world coordinates in vtk renderer
@@ -21,37 +21,13 @@ class Atom():
         #Unit Cell Containing this Atom
         self.unit_Cell = unit_Cell
         
-        #sphere geometry
-        self.sphere_Source = vtkSphereSource()
-        self.sphere_Source.SetRadius(radius)
-        self.sphere_Source.SetThetaResolution(self.defualt_res)
-        self.sphere_Source.SetPhiResolution(self.defualt_res)
-        
-        # map to graphics objects
-        sphereMap = vtkPolyDataMapper()
-        sphereMap.SetInput(self.sphere_Source.GetOutput())
-        
-        # actor coordinates geometry, properties, transformation
-        self.sphere_Actor = vtkActor()
-        self.sphere_Actor.SetMapper(sphereMap)
-        self.sphere_Actor.GetProperty().SetColor(r,g,b)
-        
-        cellPosition = unit_Cell.getPosition()
-        self.sphere_Actor.SetPosition(x + cellPosition[0],y + cellPosition[1],z + cellPosition[2])
-    
 
+    def getRadius(self):
+        return self.radius
     
-    
-    #Default Sphere Resolution Theta and Phi
-    defualt_res = 100
-
-
-    
-    def getSource(self):
-        return self.sphere_Source
-    
-    def getActor(self):
-        return self.sphere_Actor
+    def getColor(self):
+        """returns [r,g,b] color"""
+        return self.color
     
     def getPosition(self):
         """returns (x,y,z) fractional coordinates within Unit Cell + (x,y,z) Unit Cell Position  (integers)"""
