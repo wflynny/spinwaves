@@ -6,18 +6,33 @@ import wx
 from picker import Picker
 from wxVTKRenderWindowInteractor import *
 from vtkModel.AtomGeneratorSample import *
+import time
 
 class Frame(wx.Frame):
     def __init__(self, parent, id):
         wx.Frame.__init__(self, parent, id, 'Magnetic Cell', size= (900,500))
         
         self.initVTKWindow()
+        
+        
+        #Add Menus
+        menuBar = wx.MenuBar()
+        
+        #Add File Menu
+        fileMenu = wx.Menu()
+        fileMenu.Append(wx.NewId(), "&Open")
+        fileMenu.Append(wx.NewId(), "&Save")
+        fileMenu.Append(wx.NewId(), "&Quit")
+        menuBar.Append(fileMenu, "&File")
+        
+        self.SetMenuBar(menuBar)
 
+    
     
     def initVTKWindow(self):
         #Code from wxRenderWindowInterActor Sample
        
-        self.window = wxVTKRenderWindowInteractor(self, -1)
+        self.window = wxVTKRenderWindowInteractor(self, -1, self.afterRender)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.window, 1, wx.EXPAND)
         self.SetSizer(sizer)
@@ -45,78 +60,33 @@ class Frame(wx.Frame):
         unitcell.generateAtoms(atomPos, "atom1" , .05, randGen.uniform(0,1), randGen.uniform(0,1), randGen.uniform(0,1))
         
         #Create the Magnetic Cell
-        MagCell = MagneticCell(unitcell, 1,2,3, Space_Group)
-        AllAtoms = MagCell.getAllAtoms()
-        MagCell.addInterCellularBond(AllAtoms[0], AllAtoms[6])
+        self.MagCell = MagneticCell(unitcell, 1,2,3, Space_Group)
+        AllAtoms = self.MagCell.getAllAtoms()
+        self.MagCell.addInterCellularBond(AllAtoms[0], AllAtoms[6])
          
         # a renderer for the data
-        ren1 = vtkRenderer()
-        ren1.SetBackground(1,1,1)
+        self.ren1 = vtkRenderer()
+        self.ren1.SetBackground(1,1,1)
     
         # a render window to display the contents
         renWin = self.window.GetRenderWindow()
-        renWin.AddRenderer(ren1)
+        renWin.AddRenderer(self.ren1)
         
         #Add my picker
-        Picker(MagCell, self.window._Iren, ren1)
+        Picker(self.MagCell, self.window._Iren, self.ren1)
             
         #Draw the Magnetic Cell
-        MagCell.drawCell(ren1)
+        self.MagCell.drawCell(self.ren1)
         
-        #Add Axes
-        axes = vtkAxes()
-        axes.SetOrigin(0,0,0)
-        axesMapper = vtkPolyDataMapper()
-        axesMapper.SetInputConnection(axes.GetOutputPort())
-        axesActor = vtkActor()
-        axesActor.SetMapper(axesMapper)
-        ren1.AddActor(axesActor)
-        xLabel = vtkVectorText()
-        yLabel = vtkVectorText()
-        zLabel = vtkVectorText()
-        xLabel.SetText("x")
-        yLabel.SetText("y")
-        zLabel.SetText("z")
-        xLabelMapper = vtkPolyDataMapper()
-        yLabelMapper = vtkPolyDataMapper()
-        zLabelMapper = vtkPolyDataMapper()
-        xLabelMapper.SetInputConnection(xLabel.GetOutputPort())
-        yLabelMapper.SetInputConnection(yLabel.GetOutputPort())
-        zLabelMapper.SetInputConnection(zLabel.GetOutputPort())
-        xLabelActor = vtkFollower()
-        yLabelActor = vtkFollower()
-        zLabelActor = vtkFollower()
-        xLabelActor.SetMapper(xLabelMapper)
-        yLabelActor.SetMapper(yLabelMapper)
-        zLabelActor.SetMapper(zLabelMapper)
-        xLabelActor.SetScale(0.1,0.1,0.1)
-        yLabelActor.SetScale(0.1,0.1,0.1)
-        zLabelActor.SetScale(0.1,0.1,0.1)
-        xLabelActor.AddPosition(1,0,0)
-        yLabelActor.AddPosition(0,1,0)
-        zLabelActor.AddPosition(0,0,1)
-        xLabelActor.GetProperty().SetColor(0,0,0)
-        yLabelActor.GetProperty().SetColor(0,0,0)
-        zLabelActor.GetProperty().SetColor(0,0,0)
-        ren1.AddActor(xLabelActor)
-        ren1.AddActor(yLabelActor)
-        ren1.AddActor(zLabelActor)
         
+    def afterRender(self):
+        """Does everythinng that must be done after hte first render,
+        such as creating the axes and atom labels"""
+        
+        self.MagCell.addAxes(self.ren1)
+        self.MagCell.labelAtoms(self.ren1)
 
-        
- #       xLabelActor.SetCamera(ren1.GetActiveCamera())
-#        yLabelActor.SetCamera(ren1.GetActiveCamera())
-#        zLabelActor.SetCamera(ren1.GetActiveCamera())
 
-#        self.Bind(wx.EVT_BUTTON, self.ButtonOnVTK, self.window)
-#        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
-    
- #   def ButtonOnVTK(self, event):
- #       iren.InvokeEvent("LeftButtonPressEvent")
- #       print "Button Pressed"
-        
- #   def OnCloseWindow(self, event):
- #       self.Destroy()
 
 class App(wx.App):
     
@@ -129,5 +99,5 @@ class App(wx.App):
     
 if __name__ == '__main__':
 
-    app = App()
+    app = App(False)
     app.MainLoop()

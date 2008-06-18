@@ -21,6 +21,7 @@ class Cell():
         self.Atoms = []
         self.Bonds = []
         
+        
 
 
     
@@ -128,3 +129,22 @@ class Cell():
     #        r,g,b = atom1.getActor().GetProperty().GetColor()
             atom = Atom(self, coord[0], coord[1], coord [2], description, radius, r,g,b)
             self.addAtom(atom)
+
+    def labelAtoms(self, renderer):
+        """This should only be called after the image has been renderered, otherwise strange camera effects have been cuased"""
+        for index in range(0, len(self.Atoms)):
+            atom = self.Atoms[index]
+            label = vtkVectorText()
+            label.SetText(str(index + 1))
+            labelMapper = vtkPolyDataMapper()
+            labelMapper.SetInputConnection(label.GetOutputPort())
+            labelActor = vtkFollower()
+            labelActor.SetMapper(labelMapper)
+            labelActor.SetScale(0.1,0.1,0.1)
+            x,y,z = atom.getPosition()
+            x += atom.getSource().GetRadius()
+            labelActor.AddPosition(x,y,z)
+            labelActor.GetProperty().SetColor(0,0,0)
+
+            renderer.AddActor(labelActor)
+            labelActor.SetCamera(renderer.GetActiveCamera())

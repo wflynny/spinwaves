@@ -101,13 +101,21 @@ class wxVTKRenderWindowInteractor(baseClass):
     # myRWI = wxVTKRenderWindowInteractor(parent, -1)
     USE_STEREO = False
     
-    def __init__(self, parent, ID, *args, **kw):
+    def __init__(self, parent, ID, postRenderTask, *args, **kw):
         """Default class constructor.
         @param parent: parent window
         @param ID: window id
         @param **kw: wxPython keywords (position, size, style) plus the
         'stereo' keyword
         """
+        
+        
+        #Added so that I could get the camera for labels after it was rendered for the first time
+        self.postRenderTask = postRenderTask
+        
+        
+        
+        
         # private attributes
         self.__RenderWhenDisabled = 0
 
@@ -371,6 +379,7 @@ class wxVTKRenderWindowInteractor(baseClass):
             self.__has_painted = True
 
         self.Render()
+        self.postRenderTask()
 
     def OnSize(self,event):
         """Handles the wx.EVT_SIZE event for
@@ -532,15 +541,19 @@ class wxVTKRenderWindowInteractor(baseClass):
         if keycode < 256:
             key = chr(keycode)
 
+        
         # wxPython 2.6.0.1 does not return a valid event.Get{X,Y}()
         # for this event, so we use the cached position.
-        (x,y)= self._Iren.GetEventPosition()
-        self._Iren.SetEventInformation(x, y,
-                                       ctrl, shift, key, 0,
-                                       keysym)
-
-        self._Iren.KeyPressEvent()
-        self._Iren.CharEvent()
+        
+        #I do not want 'j' key press to be passed to vtk becuase I do not want to switch out of trackball mode
+        if key != 'j':
+            (x,y)= self._Iren.GetEventPosition()
+            self._Iren.SetEventInformation(x, y,
+                                           ctrl, shift, key, 0,
+                                           keysym)
+    
+            self._Iren.KeyPressEvent()
+            self._Iren.CharEvent()
 
         
     def OnKeyUp(self,event):
@@ -670,23 +683,4 @@ class StatusFrame(wx.Frame):
         
     def OnCloseWindow(self, event):
         self.Destroy()
-
-
-
-def wxVTKRenderWindowInteractorConeExample():
-    """Like it says, just a simple example
-    """
-    # every wx app needs an app
-    app = wx.PySimpleApp()
-
-    # create the top-level frame, sizer and wxVTKRWI
-    frame = StatusFrame(None, -1)
-
-    # show the window
-    frame.Show()
-
-    app.MainLoop()
-
-if __name__ == "__main__":
-    wxVTKRenderWindowInteractorConeExample()
 

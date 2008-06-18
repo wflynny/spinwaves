@@ -191,8 +191,8 @@ if __name__=='__main__':
     SelectedActor = None  #used by the picker
     iren.AddObserver("LeftButtonPressEvent", pick)
     
-    renWin.Render()    
+    renWin.Render()
     xLabelActor.SetCamera(ren1.GetActiveCamera())
     yLabelActor.SetCamera(ren1.GetActiveCamera())
-    zLabelActor.SetCamera(ren1.GetActiveCamera())
+    zLabelActor.SetCamera(ren1.GetActiveCamera())   
     iren.Start()
