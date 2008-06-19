@@ -19,14 +19,14 @@ class Cell():
 #        self.DimZ = DimZ
         
         self.Atoms = []
-        self.Bonds = []
+#        self.Bonds = []
         
         
 
 
     
     #functions
-    def atomAtPosition(self,position):  #untested
+    def atomAtPosition(self,position):
         """Returns the atom at the position if one exists, None otherwise"""
         if self.positionIsInCell(position):
             positionList = []
@@ -47,14 +47,14 @@ class Cell():
     def addAtom(self, Atom):
         self.Atoms.append(Atom)
     
-    def addBond(self, Bond):
-        self.Bonds.append(Bond)
+#    def addBond(self, Bond):
+#        self.Bonds.append(Bond)
     
     def getAtoms(self):
         return self.Atoms
     
-    def getBonds(self):
-        return self.Bonds
+#    def getBonds(self):
+#        return self.Bonds
     
     def setPosX(self, x):
         self.PosX = x
@@ -75,10 +75,11 @@ class Cell():
             color = atomn.getColor()
             new_cell.addAtom(Atom(new_cell, position[0], position[1], position[2], atomn.getDescription(), atomn.getRadius(), color[0], color[1], color[2]))
 
-        for bondn in self.Bonds:
-            newAtom1 = new_cell.atomAtIndex( self.getAtomIndex(bondn.getAtom1()) )
-            newAtom2 = new_cell.atomAtIndex( self.getAtomIndex(bondn.getAtom2()) )
-            new_cell.addBond(Bond(new_cell, newAtom1, newAtom2, bondn.getRGBColor()))
+#Bonds no longer associated with cells
+#        for bondn in self.Bonds:
+#            newAtom1 = new_cell.atomAtIndex( self.getAtomIndex(bondn.getAtom1()) )
+#            newAtom2 = new_cell.atomAtIndex( self.getAtomIndex(bondn.getAtom2()) )
+#            new_cell.addBond(Bond(new_cell, newAtom1, newAtom2, bondn.getRGBColor()))
         
         return new_cell
 

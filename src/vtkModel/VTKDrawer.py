@@ -140,11 +140,9 @@ class vtkDrawer():
         #Add the actor to the renderer 
         self.ren1.AddActor(abox)
         
-        #Add the Atoms and Bonds to the renderer
+        #Add the Atoms to the renderer
         for atom in cell.getAtoms():
             self.drawAtom(atom)
-        for bond in cell.getBonds():
-            self.drawBond(bond)
             
             
     
@@ -174,7 +172,7 @@ class vtkDrawer():
         for cell in MagCell.getAllUnitCells():
             self.drawUnitCell(cell)
             #Draw intercellular bonds
-            for bond in MagCell.getIntercellularBonds():
+            for bond in MagCell.getBonds():
                 self.drawBond(bond)
 
 

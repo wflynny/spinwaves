@@ -53,23 +53,20 @@ class Frame(wx.Frame):
         self.window.AddObserver("ExitEvent", lambda o,e,f=self: f.Close())
     
         #My Code
-        Space_Group = sg225
+        Space_Group = sg50
         unitcell = Cell(Space_Group)
-        atomPos = [.15, .15, .15]
+        atomPos = [.25, .25, .5]
     
         #Create the unit cell
         randGen = random.Random()
         unitcell.generateAtoms(atomPos, "atom1" , .05, randGen.uniform(0,1), randGen.uniform(0,1), randGen.uniform(0,1))
-#        bond1 = Bond(unitcell, unitcell.atomAtIndex(0), unitcell.atomAtIndex(4))
-#        for bonds in bond1.createSymmetryBonds(Space_Group):
-#            unitcell.addBond(bonds)
         
         #Create the Magnetic Cell
-        self.MagCell = MagneticCell(unitcell, 1,2,3, Space_Group)
+        self.MagCell = MagneticCell(unitcell, 2,2,3, Space_Group)
         AllAtoms = self.MagCell.getAllAtoms()
         for i in range(0, len(AllAtoms)):
             print i, AllAtoms[i]
-        self.MagCell.addInterCellularBond(AllAtoms[71], AllAtoms[34])
+        self.MagCell.addBond(AllAtoms[0], AllAtoms[1])
          
         # a renderer for the data
         ren1 = vtkRenderer()
