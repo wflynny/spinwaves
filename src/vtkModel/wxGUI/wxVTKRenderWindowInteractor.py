@@ -379,7 +379,10 @@ class wxVTKRenderWindowInteractor(baseClass):
             self.__has_painted = True
 
         self.Render()
+        
+        
         self.postRenderTask()
+        self.Render() #Rendered again otherwise changes won't show up until next render
 
     def OnSize(self,event):
         """Handles the wx.EVT_SIZE event for

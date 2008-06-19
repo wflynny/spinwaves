@@ -52,41 +52,48 @@ class Frame(wx.Frame):
     
         self.window.AddObserver("ExitEvent", lambda o,e,f=self: f.Close())
     
-        
         #My Code
-        Space_Group = sg65
+        Space_Group = sg225
         unitcell = Cell(Space_Group)
-        atomPos = [.25, .25, .5]
+        atomPos = [.15, .15, .15]
     
         #Create the unit cell
         randGen = random.Random()
         unitcell.generateAtoms(atomPos, "atom1" , .05, randGen.uniform(0,1), randGen.uniform(0,1), randGen.uniform(0,1))
+#        bond1 = Bond(unitcell, unitcell.atomAtIndex(0), unitcell.atomAtIndex(4))
+#        for bonds in bond1.createSymmetryBonds(Space_Group):
+#            unitcell.addBond(bonds)
         
         #Create the Magnetic Cell
         self.MagCell = MagneticCell(unitcell, 1,2,3, Space_Group)
         AllAtoms = self.MagCell.getAllAtoms()
-        self.MagCell.addInterCellularBond(AllAtoms[0], AllAtoms[6])
+        for i in range(0, len(AllAtoms)):
+            print i, AllAtoms[i]
+        self.MagCell.addInterCellularBond(AllAtoms[71], AllAtoms[34])
          
         # a renderer for the data
         ren1 = vtkRenderer()
         ren1.SetBackground(1,1,1)
-       
-        #Add my picker
-        Picker(self.MagCell, self.window._Iren, ren1)
+        
+        #Add the renderer to the window
+        self.window.GetRenderWindow().AddRenderer(ren1)
             
         #Create vtkDrawer
         self.drawer = vtkDrawer(ren1)
         
+        #Add my picker
+        Picker(self.drawer, self.window._Iren, ren1)
+        
         #Draw the Magnetic Cell
         self.drawer.drawMagneticCell(self.MagCell)
-        
+ 
         
     def afterRender(self):
         """Does everythinng that must be done after hte first render,
         such as creating the axes and atom labels"""
         
         self.drawer.addAxes()
-#        self.MagCell.labelAtoms()
+        self.drawer.labelAtoms(self.MagCell)
 
 
 

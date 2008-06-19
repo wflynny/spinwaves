@@ -1,5 +1,6 @@
 import AtomClass
 from vtk import *
+import numpy
 
 
 
@@ -45,8 +46,6 @@ class Bond():
             mask2 = numpy.logical_or(pos2 < 0.0, pos2 >= 1.0)
             pos1[mask1] -= numpy.floor(pos1[mask1])
             pos2[mask2] -= numpy.floor(pos2[mask2])
-            print pos1
-            print pos2
             newBond = Bond(self.Cell, self.Cell.atomAtPosition(pos1), self.Cell.atomAtPosition(pos2), self.r, self.g, self.b)
             #check if the bond already exists
             for currentBond in newBonds:

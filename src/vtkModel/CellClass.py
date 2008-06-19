@@ -94,7 +94,6 @@ class Cell():
     def generateAtoms(self, position, description, radius, r,g,b):
         locations = SymmetryUtilities.expandPosition(self.Space_Group, numpy.array([position[0],position[1], position[2]]))[0]
         for coord in locations:
-            print coord[0], coord[1], coord[2]
     #        r,g,b = atom1.getColor()
             atom = Atom(self, coord[0], coord[1], coord [2], description, radius, r,g,b)
             self.addAtom(atom)

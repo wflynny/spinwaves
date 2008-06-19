@@ -7,11 +7,16 @@ import numpy
 class vtkDrawer():
     def __init__(self, renderer):
         self.ren1 = renderer
+        self.actors = {}# asscociate actors with their model objects for picking
     
     
     #Default Sphere resolution
     defualt_Sphere_Res = 80
     defualtBondRadius = .025
+    
+    
+    def getObjFromActor(self, actor):
+        return self.actors[actor]
     
     
     def drawAtom(self, atom):
@@ -33,11 +38,15 @@ class vtkDrawer():
         sphere_Actor.SetPosition(atom.getPosition())
         
         self.ren1.AddActor(sphere_Actor)
+        
+        self.actors[sphere_Actor] = atom
     
     
     
     def drawBond(self, bond):
-        return self.makeCylinder(bond.getAtom1().getPosition(), bond.getAtom2().getPosition(), bond.getAtom1().getRadius(), bond.getAtom2().getRadius())
+        cylinder = self.makeCylinder(bond.getAtom1().getPosition(), bond.getAtom2().getPosition(), bond.getAtom1().getRadius(), bond.getAtom2().getRadius())
+        self.actors[cylinder] = bond
+        self.ren1.AddActor(cylinder)
 
     def makeCylinder (self, posOne, posTwo, rad_One, rad_Two):
         """returns a cylindrical Actor to represent a bond
@@ -71,9 +80,6 @@ class vtkDrawer():
         
         #create unit vetor
         vectLength = (x**2 + y**2 + z**2)**.5
-        print vectLength
-        print posOne
-        print posTwo
         unitX = x/vectLength
         unitY = y/vectLength
         unitZ = z/vectLength
@@ -142,25 +148,27 @@ class vtkDrawer():
             
             
     
-    def labelAtoms(self, AtomList):
+    def labelAtoms(self, magneticCell):
         """This should only be called after the image has been renderered, otherwise strange camera effects have been cuased"""
-        for index in range(0, len(AtomList)):
-            atom = AtomList[index]
-            label = vtkVectorText()
-            label.SetText(str(index + 1))
-            labelMapper = vtkPolyDataMapper()
-            labelMapper.SetInputConnection(label.GetOutputPort())
-            labelActor = vtkFollower()
-            labelActor.SetMapper(labelMapper)
-            labelActor.SetScale(0.1,0.1,0.1)
-            x,y,z = atom.getPosition()
-            x += atom.getSource().GetRadius()  #display the label on the +x side of sphere
-            labelActor.AddPosition(x,y,z)
-            labelActor.GetProperty().SetColor(0,0,0)
-
-            self.ren1.AddActor(labelActor)
-            labelActor.SetCamera(self.ren1.GetActiveCamera())
+        for cell in magneticCell.getAllUnitCells():
+            AtomList = cell.getAtoms()
+            for index in range(0, len(AtomList)):
+                atom = AtomList[index]
+                label = vtkVectorText()
+                label.SetText(str(index + 1))
+                labelMapper = vtkPolyDataMapper()
+                labelMapper.SetInputConnection(label.GetOutputPort())
+                labelActor = vtkFollower()
+                labelActor.SetMapper(labelMapper)
+                labelActor.SetScale(0.05,0.05,0.05)
+                x,y,z = atom.getPosition()
+                x += atom.getRadius()  #display the label on the +x side of sphere
+                labelActor.AddPosition(x,y,z)
+                labelActor.GetProperty().SetColor(0,0,0)
     
+                self.ren1.AddActor(labelActor)
+                labelActor.SetCamera(self.ren1.GetActiveCamera())
+        
     
     def drawMagneticCell(self, MagCell):
         for cell in MagCell.getAllUnitCells():
@@ -180,6 +188,7 @@ class vtkDrawer():
         axesMapper = vtkPolyDataMapper()
         axesMapper.SetInputConnection(axes.GetOutputPort())
         axesActor = vtkActor()
+        axesActor.PickableOff()
         axesActor.SetMapper(axesMapper)
         self.ren1.AddActor(axesActor)
         xLabel = vtkVectorText()

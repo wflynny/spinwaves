@@ -24,14 +24,93 @@ class MagneticCell():
                     if i !=0 or j != 0 or k != 0: #to not duplicate original unit cell
                         self.AllUnitCells.append(self.unit_cell.translateCell(i,j,k))
     
+#        self.transformCellBondsToInterCell()
+        
+    
+    #Can't just take random bond
+    def transformCellBondsToInterCell(self):
+        """transforms bond in the unit cell to bonds between cells using SymOps"""
+        #pick a random bond from the first unit cell
+        unitCellBond = self.unit_cell.getBonds()[0]
+        if unitCellBond == None:
+            return
+        
+        #Using most of the same code from addInterCellularBond
+        #Only the atoms are in  the same cell and each translated pair needs
+        #to be checked to see if they are in the same cell and discarded if they are
+        newBonds = [] #bonds created by symmetry
+        
+        #Create Symmetry Bonds
+        xyz = unitCellBond.getAtom1().getPosition()
+        xyz2 = unitCellBond.getAtom2().getPosition()
+        for symop in self.space_Group.iter_symops():
+        # operate on coordinates in non-shifted spacegroup
+            pos1 = symop(xyz)
+            pos2 = symop(xyz2)
+            mask1 = numpy.logical_or(pos1 < 0.0, pos1 >= 1.0)
+            translation = numpy.floor(pos1[mask1])  #translates the first atom back to cell at (0,0,0)
+            pos1[mask1] -= translation
+            pos2[mask1] -= translation  #Uses same translation to translate other atom
+            
+            #if the second atom is not in the magnetic cell, do another translation so that it is
+            if pos2[0] < 0 or pos2[1] < 0 or pos2[2] < 0:
+                mask2 = pos2 < 0.0
+                translation = numpy.floor(pos2[mask2])  #translates the first atom back to cell at (0,0,0)
+                pos1[mask2] -= translation
+                pos2[mask2] -= translation  #Uses same translation to translate other atom
+                
+                #If the atoms are in the same cell, discard
+                if self.positionsInSameCell(pos1, pos2):
+                    break
+            
+                atomAtPos1 = self.unit_cell.atomAtPosition(pos2) #Second Position was translated to the first cell (0,0,0)
+                atomAtPos2 = self.atomAtPosition(pos1)
+            else:
+                if self.positionsInSameCell(pos1, pos2): #Ensuring bond is between cells
+                    break
+                
+                atomAtPos1 = self.unit_cell.atomAtPosition(pos1) #first Position was translated to the first cell (0,0,0)
+                atomAtPos2 = self.atomAtPosition(pos2)
+            
+
+#Both Atoms shouldn't be translated outside the bounds of the Magnetic Cell
+            
+            #Bond is between cells
+            newBond = Bond(None, atomAtPos1, atomAtPos2)
+            #check if the bond already exists
+            for currentBond in newBonds:
+                if newBond.sameBond(currentBond):
+                    break
+            else:  #if not, add the bond to the list of unique bonds
+                newBonds.append(newBond)
+                
+                #translate new Bond to all cells
+                originalAtom1 = newBond.getAtom1()
+                originalAtom2 = newBond.getAtom2()
+                origPos1 = originalAtom1.getPosition()
+                origPos2 = originalAtom2.getPosition()
+                #Using the fact that the translated Cells store the atoms in the same order:
+                for i in range(0, self.Na - newBond.getAtom2().getUnitCell().getPosition()[0]): #translate in x direction (Na - Cell X position) times
+                    for j in range(0, self.Nb - newBond.getAtom2().getUnitCell().getPosition()[1]): #translate in y direction (Nb - Cell Y position) times
+                        for k in range(0, self.Nc - newBond.getAtom2().getUnitCell().getPosition()[2]): #translate in z direction (Nc - Cell Z position) times
+                            translatedCell1 = self.cellAtPosition((i + origPos1[0],j + origPos1[1],k + origPos1[2]))
+                            translatedCell2 = self.cellAtPosition((i + origPos2[0],j + origPos2[1],k + origPos2[2]))
+                
+                            translatedAtom1 = translatedCell1.atomAtIndex(originalAtom1.getIndexNumber())
+                            translatedAtom2 = translatedCell2.atomAtIndex(originalAtom2.getIndexNumber())
+                            self.IntercellularBonds.append(Bond(None,translatedAtom1, translatedAtom2))
+
+        
+        
+        
     
     
-    #does not currently support anythin but default bond colors
+    #does not currently support anything but default bond colors
     def addInterCellularBond(self, Atom1, Atom2):
         
         #Make Sure the Atoms are not in the same cell
-        if Atom1.getUnitCell() == Atom2.getUnitCell():
-            raise Exception("These atoms are in the same Unit Cell:" + Atom1.__str__() + ", " + Atom2.__str__())
+ #       if Atom1.getUnitCell() == Atom2.getUnitCell():
+ #           raise Exception("These atoms are in the same Unit Cell:" + Atom1.__str__() + ", " + Atom2.__str__())
         
         newBonds = [] #this bond and bonds created by symmetry
         original = Bond(None, Atom1, Atom2)
@@ -40,7 +119,6 @@ class MagneticCell():
         
         xyz = original.getAtom1().getPosition()
         xyz2 = original.getAtom2().getPosition()
-        count = 0
         for symop in self.space_Group.iter_symops():
         # operate on coordinates in non-shifted spacegroup
             pos1 = symop(xyz)
@@ -54,6 +132,8 @@ class MagneticCell():
             if pos2[0] < 0 or pos2[1] < 0 or pos2[2] < 0:
                 mask2 = pos2 < 0.0
                 translation = numpy.floor(pos2[mask2])  #translates the first atom back to cell at (0,0,0)
+                print pos1
+                print pos2
                 pos1[mask2] -= translation
                 pos2[mask2] -= translation  #Uses same translation to translate other atom
                 atomAtPos1 = self.unit_cell.atomAtPosition(pos2) #Second Position was translated to the first cell (0,0,0)
@@ -62,11 +142,12 @@ class MagneticCell():
                 atomAtPos1 = self.unit_cell.atomAtPosition(pos1) #first Position was translated to the first cell (0,0,0)
                 atomAtPos2 = self.atomAtPosition(pos2)
             
-            print "symmop:\n", symop
-            print "position1:", pos1
+            if atomAtPos2 == None:
+                print "here"
+            
+
             if atomAtPos1 != None:
                 print atomAtPos1.getPosition()
-            print "position2:", pos2
             if atomAtPos2 != None:
                 print atomAtPos2.getPosition()
 #            translation = numpy.floor(pos1)
@@ -75,7 +156,8 @@ class MagneticCell():
             
             
             #Right Now this allows Bonds to be created within a Unit Cell and stored as intercellular
-            if atomAtPos2 != None and atomAtPos1 != None:  #Both Atoms could be translated outside the bounds of the Magnetic Cell
+ #           if atomAtPos2 != None and atomAtPos1 != None:  #Both Atoms could be translated outside the bounds of the Magnetic Cell
+            if atomAtPos2 != None: 
                 newBond = Bond(None, atomAtPos1, atomAtPos2)
                 #check if the bond already exists
                 for currentBond in newBonds:
@@ -83,6 +165,8 @@ class MagneticCell():
                         break
                 else:  #if not, add the bond to the list of unique bonds
                     newBonds.append(newBond)
+                    
+                    self.IntercellularBonds.append(Bond(None, atomAtPos1,atomAtPos2))
                     
                     #translate new Bond to all cells
                     originalAtom1 = newBond.getAtom1()
@@ -102,6 +186,14 @@ class MagneticCell():
 
                                 
     
+    
+    def positionsInSameCell(self, pos1, pos2):
+        x1,y1,z1 = pos1
+        x2,y2,z2 = pos2
+        if int(x1) == int(x2):
+            if int(y1) == int(y2):
+                if int(z1) == int(z2):
+                    return True
     
     def getAllUnitCells(self):
         return self.AllUnitCells
