@@ -53,16 +53,16 @@ class Frame(wx.Frame):
         self.window.AddObserver("ExitEvent", lambda o,e,f=self: f.Close())
     
         #My Code
-        Space_Group = sg50
+        Space_Group = sg225
         unitcell = Cell(Space_Group)
-        atomPos = [.25, .25, .5]
+        atomPos = [.25, .25, .25]
     
         #Create the unit cell
         randGen = random.Random()
         unitcell.generateAtoms(atomPos, "atom1" , .05, randGen.uniform(0,1), randGen.uniform(0,1), randGen.uniform(0,1))
         
         #Create the Magnetic Cell
-        self.MagCell = MagneticCell(unitcell, 2,2,3, Space_Group)
+        self.MagCell = MagneticCell(unitcell, 2,2,2, Space_Group)
         AllAtoms = self.MagCell.getAllAtoms()
         for i in range(0, len(AllAtoms)):
             print i, AllAtoms[i]

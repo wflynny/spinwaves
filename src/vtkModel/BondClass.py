@@ -15,7 +15,6 @@ class Bond():
         
         self.Atom1 = Atom1
         self.Atom2 = Atom2
-#        self.Cell = Cell
 
     
     def getAtom1(self):
@@ -29,37 +28,6 @@ class Bond():
     
     def setAtom2(self, atom):
         self.Atom2 = atom
-
-
-
-#Handled in MagneticCell Class now
-
-#    def createSymmetryBonds(self, space_Group):
-#        """returns list of new bonds within the same cell formed from space_group symOps
-#        Can Only be used on a Bond that is contained within a cell (not for bonds between cells)
-#        -Should only really be used on original unit Cell"""
-#        newBonds = []
-#        
-#        xyz = self.Atom1.getPosition()
-#        xyz2 = self.Atom2.getPosition()
-#        for symop in space_Group.iter_symops():
-#        # operate on coordinates in non-shifted spacegroup
-#            pos1 = symop(xyz)
-#            pos2 = symop(xyz2)
-#            mask1 = numpy.logical_or(pos1 < 0.0, pos1 >= 1.0)
-#            mask2 = numpy.logical_or(pos2 < 0.0, pos2 >= 1.0)
-#            pos1[mask1] -= numpy.floor(pos1[mask1])
-#            pos2[mask2] -= numpy.floor(pos2[mask2])
-#            newBond = Bond(self.Cell, self.Cell.atomAtPosition(pos1), self.Cell.atomAtPosition(pos2), self.r, self.g, self.b)
-#            #check if the bond already exists
-#            for currentBond in newBonds:
-#                if newBond.sameBond(currentBond):
-#                    break
-#            else:  #if not, add the bond to the list
-#                newBonds.append(newBond)
-#            
-#        return newBonds
-
 
     def sameBond(self, otherBond):
         """returns true if otherBond connects the same atoms"""

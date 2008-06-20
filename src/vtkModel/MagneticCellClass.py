@@ -25,7 +25,7 @@ class MagneticCell():
                         self.AllUnitCells.append(self.unit_cell.translateCell(i,j,k))
     
 
-        
+        self.bondConstraints = []
     
     
     #does not currently support anything but default bond colors
@@ -35,71 +35,82 @@ class MagneticCell():
  #       if Atom1.getUnitCell() == Atom2.getUnitCell():
  #           raise Exception("These atoms are in the same Unit Cell:" + Atom1.__str__() + ", " + Atom2.__str__())
     def addBond(self, Atom1, Atom2):     
-        newBonds = [] #this bond and bonds created by symmetry
-        original = Bond(Atom1, Atom2)
+        """Adds a bond and all symmettry equivalent bonds within the magnetic Cell
+        
+        Performs every symmetry operaation and every possible translation for each 
+        symmetry operation to find all possible bonds"""
         
         #Create Symmetry Bonds
         
-        xyz = original.getAtom1().getPosition()
-        xyz2 = original.getAtom2().getPosition()
+        xyz = Atom1.getPosition()
+        xyz2 = Atom2.getPosition()
+        
+        
         for symop in self.space_Group.iter_symops():
         # operate on coordinates in non-shifted spacegroup
             pos1 = symop(xyz)
             pos2 = symop(xyz2)
+            
+            #Recording symops that map bond back to itself
+            if xyz[0] == pos1[0] and xyz2[0] == pos2[0]: #x component
+                if xyz[1] == pos1[1] and xyz2[1] == pos2[1]: #y component
+                    if xyz[2] == pos1[2] and xyz2[2] == pos2[2]: #z component
+                        self.bondConstraints.append(BondConstraint(xyz, xyz2, symop))
+            
+            
+            
             mask1 = numpy.logical_or(pos1 < 0.0, pos1 >= 1.0)
             translation = numpy.floor(pos1[mask1])  #translates the first atom back to cell at (0,0,0)
             pos1[mask1] -= translation
             pos2[mask1] -= translation  #Uses same translation to translate other atom
+                 
+
+                
             
-            #if the second atom is not in the magntic cell, do another translation so that it is
-            if pos2[0] < 0 or pos2[1] < 0 or pos2[2] < 0:
-                mask2 = pos2 < 0.0
-                translation = numpy.floor(pos2[mask2])  #translates the first atom back to cell at (0,0,0)
-                print pos1
-                print pos2
-                pos1[mask2] -= translation
-                pos2[mask2] -= translation  #Uses same translation to translate other atom
-                atomAtPos1 = self.unit_cell.atomAtPosition(pos2) #Second Position was translated to the first cell (0,0,0)
-                atomAtPos2 = self.atomAtPosition(pos1)
+#            atom1Index = self.unit_cell.atomAtPosition(pos1).getIndexNumber()
+#            atom2Index = self.atomAtPosition(pos2).getIndexNumber()
+            
+            
+            #translate new Bond to all cells 
+#---            #Using the fact that the translated Cells store the atoms in the same order:
+            
+            
+            if pos1[0]>pos2[0]:
+                Xiter = self.Na - pos1[0]
             else:
-                atomAtPos1 = self.unit_cell.atomAtPosition(pos1) #first Position was translated to the first cell (0,0,0)
-                atomAtPos2 = self.atomAtPosition(pos2)
+                Xiter = self.Na - pos2[0]
             
+            if pos1[1] > pos2[1]:
+                Yiter = self.Nb - pos1[1]
+            else:
+                Yiter = self.Nb - pos2[1]
+            
+            if pos1[2] > pos2[2]:
+                Ziter = self.Nc - pos1[2]
+            else:
+                Ziter = self.Nc - pos2[2]
+            
+            Xiter = int(Xiter) + 1 
+            Yiter = int(Yiter) + 1
+            Ziter = int(Ziter) + 1
+            
+            for i in range(0, Xiter): #translate in x direction (Na - Cell X position) times
+                for j in range(0, Yiter): #translate in y direction (Nb - Cell Y position) times
+                    for k in range(0, Ziter): #translate in z direction (Nc - Cell Z position) times
+                        translatedAtom1 = self.atomAtPosition((i + pos1[0],j + pos1[1],k + pos1[2]))
+                        translatedAtom2 = self.atomAtPosition((i + pos2[0],j + pos2[1],k + pos2[2]))
+                        
+                        if translatedAtom1 != None and translatedAtom2 != None:
+                            newBond = Bond(translatedAtom1, translatedAtom2)
+                        
+                            #make sure bond does not already exist
+                            for currentBond in self.Bonds:
+                                if newBond.sameBond(currentBond):
+                                    break
+                            else:  #if not, add the bond to the list of unique bonds
+                                self.Bonds.append(newBond)
 
-#            translation = numpy.floor(pos1)
-#            pos1 -= numpy.floor(pos1)
-#            pos2 -= numpy.floor(pos1)
-            
-            
-            #Right Now this allows Bonds to be created within a Unit Cell and stored as intercellular
-            if atomAtPos2 != None and atomAtPos1 != None:  #Both Atoms could be translated outside the bounds of the Magnetic Cell
-#            if atomAtPos2 != None:  #only atom2 could be out of bounds
-                newBond = Bond(atomAtPos1, atomAtPos2)
-                #check if the bond already exists
-                for currentBond in newBonds:
-                    if newBond.sameBond(currentBond):
-                        break
-                else:  #if not, add the bond to the list of unique bonds
-                    newBonds.append(newBond)
-                    
-                    
-                    #translate new Bond to all cells
-                    originalAtom1 = newBond.getAtom1()
-                    originalAtom2 = newBond.getAtom2()
-                    origPos1 = originalAtom1.getPosition()
-                    origPos2 = originalAtom2.getPosition()
-                    #Using the fact that the translated Cells store the atoms in the same order:
-                    for i in range(0, self.Na - newBond.getAtom2().getUnitCell().getPosition()[0]): #translate in x direction (Na - Cell X position) times
-                        for j in range(0, self.Nb - newBond.getAtom2().getUnitCell().getPosition()[1]): #translate in y direction (Nb - Cell Y position) times
-                            for k in range(0, self.Nc - newBond.getAtom2().getUnitCell().getPosition()[2]): #translate in z direction (Nc - Cell Z position) times
-                                translatedCell1 = self.cellAtPosition((i + origPos1[0],j + origPos1[1],k + origPos1[2]))
-                                translatedCell2 = self.cellAtPosition((i + origPos2[0],j + origPos2[1],k + origPos2[2]))
-                    
-                                translatedAtom1 = translatedCell1.atomAtIndex(originalAtom1.getIndexNumber())
-                                translatedAtom2 = translatedCell2.atomAtIndex(originalAtom2.getIndexNumber())
-                                self.Bonds.append(Bond(translatedAtom1, translatedAtom2))
-
-                                
+                            
     
     
     def positionsInSameCell(self, pos1, pos2):
@@ -136,3 +147,11 @@ class MagneticCell():
     
     def getBonds(self):
         return self.Bonds
+    
+    
+    
+class BondConstraint():
+    def __init__(self, pos1, pos2, symop):
+        self.pos1 = pos1
+        self.pos2 = pos2
+        self.symop = symop
