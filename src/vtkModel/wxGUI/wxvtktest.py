@@ -11,31 +11,17 @@ from vtkModel.MagneticCellClass import *
 from vtkModel.CellClass import *
 import random
 
-class Frame(wx.Frame):
-    def __init__(self, parent, id):
-        wx.Frame.__init__(self, parent, id, 'Magnetic Cell', size= (900,500))
-        
-        self.initVTKWindow()
-        
-        
-        #Add Menus
-        menuBar = wx.MenuBar()
-        
-        #Add File Menu
-        fileMenu = wx.Menu()
-        fileMenu.Append(wx.NewId(), "&Open")
-        fileMenu.Append(wx.NewId(), "&Save")
-        fileMenu.Append(wx.NewId(), "&Quit")
-        menuBar.Append(fileMenu, "&File")
-        
-        self.SetMenuBar(menuBar)
 
-    
+class vtkPanel(wx.Panel):
+    def __init__(self, parent, id):
+        wx.Panel.__init__(self, parent)
+        self.initVTKWindow()
+
     
     def initVTKWindow(self):
         #Code from wxRenderWindowInterActor Sample
        
-        self.window = wxVTKRenderWindowInteractor(self, -1, self.afterRender)
+        self.window = wxVTKRenderWindowInteractor(self, -1)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.window, 1, wx.EXPAND)
         self.SetSizer(sizer)
@@ -51,22 +37,49 @@ class Frame(wx.Frame):
  #       self.window.Enable(1)
     
         self.window.AddObserver("ExitEvent", lambda o,e,f=self: f.Close())
+        
+        
+        self.initializeVTKData()
+        self.draw()
+ 
+    def OnKeyEvent(self, event):
+        event.Skip()
+        
+        #Delete if key pressed is Del key  Del = 127
+        if event.GetKeyCode() == 127:
+            self.OnDelete(event)
+        
     
-        #My Code
-        Space_Group = sg225
+    def OnDelete(self,event):
+        event.Skip()
+        selectedObj = self.drawer.getObjFromActor(self.picker.getPicked())
+        if isinstance(selectedObj, Bond):
+            self.MagCell.deleteBond(selectedObj)
+            #handle atoms next
+        
+        self.draw()
+    
+    def initializeVTKData(self):
+                #My Code
+        Space_Group = sg50
         unitcell = Cell(Space_Group)
-        atomPos = [.25, .25, .25]
+        atomPos = [.25, .25, .5]
     
         #Create the unit cell
         randGen = random.Random()
         unitcell.generateAtoms(atomPos, "atom1" , .05, randGen.uniform(0,1), randGen.uniform(0,1), randGen.uniform(0,1))
         
         #Create the Magnetic Cell
-        self.MagCell = MagneticCell(unitcell, 2,2,2, Space_Group)
+        self.MagCell = MagneticCell(unitcell, 1,2,3, Space_Group)
         AllAtoms = self.MagCell.getAllAtoms()
         for i in range(0, len(AllAtoms)):
             print i, AllAtoms[i]
         self.MagCell.addBond(AllAtoms[0], AllAtoms[1])
+        
+        self.window.Bind(wx.EVT_KEY_DOWN, self.OnKeyEvent)
+        
+        
+    def draw(self):
          
         # a renderer for the data
         ren1 = vtkRenderer()
@@ -79,18 +92,103 @@ class Frame(wx.Frame):
         self.drawer = vtkDrawer(ren1)
         
         #Add my picker
-        Picker(self.drawer, self.window._Iren, ren1)
-        
+        self.picker = Picker(self.drawer, self.window._Iren, ren1)
+
         #Draw the Magnetic Cell
         self.drawer.drawMagneticCell(self.MagCell)
- 
         
-    def afterRender(self):
-        """Does everythinng that must be done after hte first render,
-        such as creating the axes and atom labels"""
-        
+        self.window.setUpRender()    
+
         self.drawer.addAxes()
         self.drawer.labelAtoms(self.MagCell)
+        self.window.Render()
+        
+    
+    def getStatusText(self):
+        return self.picker.getPicked()
+
+
+
+
+class Frame(wx.Frame):
+    def __init__(self, parent, id):
+        wx.Frame.__init__(self, parent, id, 'Magnetic Cell', size= (900,600))
+
+        
+        self.vtkPanel = vtkPanel(self, -1)
+        
+        #Add Menus
+        self.AddMenus()
+        
+        #Add Tool Bar
+        self.AddToolBar()
+        
+        #Add Status Bar                     
+        self.AddStatusBar()
+
+   
+   
+    def AddToolBar(self):
+        toolbar = self.CreateToolBar()
+#        toolbar.AddSimpleTool()
+        
+    def AddStatusBar(self):
+        self.statusBar = self.CreateStatusBar()
+        self.Bind(wx.EVT_LEFT_UP, self.OnClick)
+        
+    
+    def OnClick(self, event):
+        self.statusBar.SetStatusText("This")
+        #self.statusBar.SetStatusText(self.vtkPanel.getStatusText())
+        event.Skip()
+        
+    def AddMenus(self):
+                #Add Menus
+        menuBar = wx.MenuBar()
+        
+        #Add File Menu
+        fileMenu = wx.Menu()
+        newMenuItem = fileMenu.Append(wx.NewId(), "&New Magnetic Cell")
+        openMenuItem = fileMenu.Append(wx.NewId(), "&Open")
+        saveMenuItem = fileMenu.Append(wx.NewId(), "&Save")
+        quitMenuItem = fileMenu.Append(wx.NewId(), "&Quit")
+        menuBar.Append(fileMenu, "&File")
+        
+        #Add Model Menu
+        modelMenu = wx.Menu()
+        addCellMenuItem = modelMenu.Append(wx.NewId(), "Add Atom")
+        addBondMenuItem = modelMenu.Append(wx.NewId(), "Add Bond")
+        deleteMenuItem = modelMenu.Append(wx.NewId(), "Delete")
+        menuBar.Append(modelMenu, "Model")
+        self.SetMenuBar(menuBar)
+        
+        #Bind Events
+        self.Bind(wx.EVT_MENU, self.OnCloseMe, quitMenuItem)
+        self.Bind(wx.EVT_MENU, self.OnSave, saveMenuItem)
+        self.Bind(wx.EVT_MENU, self.OnOpenFile, openMenuItem)
+        self.Bind(wx.EVT_MENU, self.vtkPanel.OnDelete, deleteMenuItem)
+#        self.Bind(wx.EVT_MENU, self.OnNew, newMenuItem)
+    
+ #   def OnNew(self, event):
+        #Add drawing panel
+#        self.vtkPanel.draw()
+#        self.GetEventHandler().ProcessEvent(wx.SizeEvent())
+    
+    def OnCloseMe(self, event):
+        self.Close(True)
+    
+    def OnSave(self, event):
+        saveDialog = wx.FileDialog(self, "Save File")
+        if saveDialog.ShowModal() == wx.ID_OK:
+            print saveDialog.GetPath()
+        saveDialog.Destroy()
+        
+    def OnOpenFile(self, event):
+        saveDialog = wx.FileDialog(self, "Save File")
+        if saveDialog.ShowModal() == wx.ID_OK:
+            print saveDialog.GetPath()
+        saveDialog.Destroy()
+        
 
 
 

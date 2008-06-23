@@ -32,3 +32,6 @@ class Picker():
             self.iren.GetRenderWindow().Render()
             #find the Atom at this position and print its description
             print self.drawer.getObjFromActor(self.SelectedActor)
+    
+    def getPicked(self):
+        return self.SelectedActor

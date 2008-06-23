@@ -101,17 +101,13 @@ class wxVTKRenderWindowInteractor(baseClass):
     # myRWI = wxVTKRenderWindowInteractor(parent, -1)
     USE_STEREO = False
     
-    def __init__(self, parent, ID, postRenderTask, *args, **kw):
+    def __init__(self, parent, ID, *args, **kw):
         """Default class constructor.
         @param parent: parent window
         @param ID: window id
         @param **kw: wxPython keywords (position, size, style) plus the
         'stereo' keyword
         """
-        
-        
-        #Added so that I could get the camera for labels after it was rendered for the first time
-        self.postRenderTask = postRenderTask
         
         
         
@@ -256,8 +252,9 @@ class wxVTKRenderWindowInteractor(baseClass):
         # If we use EVT_KEY_DOWN instead of EVT_CHAR, capital versions
         # of all characters are always returned.  EVT_CHAR also performs
         # other necessary keyboard-dependent translations.
-        self.Bind(wx.EVT_CHAR, self.OnKeyDown)
-        self.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
+# I am not using any keys, and do not want key events handled by vtk
+#        self.Bind(wx.EVT_CHAR, self.OnKeyDown)
+#        self.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
         
         self.Bind(wx.EVT_SIZE, self.OnSize)
 
@@ -358,6 +355,10 @@ class wxVTKRenderWindowInteractor(baseClass):
         
         dc = wx.PaintDC(self)
 
+        self.setUpRender()
+        
+
+    def setUpRender(self):
         # make sure the RenderWindow is sized correctly
         self._Iren.GetRenderWindow().SetSize(self.GetSizeTuple())
         
@@ -379,11 +380,8 @@ class wxVTKRenderWindowInteractor(baseClass):
             self.__has_painted = True
 
         self.Render()
-        
-        
-        self.postRenderTask()
-        self.Render() #Rendered again otherwise changes won't show up until next render
-
+    
+    
     def OnSize(self,event):
         """Handles the wx.EVT_SIZE event for
         wxVTKRenderWindowInteractor.
@@ -530,53 +528,53 @@ class wxVTKRenderWindowInteractor(baseClass):
             self._Iren.MouseWheelBackwardEvent()
 
         
-    def OnKeyDown(self,event):
-        """Handles the wx.EVT_KEY_DOWN event for
-        wxVTKRenderWindowInteractor.
-        """
-
-        # event processing should continue
-        event.Skip()
-
-        ctrl, shift = event.ControlDown(), event.ShiftDown()
-        keycode, keysym = event.GetKeyCode(), None
-        key = chr(0)
-        if keycode < 256:
-            key = chr(keycode)
+#    def OnKeyDown(self,event):
+#        """Handles the wx.EVT_KEY_DOWN event for
+#        wxVTKRenderWindowInteractor.
+#        """
+#
+#        # event processing should continue
+#        event.Skip()
+#
+#        ctrl, shift = event.ControlDown(), event.ShiftDown()
+#        keycode, keysym = event.GetKeyCode(), None
+#        key = chr(0)
+#        if keycode < 256:
+#            key = chr(keycode)
+#
+#        
+#        # wxPython 2.6.0.1 does not return a valid event.Get{X,Y}()
+#        # for this event, so we use the cached position.
+#        
+#        #I do not want 'j' key press to be passed to vtk becuase I do not want to switch out of trackball mode
+#        if key != 'j':
+#            (x,y)= self._Iren.GetEventPosition()
+#            self._Iren.SetEventInformation(x, y,
+#                                           ctrl, shift, key, 0,
+#                                           keysym)
+#    
+#            self._Iren.KeyPressEvent()
+#            self._Iren.CharEvent()
 
         
-        # wxPython 2.6.0.1 does not return a valid event.Get{X,Y}()
-        # for this event, so we use the cached position.
-        
-        #I do not want 'j' key press to be passed to vtk becuase I do not want to switch out of trackball mode
-        if key != 'j':
-            (x,y)= self._Iren.GetEventPosition()
-            self._Iren.SetEventInformation(x, y,
-                                           ctrl, shift, key, 0,
-                                           keysym)
-    
-            self._Iren.KeyPressEvent()
-            self._Iren.CharEvent()
+#    def OnKeyUp(self,event):
+#        """Handles the wx.EVT_KEY_UP event for
+#        wxVTKRenderWindowInteractor.
+#        """
+#        
+#        # event processing should continue
+#        event.Skip()
+#        
+#        ctrl, shift = event.ControlDown(), event.ShiftDown()
+#        keycode, keysym = event.GetKeyCode(), None
+#        key = chr(0)
+#        if keycode < 256:
+#            key = chr(keycode)
 
-        
-    def OnKeyUp(self,event):
-        """Handles the wx.EVT_KEY_UP event for
-        wxVTKRenderWindowInteractor.
-        """
-        
-        # event processing should continue
-        event.Skip()
-        
-        ctrl, shift = event.ControlDown(), event.ShiftDown()
-        keycode, keysym = event.GetKeyCode(), None
-        key = chr(0)
-        if keycode < 256:
-            key = chr(keycode)
-
-        self._Iren.SetEventInformationFlipY(event.GetX(), event.GetY(),
-                                            ctrl, shift, key, 0,
-                                            keysym)
-        self._Iren.KeyReleaseEvent()
+#        self._Iren.SetEventInformationFlipY(event.GetX(), event.GetY(),
+#                                            ctrl, shift, key, 0,
+#                                            keysym)
+#        self._Iren.KeyReleaseEvent()
 
 
     def GetRenderWindow(self):

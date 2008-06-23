@@ -72,8 +72,6 @@ class MagneticCell():
             
             
             #translate new Bond to all cells 
-#---            #Using the fact that the translated Cells store the atoms in the same order:
-            
             
             if pos1[0]>pos2[0]:
                 Xiter = self.Na - pos1[0]
@@ -112,6 +110,63 @@ class MagneticCell():
 
                             
     
+    def deleteBond(self, bond):
+        """Removes a bond and all symmetry equivalent bonds within the magnetic Cell
+        
+        Performs every symmetry operaation and every possible translation for each 
+        symmetry operation to find all possible bonds"""
+        
+        #Find Symmetry Bonds
+        xyz = bond.getAtom1().getPosition()
+        xyz2 = bond.getAtom2().getPosition()
+        
+        
+        for symop in self.space_Group.iter_symops():
+        # operate on coordinates in non-shifted spacegroup
+            pos1 = symop(xyz)
+            pos2 = symop(xyz2)
+            
+            mask1 = numpy.logical_or(pos1 < 0.0, pos1 >= 1.0)
+            translation = numpy.floor(pos1[mask1])  #translates the first atom back to cell at (0,0,0)
+            pos1[mask1] -= translation
+            pos2[mask1] -= translation  #Uses same translation to translate other atom
+            
+            
+            #translate new Bond to all cells 
+            
+            if pos1[0]>pos2[0]:
+                Xiter = self.Na - pos1[0]
+            else:
+                Xiter = self.Na - pos2[0]
+            
+            if pos1[1] > pos2[1]:
+                Yiter = self.Nb - pos1[1]
+            else:
+                Yiter = self.Nb - pos2[1]
+            
+            if pos1[2] > pos2[2]:
+                Ziter = self.Nc - pos1[2]
+            else:
+                Ziter = self.Nc - pos2[2]
+            
+            Xiter = int(Xiter) + 1 
+            Yiter = int(Yiter) + 1
+            Ziter = int(Ziter) + 1
+            
+            for i in range(0, Xiter): #translate in x direction (Na - Cell X position) times
+                for j in range(0, Yiter): #translate in y direction (Nb - Cell Y position) times
+                    for k in range(0, Ziter): #translate in z direction (Nc - Cell Z position) times
+                        translatedAtom1 = self.atomAtPosition((i + pos1[0],j + pos1[1],k + pos1[2]))
+                        translatedAtom2 = self.atomAtPosition((i + pos2[0],j + pos2[1],k + pos2[2]))
+                        
+
+                        
+                        if translatedAtom1 != None and translatedAtom2 != None:
+                            #Find bond that connects these and delete
+                            for bond in self.Bonds:
+                                if bond.getAtom1() == translatedAtom1 or bond.getAtom1() == translatedAtom2:
+                                    if bond.getAtom2() == translatedAtom1 or bond.getAtom2() == translatedAtom2:
+                                         self.Bonds.remove(bond)
     
     def positionsInSameCell(self, pos1, pos2):
         x1,y1,z1 = pos1
@@ -147,8 +202,6 @@ class MagneticCell():
     
     def getBonds(self):
         return self.Bonds
-    
-    
     
 class BondConstraint():
     def __init__(self, pos1, pos2, symop):

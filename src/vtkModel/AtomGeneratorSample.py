@@ -6,6 +6,7 @@ from SpaceGroups import *
 import random
 from CellClass import *
 from MagneticCellClass import *
+from vtkModel import CifFile
 
 
 

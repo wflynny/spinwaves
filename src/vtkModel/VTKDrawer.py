@@ -72,8 +72,8 @@ class vtkDrawer():
         #create cylinder actor
         aCylinder = vtkActor()
         aCylinder.SetMapper(cylinderMap)
-        aCylinder.GetProperty().SetColor(0,.1,.6)
-        aCylinder.SetScale(.2,distance,.2)
+        aCylinder.GetProperty().SetColor(0, .1, .6)
+        aCylinder.SetScale(.2, distance, .2)
         
         #to get the center point between the surfaces of the two spheres
         #create a unit vector and multiply it by the distance/2
@@ -93,27 +93,27 @@ class vtkDrawer():
         
         #Angle
         #cross product of Unit vectors cylinder direction and desired orientation
-        i,j,k = self.crossProduct(0,1,0,unitX,unitY,unitZ)  #default orientation for the cylinder is along y axis
+        i, j, k = self.crossProduct(0, 1, 0, unitX, unitY, unitZ)  #default orientation for the cylinder is along y axis
         theta = scipy.arcsin((i**2+j**2+k**2)**.5)*180/math.pi
         
         #if the angle is obtuse, theta must be corrected
-        if self.dotProduct(0,1,0,unitX,unitY,unitZ) >= 0:
-            aCylinder.RotateWXYZ(theta,i,j,k)
+        if self.dotProduct(0, 1, 0, unitX, unitY, unitZ) >= 0:
+            aCylinder.RotateWXYZ(theta, i, j, k)
         else:
-            aCylinder.RotateWXYZ(theta,-i,-j,-k)
+            aCylinder.RotateWXYZ(theta, -i, -j, -k)
         
         return aCylinder
     
-    def dotProduct(self, x1,y1,z1,x2,y2,z2):
+    def dotProduct(self, x1, y1, z1, x2, y2, z2):
         """x,y,z represent vector coordinates - used by makeCylinder"""
         return (x1*x2 + y1*y2 + z1*z2)
     
-    def crossProduct(self, x1,y1,z1,x2,y2,z2):
+    def crossProduct(self, x1, y1, z1, x2, y2, z2):
         """x,y,z represent vector coordinates - used by makeCylinder"""
         i = (y1*z2) - (z1*y2)
         j = (x1*z2) - (z1*x2)
         k = (x1*y2) - (y1*x2)
-        return i,j,k
+        return i, j, k
     
     
    
@@ -131,9 +131,9 @@ class vtkDrawer():
         #create actor
         abox = vtkActor()
         abox.SetMapper(boxMap)
-        abox.GetProperty().SetColor(0,.1,.6)
+        abox.GetProperty().SetColor(0, .1, .6)
         abox.GetProperty().SetOpacity(.1)
-        a,b,c = cell.getPosition()
+        a, b, c = cell.getPosition()
         abox.SetPosition(a + .5, b + .5, c + .5)
         abox.PickableOff()
         
@@ -158,11 +158,11 @@ class vtkDrawer():
                 labelMapper.SetInputConnection(label.GetOutputPort())
                 labelActor = vtkFollower()
                 labelActor.SetMapper(labelMapper)
-                labelActor.SetScale(0.05,0.05,0.05)
-                x,y,z = atom.getPosition()
+                labelActor.SetScale(0.05, 0.05, 0.05)
+                x, y, z = atom.getPosition()
                 x += atom.getRadius()  #display the label on the +x side of sphere
-                labelActor.AddPosition(x,y,z)
-                labelActor.GetProperty().SetColor(0,0,0)
+                labelActor.AddPosition(x, y, z)
+                labelActor.GetProperty().SetColor(0, 0, 0)
     
                 self.ren1.AddActor(labelActor)
                 labelActor.SetCamera(self.ren1.GetActiveCamera())
@@ -182,7 +182,7 @@ class vtkDrawer():
         
         #Add Axes
         axes = vtkAxes()
-        axes.SetOrigin(0,0,0)
+        axes.SetOrigin(0, 0, 0)
         axesMapper = vtkPolyDataMapper()
         axesMapper.SetInputConnection(axes.GetOutputPort())
         axesActor = vtkActor()
@@ -207,15 +207,15 @@ class vtkDrawer():
         xLabelActor.SetMapper(xLabelMapper)
         yLabelActor.SetMapper(yLabelMapper)
         zLabelActor.SetMapper(zLabelMapper)
-        xLabelActor.SetScale(0.1,0.1,0.1)
-        yLabelActor.SetScale(0.1,0.1,0.1)
-        zLabelActor.SetScale(0.1,0.1,0.1)
-        xLabelActor.AddPosition(1,0,0)
-        yLabelActor.AddPosition(0,1,0)
-        zLabelActor.AddPosition(0,0,1)
-        xLabelActor.GetProperty().SetColor(0,0,0)
-        yLabelActor.GetProperty().SetColor(0,0,0)
-        zLabelActor.GetProperty().SetColor(0,0,0)
+        xLabelActor.SetScale(0.1, 0.1, 0.1)
+        yLabelActor.SetScale(0.1, 0.1, 0.1)
+        zLabelActor.SetScale(0.1, 0.1, 0.1)
+        xLabelActor.AddPosition(1, 0, 0)
+        yLabelActor.AddPosition(0, 1, 0)
+        zLabelActor.AddPosition(0, 0, 1)
+        xLabelActor.GetProperty().SetColor(0, 0, 0)
+        yLabelActor.GetProperty().SetColor(0, 0, 0)
+        zLabelActor.GetProperty().SetColor(0, 0, 0)
         self.ren1.AddActor(xLabelActor)
         self.ren1.AddActor(yLabelActor)
         self.ren1.AddActor(zLabelActor)
