@@ -2,9 +2,10 @@ import SymmetryUtilities
 import numpy
 from AtomClass import *
 from BondClass import *
+import random
 
 class Cell():
-    def  __init__(self, Space_Group, PosX = 0, PosY = 0, PosZ = 0):
+    def  __init__(self, Space_Group, PosX = 0, PosY = 0, PosZ = 0, a=1, b=1, c=1, alpha=90, gamma=90, beta=90):
         """PosX, PosY, PosZ are the fractional coordinates of the cell - they should all be integers"""
         self.Space_Group = Space_Group
         
@@ -13,17 +14,17 @@ class Cell():
         self.PosY = PosY
         self.PosZ = PosZ
         
-        #Dimensions
-#        self.DimX = DimX
-#        self.DimY = DimY
-#        self.DimZ = DimZ
+        #Dimensions (Currently not used)
+        self.a = a
+        self.b = b
+        self.c = c
+        self.alpha = alpha
+        self.gamma = gamma
+        self.beta = beta
         
         self.Atoms = []
-#        self.Bonds = []
         
         
-
-
     
     #functions
     def atomAtPosition(self,position):
@@ -92,10 +93,14 @@ class Cell():
     def getAtomIndex(self, atom):
         return self.Atoms.index(atom)
     
-    def generateAtoms(self, position, description, radius, r,g,b):
+    def generateAtoms(self, position, description, radius = .05):
         locations = SymmetryUtilities.expandPosition(self.Space_Group, numpy.array([position[0],position[1], position[2]]))[0]
+        randGen = random.Random()
+        r = random.uniform(0,1)
+        g = random.uniform(0,1)
+        b = random.uniform(0,1)
         for coord in locations:
     #        r,g,b = atom1.getColor()
-            atom = Atom(self, coord[0], coord[1], coord [2], description, radius, r,g,b)
+            atom = Atom(self, coord[0], coord[1], coord[2], description, radius, r,g,b)
             self.addAtom(atom)
 

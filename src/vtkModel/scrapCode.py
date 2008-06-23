@@ -295,4 +295,29 @@ class InterCellularBond(Bond):
                                 translatedAtom1 = translatedCell1.atomAtIndex(originalAtom1.getIndexNumber())
                                 translatedAtom2 = translatedCell2.atomAtIndex(originalAtom2.getIndexNumber())
                                 self.Bonds.append(Bond(translatedAtom1, translatedAtom2))
-        
+
+
+
+
+
+
+myblock = CifFile.CifBlock()
+
+cf['a_block'] = myblock
+
+cf['a_block']['_data1'] = "data"
+cf['a_block']['_data2'] = 'moredata'
+
+listobj = []
+listobj.append("this")
+listobj.append("this2")
+listobj.append("and this")
+cf['a_block']['_listobj'] = listobj
+
+
+
+outfile = open(filename, 'w')
+outfile.write(cf.WriteOut())
+outfile.close()
+
+cf = CifFile.ReadCif(filename)        

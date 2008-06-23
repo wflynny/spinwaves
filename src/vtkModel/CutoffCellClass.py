@@ -1,12 +1,5 @@
-import copy
-from BondClass import *
-import numpy
-import CifFile
-import SpaceGroups
-from CellClass import Cell
 
-class MagneticCell():
-    
+class CutoffCell():   
     def __init__(self, Unit_Cell, Na, Nb, Nc, spaceGroup):
         self.unit_cell = Unit_Cell
         
@@ -27,8 +20,6 @@ class MagneticCell():
                     if i !=0 or j != 0 or k != 0: #to not duplicate original unit cell
                         self.AllUnitCells.append(self.unit_cell.translateCell(i,j,k))
     
-
-        self.bondConstraints = []
     
     
     #does not currently support anything but default bond colors
@@ -205,43 +196,5 @@ class MagneticCell():
     
     def getBonds(self):
         return self.Bonds
-  
-class BondConstraint():
-    def __init__(self, pos1, pos2, symop):
-        self.pos1 = pos1
-        self.pos2 = pos2
-        self.symop = symop
-  
-  
-  
-def magneticCellFromCif(filename):
-    cf = CifFile.ReadCif(filename)
-    
-    #Assuming all data is in one outter block like NIST examples:
-    data = cf[cf.keys()[0]]
-    
-    #Create a Crystollographic Unit Cell
-    a = data['_cell_length_a']
-    b = data['_cell_length_b']
-    c = data['_cell_length_c']
-    
-    alpha = data['_cell_angle_alpha']
-    gamma = data['_cell_angle_gamma']
-    beta = data['_cell_angle_beta']
-    
-    spaceGroup = SpaceGroups.GetSpaceGroup(int(data['_symmetry_Int_Tables_number']))
-    
-    unitcell = Cell(spaceGroup, 0,0,0, a, b, c, alpha, gamma, beta)
-    
-    atomLabels = data['_atom_site_label']
-#Not Currently used        atomType = data['_atom_site_type_symbol']
-    xPositions = data['_atom_site_fract_x']
-    yPositions = data['_atom_site_fract_y']
-    zPositions = data['_atom_site_fract_z']
-    
-    for i in range(len(atomLabels)):
-        unitcell.generateAtoms((float(xPositions[i]), float(yPositions[i]), float(zPositions[i])), atomLabels[i])
 
-    #Create a Magnetic Cell
-    return MagneticCell(unitcell, 1,1,1, spaceGroup)
     

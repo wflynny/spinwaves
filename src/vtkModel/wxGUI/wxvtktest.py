@@ -9,7 +9,13 @@ from vtkModel.SpaceGroups import *
 from vtkModel.VTKDrawer import *
 from vtkModel.MagneticCellClass import *
 from vtkModel.CellClass import *
-import random
+#import random
+
+
+class atomPanel(wx.Panel):
+    def __init__(self, parent, id):
+        wx.Panel.__init__(self, parent, id)
+        grid = wx.grid.Grid()
 
 
 class vtkPanel(wx.Panel):
@@ -37,11 +43,14 @@ class vtkPanel(wx.Panel):
  #       self.window.Enable(1)
     
         self.window.AddObserver("ExitEvent", lambda o,e,f=self: f.Close())
+        self.window.Render()
         
-        
-        self.initializeVTKData()
-        self.draw()
+#        self.initializeVTKData()
+#        self.draw()
+        self.window.Bind(wx.EVT_KEY_DOWN, self.OnKeyEvent)
  
+    
+    
     def OnKeyEvent(self, event):
         event.Skip()
         
@@ -49,6 +58,7 @@ class vtkPanel(wx.Panel):
         if event.GetKeyCode() == 127:
             self.OnDelete(event)
         
+    
     
     def OnDelete(self,event):
         event.Skip()
@@ -59,24 +69,24 @@ class vtkPanel(wx.Panel):
         
         self.draw()
     
-    def initializeVTKData(self):
+#    def initializeVTKData(self):
                 #My Code
-        Space_Group = sg50
-        unitcell = Cell(Space_Group)
-        atomPos = [.25, .25, .5]
+#        Space_Group = sg141
+#        unitcell = Cell(Space_Group)
+#        atomPos = [0, 0, 0]
     
         #Create the unit cell
-        randGen = random.Random()
-        unitcell.generateAtoms(atomPos, "atom1" , .05, randGen.uniform(0,1), randGen.uniform(0,1), randGen.uniform(0,1))
+#        unitcell.generateAtoms(atomPos, "atom1")
+
         
         #Create the Magnetic Cell
-        self.MagCell = MagneticCell(unitcell, 1,2,3, Space_Group)
-        AllAtoms = self.MagCell.getAllAtoms()
-        for i in range(0, len(AllAtoms)):
-            print i, AllAtoms[i]
-        self.MagCell.addBond(AllAtoms[0], AllAtoms[1])
+#        self.MagCell = MagneticCell(unitcell, 1,1,1, Space_Group)
         
-        self.window.Bind(wx.EVT_KEY_DOWN, self.OnKeyEvent)
+#        AllAtoms = self.MagCell.getAllAtoms()
+#        for i in range(0, len(AllAtoms)):
+#            print i, AllAtoms[i]
+#        self.MagCell.addBond(AllAtoms[0], AllAtoms[1])
+        
         
         
     def draw(self):
@@ -104,6 +114,11 @@ class vtkPanel(wx.Panel):
         self.window.Render()
         
     
+    def openCif(self, filename):
+        self.MagCell = magneticCellFromCif(filename)
+        self.draw()
+    
+    
     def getStatusText(self):
         return self.picker.getPicked()
 
@@ -114,33 +129,33 @@ class Frame(wx.Frame):
     def __init__(self, parent, id):
         wx.Frame.__init__(self, parent, id, 'Magnetic Cell', size= (900,600))
 
-        
-        self.vtkPanel = vtkPanel(self, -1)
+        self.panel = atomPanel(self, -1)
+#        self.vtkPanel = vtkPanel(self, -1)
         
         #Add Menus
-        self.AddMenus()
+#        self.AddMenus()
         
         #Add Tool Bar
-        self.AddToolBar()
+#        self.AddToolBar()
         
         #Add Status Bar                     
-        self.AddStatusBar()
+#        self.AddStatusBar()
 
    
    
-    def AddToolBar(self):
-        toolbar = self.CreateToolBar()
+#    def AddToolBar(self):
+#        toolbar = self.CreateToolBar()
 #        toolbar.AddSimpleTool()
         
-    def AddStatusBar(self):
-        self.statusBar = self.CreateStatusBar()
-        self.Bind(wx.EVT_LEFT_UP, self.OnClick)
-        
-    
-    def OnClick(self, event):
-        self.statusBar.SetStatusText("This")
-        #self.statusBar.SetStatusText(self.vtkPanel.getStatusText())
-        event.Skip()
+#    def AddStatusBar(self):
+#        self.statusBar = self.CreateStatusBar()
+#        self.Bind(wx.EVT_LEFT_UP, self.OnClick)
+#        
+#    
+#    def OnClick(self, event):
+#        self.statusBar.SetStatusText("This")
+#        #self.statusBar.SetStatusText(self.vtkPanel.getStatusText())
+#        event.Skip()
         
     def AddMenus(self):
                 #Add Menus
@@ -178,30 +193,32 @@ class Frame(wx.Frame):
         self.Close(True)
     
     def OnSave(self, event):
-        saveDialog = wx.FileDialog(self, "Save File")
+        saveDialog = wx.FileDialog(self, "Save File", style = wx.SAVE)
         if saveDialog.ShowModal() == wx.ID_OK:
             print saveDialog.GetPath()
         saveDialog.Destroy()
         
     def OnOpenFile(self, event):
-        saveDialog = wx.FileDialog(self, "Save File")
+        saveDialog = wx.FileDialog(self, "Open File", style = wx.OPEN, wildcard = "*.cif")
         if saveDialog.ShowModal() == wx.ID_OK:
-            print saveDialog.GetPath()
+            self.vtkPanel.openCif(saveDialog.GetPath())
         saveDialog.Destroy()
         
 
 
 
 class App(wx.App):
-    
-    def OnInit(self, redirect = False, filename = None):
+    def __init__(self, redirect = False, filename = None):
         wx.App.__init__(self, redirect, filename)
+    
+    def OnInit(self):
         self.frame = Frame(None, -1)
         self.frame.Show()
         self.SetTopWindow(self.frame)
         return True
     
-if __name__ == '__main__':
 
-    app = App(False)
+
+if __name__ == '__main__':
+    app = App()
     app.MainLoop()
