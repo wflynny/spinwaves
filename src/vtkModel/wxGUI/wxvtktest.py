@@ -3,6 +3,7 @@
 """This is a test of wxVTKRenderWindow"""
 
 import wx
+import wx.grid
 from picker import Picker
 from wxVTKRenderWindowInteractor import *
 from vtkModel.SpaceGroups import *
@@ -14,9 +15,19 @@ from vtkModel.CellClass import *
 
 class atomPanel(wx.Panel):
     def __init__(self, parent, id):
-        wx.Panel.__init__(self, parent, id)
-        grid = wx.grid.Grid()
+        wx.Panel.__init__(self, parent, id, size = (200,200))
+        self.SetSizer()
 
+class atomListGrid(wx.grid.Grid):
+    def __init__(self, parent, id):
+        wx.grid.Grid.__init__(self, parent, id)
+        self.CreateGrid(3,5)
+        self.SetColLabelValue(0, "Name")
+        self.SetColLabelValue(1, "Atomic Number")
+        self.SetColLabelValue(2, "x")
+        self.SetColLabelValue(3, "y")
+        self.SetColLabelValue(4, "z")
+        self.AutoSize()
 
 class vtkPanel(wx.Panel):
     def __init__(self, parent, id):
@@ -129,11 +140,10 @@ class Frame(wx.Frame):
     def __init__(self, parent, id):
         wx.Frame.__init__(self, parent, id, 'Magnetic Cell', size= (900,600))
 
-        self.panel = atomPanel(self, -1)
-#        self.vtkPanel = vtkPanel(self, -1)
+        self.vtkPanel = vtkPanel(self, -1)
         
         #Add Menus
-#        self.AddMenus()
+        self.AddMenus()
         
         #Add Tool Bar
 #        self.AddToolBar()
@@ -215,6 +225,9 @@ class App(wx.App):
         self.frame = Frame(None, -1)
         self.frame.Show()
         self.SetTopWindow(self.frame)
+        frame1 = wx.Frame(self.frame, -1)
+        atomListGrid(frame1, -1)
+        frame1.Show()
         return True
     
 
