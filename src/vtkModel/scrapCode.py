@@ -320,4 +320,118 @@ outfile = open(filename, 'w')
 outfile.write(cf.WriteOut())
 outfile.close()
 
-cf = CifFile.ReadCif(filename)        
+cf = CifFile.ReadCif(filename)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def __init__(self, parent, id):
+        wx.Panel.__init__(self, parent, id)
+        
+        #Add Space Group
+        spaceGroupLabel = wx.StaticText(self, -1, "Space Group:")
+        self.spaceGroupSpinner = wx.SpinCtrl(self, -1, "")
+        self.spaceGroupSpinner.SetRange(1,230)
+        self.spaceGroupSpinner.SetValue(1)
+        
+        #Add Atom List
+        self.atomList = atomListGrid(self, -1)
+        
+        #Add a, b, c, Alpha, gamma, beta, Na, Nb, Nc
+        aLabel = wx.StaticText(self, -1, "a:")
+        self.aText = wx.TextCtrl(self, -1, size = (60, -1))
+        aSizer = wx.BoxSizer(wx.VERTICAL)
+        aSizer.Add(aLabel, 0)
+        aSizer.Add(self.aText, 0)
+        
+        bLabel = wx.StaticText(self, -1, "b:")
+        self.bText = wx.TextCtrl(self, -1, size = (60, -1))
+        bSizer = wx.BoxSizer(wx.VERTICAL)
+        bSizer.Add(bLabel, 0)
+        bSizer.Add(self.bText, 0)
+        
+        cLabel = wx.StaticText(self, -1, "c:")
+        self.cText = wx.TextCtrl(self, -1, size = (60, -1))
+        cSizer = wx.BoxSizer(wx.VERTICAL)
+        cSizer.Add(cLabel, 0)
+        cSizer.Add(self.cText, 0)
+        
+        alphaLabel = wx.StaticText(self, -1, "alpha:")
+        self.alphaText = wx.TextCtrl(self, -1, size = (60, -1))
+        alphaSizer = wx.BoxSizer(wx.VERTICAL)
+        alphaSizer.Add(alphaLabel, 0)
+        alphaSizer.Add(self.alphaText, 0)
+        
+        betaLabel = wx.StaticText(self, -1, "beta:")
+        self.betaText = wx.TextCtrl(self, -1, size = (60, -1))
+        betaSizer = wx.BoxSizer(wx.VERTICAL)
+        betaSizer.Add(betaLabel, 0)
+        betaSizer.Add(self.betaText, 0)
+        
+        gammaLabel = wx.StaticText(self, -1, "gamma:")
+        self.gammaText = wx.TextCtrl(self, -1, size = (60, -1))
+        gammaSizer = wx.BoxSizer(wx.VERTICAL)
+        gammaSizer.Add(gammaLabel, 0)
+        gammaSizer.Add(self.gammaText, 0)
+        
+        
+        naLabel = wx.StaticText(self, -1, "Na:")
+        self.naText = wx.TextCtrl(self, -1, size = (60, -1))
+        naSizer = wx.BoxSizer(wx.VERTICAL)
+        naSizer.Add(naLabel, 0)
+        naSizer.Add(self.naText, 0)
+        
+        nbLabel = wx.StaticText(self, -1, "Nb:")
+        self.nbText = wx.TextCtrl(self, -1, size = (60, -1))
+        nbSizer = wx.BoxSizer(wx.VERTICAL)
+        nbSizer.Add(nbLabel, 0)
+        nbSizer.Add(self.nbText, 0)
+        
+        ncLabel = wx.StaticText(self, -1, "Nc:")
+        self.ncText = wx.TextCtrl(self, -1, size = (60, -1))
+        ncSizer = wx.BoxSizer(wx.VERTICAL)
+        ncSizer.Add(ncLabel, 0)
+        ncSizer.Add(self.ncText, 0)
+        
+        #Organize a,b,c and alpha, gamma, beta , Na, Nb, Nc into a grid
+        dimSizer = wx.GridSizer(cols = 3, hgap = 15, vgap = 5)
+        dimSizer.Add(aSizer)
+        dimSizer.Add(bSizer)
+        dimSizer.Add(cSizer)
+        dimSizer.Add(alphaSizer)
+        dimSizer.Add(betaSizer)
+        dimSizer.Add(gammaSizer)
+        dimSizer.Add(naSizer)
+        dimSizer.Add(nbSizer)
+        dimSizer.Add(ncSizer)
+        
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        spaceGroupSizer = wx.BoxSizer(wx.HORIZONTAL)
+        spaceGroupSizer.Add(spaceGroupLabel, 0)
+        spaceGroupSizer.Add(self.spaceGroupSpinner, 0)
+        
+        #Add a button on upper right to generate new image
+        self.genButton = wx.Button(self, -1, "Generate")
+        spaceGroupSizer.Add(self.genButton, flag = wx.ALIGN_RIGHT)
+        
+        sizer.Add(spaceGroupSizer, 0)
+        sizer.Add(dimSizer, 0)
+        sizer.Add(self.atomList, 1, wx.EXPAND)
+        
+        self.SetSizer(sizer)
+        
+        #For now, the generate button will create a new magnetic cell
+        #which will then be drawn by the vtkPanel
+        self.Bind(wx.EVT_BUTTON, self.OnGenerate, self.genButton)
