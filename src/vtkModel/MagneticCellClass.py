@@ -205,6 +205,13 @@ class MagneticCell():
     
     def getBonds(self):
         return self.Bonds
+    
+    def hasBond(self, atom1, atom2):
+        for eachBond in self.getBonds():
+            if eachBond.getAtom1() == atom1 or eachBond.getAtom2() == atom1:
+                if eachBond.getAtom1() == atom2 or eachBond.getAtom2() == atom2:
+                    return True
+        return False
   
 class BondConstraint():
     def __init__(self, pos1, pos2, symop):

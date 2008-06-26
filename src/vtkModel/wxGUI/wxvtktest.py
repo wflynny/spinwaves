@@ -26,7 +26,7 @@ import vtkModel.SpaceGroups
 
 
 
-
+#Atom and cell info window
 
 class atomPanel(wx.Panel):
     def __init__(self, parent, id):
@@ -198,7 +198,7 @@ class atomPanel(wx.Panel):
         
     
     def validate(self):
-        """Currently checks that all values are the right type, not including table"""
+        """Currently checks that all values are the right type"""
         a = self.aText.GetValue() #str - float
         b = self.bText.GetValue() #str - float
         c = self.cText.GetValue() #str - float
@@ -495,6 +495,289 @@ class atomListGrid(wx.grid.Grid):
 #        self.AutoSize()
         return diff
 
+
+
+
+
+#Bond information window
+class bondTable(wx.grid.PyGridTableBase):
+    def __init__(self):
+        wx.grid.PyGridTableBase.__init__(self)
+        self.colLabels = ['Atom1 Number', '   Na   ','   Nb   ', '   Nc   ', 'Atom2 Number', '   Na   ','   Nb   ', '   Nc   ', 'On']
+        self.rowLabels=['Bond 1']
+        
+        self.data = [
+                     ['','','','','','','','','']#Row 1
+                     ]
+    
+    def GetNumberRows(self):
+        return len(self.data)
+    def AppendRows(self, num):
+        for i in range(num):
+            self.AppendRow()
+        return True
+    def GetNumberCols(self):
+        return len(self.colLabels)
+    def GetColLabelValue(self, col):
+        return self.colLabels[col]
+    def GetRowLabelValue(self, row):
+        return self.rowLabels[row]
+    def IsEmptyCell(self, row, col):
+        try:
+            return not self.data[row][col]
+        except IndexError:
+            return True
+    # Get/Set values in the table.  The Python version of these
+    # methods can handle any data-type, (as long as the Editor and
+    # Renderer understands the type too,) not just strings as in the
+    # C++ version.
+    def GetValue(self, row, col):
+        try:
+            return self.data[row][col]
+        except IndexError:
+            return ''
+    def SetValue(self, row, col, value):
+        try:
+            self.data[row][col] = value
+        except IndexError:
+            # add a new row
+            self.AppendRow()
+            self.data[row][col]=value
+        return
+    
+    def AppendRow(self):
+            row = [''] * (self.GetNumberCols())
+            self.data.append(row)
+            self.rowLabels.append('Bond ' + str(self.GetNumberRows()))
+
+            # tell the grid we've added a row
+            msg = wx.grid.GridTableMessage(self,            # The table
+                    wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED, # what we did to it
+                    1                                       # how many
+                    )
+            self.GetView().ProcessTableMessage(msg)
+            return True
+
+    def DeleteRows(self,pos=0,numRows=1):
+        if numRows>=0 and numRows<=self.GetNumberRows():
+            del self.data[pos:pos+numRows]
+            msg = wx.grid.GridTableMessage(self,            # The table
+            wx.grid.GRIDTABLE_NOTIFY_ROWS_DELETED, # what we did to it
+            pos,numRows                                     # how many
+            )
+            #msg = wx.grid.GridTableMessage(self, 0, numRows)
+            self.GetView().ProcessTableMessage(msg)
+            
+            self.UpdateValues()
+            return True
+        else:
+            return False
+        
+    def UpdateValues( self ):
+            """Update all displayed values"""
+            msg =wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
+            self.GetView().ProcessTableMessage(msg)
+
+
+class bondListGrid(wx.grid.Grid):
+    def __init__(self, parent, id):
+        wx.grid.Grid.__init__(self, parent, id)
+        self.table = bondTable()
+        self.SetTable(self.table)
+        self.AutoSize()
+        
+        
+        #Set up last cell for clicks only
+#        wx.grid.Grid.EnableEditing(self,False)
+        attr=wx.grid.GridCellAttr()
+        attr.SetReadOnly(True)
+        self.SetColAttr(8,attr)
+        self.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.OnLeftClick ,self)
+        
+
+    def SetNumberRows(self, num):
+        diff = num - self.table.GetNumberRows()
+        if diff > 0:
+            for i in range(diff):
+                self.table.AppendRow() #Add a blank row
+        elif diff < 0:
+            self.table.DeleteRows(self.table.GetNumberRows()+diff, -diff)
+#        self.AutoSize()
+        return diff
+    
+    
+    def OnLeftClick(self, evt):
+        evt.Skip()
+        print 'LeftClick'
+        col=evt.GetCol()
+        row=evt.GetRow()
+        print row, col
+#        if col<=0 and row >=0:
+#            currval=self.table.GetValue(row,0)
+        if col>=8 and row >=0:
+            currval=self.table.GetValue(row,8)
+            if currval=='':
+                self.table.SetValue(row,8,'X')
+            else:
+                self.table.SetValue(row,8,'')
+
+
+        #if self.CanEnableCellControl():
+        #    self.EnableCellEditControl()
+        wx.grid.Grid.ForceRefresh(self)
+
+class bondPanel(wx.Panel):
+    def __init__(self, parent, id):
+        wx.Panel.__init__(self, parent, id)
+        self.bondList = bondListGrid(self, -1)
+        
+        self.bondSpinner = wx.SpinCtrl(self, -1, "")
+        self.bondSpinner.SetRange(1,100)
+        self.bondSpinner.SetValue(1)
+        self.bondSpinner.Bind(wx.EVT_TEXT, self.OnGridResize, self.bondSpinner)
+        
+        self.genButton = wx.Button(self, -1, "Generate")
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        topSizer.Add(self.bondSpinner)
+        topSizer.Add(self.genButton)
+        
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(topSizer)
+        sizer.Add(self.bondList, 1, wx.EXPAND)
+        self.SetSizer(sizer)
+        
+        self.Bind(wx.EVT_BUTTON, self.OnGenerate, self.genButton)
+
+    
+    def OnGenerate(self, event):
+        failed, bondData = self.validate()
+        if failed:
+            return
+        send(signal = "Bond Change", sender = "Bond Panel", bondData = bondData)
+      
+    
+    def validate(self):
+        """Currently checks that all values are the right type"""
+         
+        bgColor = "pink"
+        failed = False
+
+         #Validate bond data in table
+        bondData = []
+        for row in range(self.bondList.GetNumberRows()):
+            
+            atom1Num = None
+            try:
+                atom1Num = int(self.bondList.GetCellValue(row, 0))
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour("white")
+                self.bondList.SetAttr(row, 0, attr)
+            except:
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour(bgColor)
+                self.bondList.SetAttr(row, 0, attr)
+                failed = True
+            
+            Na1 = None
+            try:
+                Na1 = int(self.bondList.GetCellValue(row, 1))
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour("white")
+                self.bondList.SetAttr(row, 1, attr)
+            except:
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour(bgColor)
+                self.bondList.SetAttr(row, 1, attr)
+                failed = True
+
+            Nb1 = None
+            try:
+                Nb1 = int(self.bondList.GetCellValue(row, 2))
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour("white")
+                self.bondList.SetAttr(row, 2, attr)
+            except:
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour(bgColor)
+                self.bondList.SetAttr(row, 2, attr)
+                failed = True
+        
+            Nc1 = None
+            try:
+                Nc1 = int(self.bondList.GetCellValue(row, 3))
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour("white")
+                self.bondList.SetAttr(row, 3, attr)
+            except:
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour(bgColor)
+                self.bondList.SetAttr(row, 3, attr)
+                failed = True
+                
+            
+            atom2Num = None
+            try:
+                atom2Num = int(self.bondList.GetCellValue(row, 4))
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour("white")
+                self.bondList.SetAttr(row, 4, attr)
+            except:
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour(bgColor)
+                self.bondList.SetAttr(row, 4, attr)
+                failed = True
+            
+            Na2 = None
+            try:
+                Na2 = int(self.bondList.GetCellValue(row, 5))
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour("white")
+                self.bondList.SetAttr(row, 5, attr)
+            except:
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour(bgColor)
+                self.bondList.SetAttr(row, 5, attr)
+                failed = True
+
+            Nb2 = None
+            try:
+                Nb2 = int(self.bondList.GetCellValue(row, 6))
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour("white")
+                self.bondList.SetAttr(row, 6, attr)
+            except:
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour(bgColor)
+                self.bondList.SetAttr(row, 6, attr)
+                failed = True
+        
+            Nc2 = None
+            try:
+                Nc2 = int(self.bondList.GetCellValue(row, 7))
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour("white")
+                self.bondList.SetAttr(row, 7, attr)
+            except:
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour(bgColor)
+                self.bondList.SetAttr(row, 7, attr)
+                failed = True
+                
+            bondData.append([atom1Num, Na1,Nb1,Nc1, atom2Num, Na2,Nb2,Nc2])
+            
+        self.bondList.AutoSize()  #There may be a better way to do this, but
+        #this rerenders the cells to they show the color change
+        
+        return failed, bondData
+        
+        
+    def OnGridResize(self, event):
+        rows = self.bondSpinner.GetValue()
+        self.bondList.SetNumberRows(rows)
+#        self.atomList.GetTable().SetNumberRows(rows)
+        event.Skip()
+        
+
 class vtkPanel(wx.Panel):
     def __init__(self, parent, id):
         wx.Panel.__init__(self, parent)
@@ -526,6 +809,7 @@ class vtkPanel(wx.Panel):
 #        self.draw()
         self.window.Bind(wx.EVT_KEY_DOWN, self.OnKeyEvent)
         connect(self.OnCellChange, signal = "Cell Change")
+        connect(self.OnBondChange, signal = "Bond Change")
  
     
     
@@ -611,13 +895,29 @@ class vtkPanel(wx.Panel):
         #Create a Magnetic Cell
         self.MagCell = MagneticCell(unitcell, magNa, magNb, magNc, spaceGroup)
         self.draw()
+        
+        #Regenerate Bonds as well
+        self.OnBondChange(self.bondData)
 
+    def OnBondChange(self, bondData):
+        """Chacks if each bond exists, if not, it generates them""" 
+        self.bondData = bondData  #added this so that bonds can be regerated later if there is a change in the cells
+        for i in range(len(bondData)):
+            cell1 = self.MagCell.cellAtPosition((bondData[i][1], bondData[i][2], bondData[i][3]))
+            cell2 = self.MagCell.cellAtPosition((bondData[i][5], bondData[i][6], bondData[i][7]))
+            
+            atom1 = cell1.atomAtIndex(bondData[i][0] + 1)
+            atom2 = cell2.atomAtIndex(bondData[i][4] + 1)
+            
+            if not self.MagCell.hasBond(atom1, atom2):
+                self.MagCell.addBond(atom1, atom2)
 
+        self.draw()
 
 
 class Frame(wx.Frame):
     def __init__(self, parent, id):
-        wx.Frame.__init__(self, parent, id, 'Magnetic Cell', size= (900,600))
+        wx.Frame.__init__(self, parent, id, 'Magnetic Cell', size= (900,800))
 
         self.vtkPanel = vtkPanel(self, -1)
         
@@ -707,6 +1007,9 @@ class App(wx.App):
         frame1 = wx.Frame(self.frame, -1, size = (455,245))
         atomPanel(frame1, -1)
         frame1.Show()
+        frame2 = wx.Frame(self.frame, -1, 'Bonds', size = (575,160))
+        bondPanel(frame2, -1)
+        frame2.Show()
         
         
         #Williams
