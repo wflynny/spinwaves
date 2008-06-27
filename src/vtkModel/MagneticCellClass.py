@@ -171,6 +171,9 @@ class MagneticCell():
                                     if bond.getAtom2() == translatedAtom1 or bond.getAtom2() == translatedAtom2:
                                          self.Bonds.remove(bond)
     
+    def clearAllBonds(self):
+        self.Bonds = []
+    
     def positionsInSameCell(self, pos1, pos2):
         x1,y1,z1 = pos1
         x2,y2,z2 = pos2

@@ -5,7 +5,7 @@ import numpy
 
 
 class Bond():
-    def __init__(self, Atom1, Atom2, r = 0,g = 0,b = 1):
+    def __init__(self, Atom1, Atom2, jMatrix = None, r = 0,g = 0,b = 1):
         """Cell is the Unit Cell if this bond is in a unit Cell or None Otherwise.
         Atom1 and Atom2 are the atoms that this bond connects.
         r,g,b are the color of the actor."""
@@ -15,6 +15,8 @@ class Bond():
         
         self.Atom1 = Atom1
         self.Atom2 = Atom2
+        
+        self.jMat = jMatrix
 
     
     def getAtom1(self):
