@@ -104,3 +104,4 @@ class Cell():
             atom = Atom(self, coord[0], coord[1], coord[2], description, radius, r,g,b)
             self.addAtom(atom)
 
+

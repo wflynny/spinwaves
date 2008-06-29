@@ -37,7 +37,7 @@ class MagneticCell():
         #Make Sure the Atoms are not in the same cell
  #       if Atom1.getUnitCell() == Atom2.getUnitCell():
  #           raise Exception("These atoms are in the same Unit Cell:" + Atom1.__str__() + ", " + Atom2.__str__())
-    def addBond(self, Atom1, Atom2):     
+    def addBond(self, Atom1, Atom2, jMatrix = None):     
         """Adds a bond and all symmettry equivalent bonds within the magnetic Cell
         
         Performs every symmetry operaation and every possible translation for each 
@@ -102,7 +102,7 @@ class MagneticCell():
                         translatedAtom2 = self.atomAtPosition((i + pos2[0],j + pos2[1],k + pos2[2]))
                         
                         if translatedAtom1 != None and translatedAtom2 != None:
-                            newBond = Bond(translatedAtom1, translatedAtom2)
+                            newBond = Bond(translatedAtom1, translatedAtom2, jMatrix)
                         
                             #make sure bond does not already exist
                             for currentBond in self.Bonds:
@@ -110,9 +110,7 @@ class MagneticCell():
                                     break
                             else:  #if not, add the bond to the list of unique bonds
                                 self.Bonds.append(newBond)
-
-                            
-    
+  
     def deleteBond(self, bond):
         """Removes a bond and all symmetry equivalent bonds within the magnetic Cell
         

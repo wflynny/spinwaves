@@ -501,11 +501,11 @@ class atomListGrid(wx.grid.Grid):
 class bondTable(wx.grid.PyGridTableBase):
     def __init__(self):
         wx.grid.PyGridTableBase.__init__(self)
-        self.colLabels = ['Atom1 Number', '   Na   ','   Nb   ', '   Nc   ', 'Atom2 Number', '   Na   ','   Nb   ', '   Nc   ', 'On']
+        self.colLabels = ['Atom1 Number', '   Na   ','   Nb   ', '   Nc   ', 'Atom2 Number', '   Na   ','   Nb   ', '   Nc   ', ' Jij Matrix ', 'On']
         self.rowLabels=['Bond 1']
         
         self.data = [
-                     ['','','','','','','','','']#Row 1
+                     ['','','','','','','','','','']#Row 1
                      ]
     
     def GetNumberRows(self):
@@ -525,6 +525,8 @@ class bondTable(wx.grid.PyGridTableBase):
             return not self.data[row][col]
         except IndexError:
             return True
+        except ValueError: #Jij Matrix
+            return False
     # Get/Set values in the table.  The Python version of these
     # methods can handle any data-type, (as long as the Editor and
     # Renderer understands the type too,) not just strings as in the
@@ -543,6 +545,11 @@ class bondTable(wx.grid.PyGridTableBase):
             self.data[row][col]=value
         return
     
+ #   def AppendRows(self, numRows):
+ #       for i in range(numRows):
+ #           self.AppendRow()
+ #       return True
+    
     def AppendRow(self):
             row = [''] * (self.GetNumberCols())
             self.data.append(row)
@@ -555,7 +562,7 @@ class bondTable(wx.grid.PyGridTableBase):
                     )
             self.GetView().ProcessTableMessage(msg)
             return True
-
+    
     def DeleteRows(self,pos=0,numRows=1):
         if numRows>=0 and numRows<=self.GetNumberRows():
             del self.data[pos:pos+numRows]
@@ -589,10 +596,9 @@ class bondListGrid(wx.grid.Grid):
 #        wx.grid.Grid.EnableEditing(self,False)
         attr=wx.grid.GridCellAttr()
         attr.SetReadOnly(True)
-        self.SetColAttr(8,attr)
+        self.SetColAttr(9,attr)
         self.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.OnLeftClick ,self)
         
-
     def SetNumberRows(self, num):
         diff = num - self.table.GetNumberRows()
         if diff > 0:
@@ -603,26 +609,33 @@ class bondListGrid(wx.grid.Grid):
 #        self.AutoSize()
         return diff
     
-    
     def OnLeftClick(self, evt):
         evt.Skip()
-        print 'LeftClick'
+#        print 'LeftClick'
         col=evt.GetCol()
         row=evt.GetRow()
-        print row, col
+#        print row, col
 #        if col<=0 and row >=0:
 #            currval=self.table.GetValue(row,0)
-        if col>=8 and row >=0:
-            currval=self.table.GetValue(row,8)
+        if col>=9 and row >=0: # ON/Off
+            currval=self.table.GetValue(row,9)
             if currval=='':
-                self.table.SetValue(row,8,'X')
+                self.table.SetValue(row,9,'X')
             else:
-                self.table.SetValue(row,8,'')
+                self.table.SetValue(row,9,'')
+        elif col==8 and row >=0:  #Jij matrix
+            dialog = jijDialog()
+            result = dialog.ShowModal()
+            if result == wx.ID_OK:
+                print dialog.getMatrix()
+                self.table.SetValue(row, 8, numpy.array(dialog.getMatrix()))
 
+            dialog.Destroy()
 
+        self.AutoSize()
         #if self.CanEnableCellControl():
         #    self.EnableCellEditControl()
-        wx.grid.Grid.ForceRefresh(self)
+#        wx.grid.Grid.ForceRefresh(self)
 
 class bondPanel(wx.Panel):
     def __init__(self, parent, id):
@@ -645,7 +658,31 @@ class bondPanel(wx.Panel):
         self.SetSizer(sizer)
         
         self.Bind(wx.EVT_BUTTON, self.OnGenerate, self.genButton)
+        connect(self.OnBondAddition, signal = "Bond Added")
 
+
+    def OnBondAddition(self, atom1, atom2):
+        """This method is called when another window adds a bond and calls send(signal = "Bond Added"..."""
+        cell1 = atom1.getUnitCell()
+        cell2 = atom2.getUnitCell()
+        
+        index1 = atom1.getIndexNumber()
+        index2 = atom2.getIndexNumber()
+        pos1 = cell1.getPosition()
+        pos2 = cell2.getPosition()
+
+        row = self.bondList.GetNumberRows() #Append row and add bond to last row
+        self.bondList.SetCellValue(row, 0, str(index1+1))
+        self.bondList.SetCellValue(row, 1, str(pos1[0]))
+        self.bondList.SetCellValue(row, 2, str(pos1[1]))
+        self.bondList.SetCellValue(row, 3, str(pos1[2]))
+        self.bondList.SetCellValue(row, 4, str(index2+1))
+        self.bondList.SetCellValue(row, 5, str(pos2[0]))
+        self.bondList.SetCellValue(row, 6, str(pos2[1]))
+        self.bondList.SetCellValue(row, 7, str(pos2[2]))
+        self.bondList.SetCellValue(row, 9, 'X') #Turn the bond on
+        
+        self.OnGenerate(None)
     
     def OnGenerate(self, event):
         failed, bondData = self.validate()
@@ -665,7 +702,7 @@ class bondPanel(wx.Panel):
         bondData = []
         for row in range(self.bondList.GetNumberRows()):
             
-            check = self.bondList.GetCellValue(row, 8)
+            check = self.bondList.GetCellValue(row, 9)
             if check == 'X':
                 atom1Num = None
                 try:
@@ -763,9 +800,23 @@ class bondPanel(wx.Panel):
                     attr.SetBackgroundColour(bgColor)
                     self.bondList.SetAttr(row, 7, attr)
                     failed = True
+                    
+#                jij = self.bondList.GetCellValue(row, 8)
+#                if not jij == '':
+#                    attr = wx.grid.GridCellAttr()
+#                    attr.SetBackgroundColour("white")
+#                    self.bondList.SetAttr(row, 8, attr)
+#                else:
+#                    attr = wx.grid.GridCellAttr()
+#                    attr.SetBackgroundColour(bgColor)
+#                    self.bondList.SetAttr(row, 8, attr)
+#                    failed = True
+                jij = self.bondList.GetCellValue(row, 8)  #allow a bond to be made with no Jij Matrix
+                if jij == '':
+                    jij = None
             
                 
-                bondData.append([atom1Num, Na1,Nb1,Nc1, atom2Num, Na2,Nb2,Nc2])
+                bondData.append([atom1Num, Na1,Nb1,Nc1, atom2Num, Na2,Nb2,Nc2, jij])
             else: #If the row is not checked, all cells should be white
                 attr = wx.grid.GridCellAttr()
                 attr.SetBackgroundColour("white")
@@ -860,10 +911,11 @@ class jijDialog(wx.Dialog):
         for i in range(3):#rows
             row = []
             for j in range(3):
-                val = float(self.GetCellValue(i,j))
+                val = float(self.grid.GetCellValue(i,j))
                 row.append(val)
             jMatrix.append(row)
-            
+        
+        return jMatrix
             
 
        
@@ -872,8 +924,10 @@ class vtkPanel(wx.Panel):
     def __init__(self, parent, id):
         wx.Panel.__init__(self, parent)
         self.initVTKWindow()
-
-    
+        self.bindEvents()
+        self.mode = None
+        self.picker = None
+  
     def initVTKWindow(self):
         #Code from wxRenderWindowInterActor Sample
        
@@ -896,12 +950,13 @@ class vtkPanel(wx.Panel):
         self.window.Render()
         
 #        self.initializeVTKData()
-#        self.draw()
+#        self.draw
+   
+    def bindEvents(self):
         self.window.Bind(wx.EVT_KEY_DOWN, self.OnKeyEvent)
         connect(self.OnCellChange, signal = "Cell Change")
         connect(self.OnBondChange, signal = "Bond Change")
- 
-    
+        connect(self.OnPick, signal = "Pick Event")
     
     def OnKeyEvent(self, event):
         event.Skip()
@@ -909,9 +964,7 @@ class vtkPanel(wx.Panel):
         #Delete if key pressed is Del key  Del = 127
         if event.GetKeyCode() == 127:
             self.OnDelete(event)
-        
-    
-    
+         
     def OnDelete(self,event):
         event.Skip()
         selectedObj = self.drawer.getObjFromActor(self.picker.getPicked())
@@ -939,9 +992,11 @@ class vtkPanel(wx.Panel):
 #            print i, AllAtoms[i]
 #        self.MagCell.addBond(AllAtoms[0], AllAtoms[1])
            
-        
     def draw(self):
-         
+        #remove old renderer
+#        if self.ren1 != None:
+ #           self.window.GetRenderWindow().RemoveRenderer(self.ren1)
+        
         # a renderer for the data
         ren1 = vtkRenderer()
         ren1.SetBackground(1,1,1)
@@ -953,6 +1008,8 @@ class vtkPanel(wx.Panel):
         self.drawer = vtkDrawer(ren1)
         
         #Add my picker
+        if self.picker:
+            self.picker.removeObserver()
         self.picker = Picker(self.drawer, self.window._Iren, ren1)
 
         #Draw the Magnetic Cell
@@ -964,17 +1021,16 @@ class vtkPanel(wx.Panel):
         self.drawer.labelAtoms(self.MagCell)
         self.window.Render()
         
-    
     def openCif(self, filename):
         self.MagCell = magneticCellFromCif(filename)
         self.draw()
     
-    
-    def getStatusText(self):
-        return self.picker.getPicked()
+    #def getStatusText(self):
+      #  return self.picker.getPicked()
     
     def OnCellChange(self,spaceGroup,a,b,c,alpha, beta, gamma, magNa, magNb, magNc, cutNa, cutNb, cutNc, atomData):
         """For now this just creates a new Magnetic Cell and draws it"""
+        print "Making Magentic Cell"
         spaceGroup = SpaceGroups.GetSpaceGroup(spaceGroup)
         
         unitcell = Cell(spaceGroup, 0,0,0, a, b, c, alpha, gamma, beta)
@@ -982,18 +1038,23 @@ class vtkPanel(wx.Panel):
         for i in range(len(atomData)):
             unitcell.generateAtoms((float(atomData[i][2]), float(atomData[i][3]), float(atomData[i][4])), atomData[i][0])
 
+        print "Unit Cell Generated"
+        
         #Create a Magnetic Cell
         self.MagCell = MagneticCell(unitcell, magNa, magNb, magNc, spaceGroup)
-        self.draw()
+        print "Magcell created"
         
         #Regenerate Bonds as well
         try:
             self.OnBondChange(self.bondData)
         except:#If there are not bonds yet
             print "No Bonds yet"
+            self.draw()
+        print "Drawn"
 
     def OnBondChange(self, bondData):
         """Checks if each bond exists, if not, it generates them""" 
+        print "Creating Bonds"
         self.bondData = bondData  #added this so that bonds can be regerated later if there is a change in the cells
         self.MagCell.clearAllBonds()
         for i in range(len(bondData)):
@@ -1004,14 +1065,41 @@ class vtkPanel(wx.Panel):
             atom2 = cell2.atomAtIndex(bondData[i][4] - 1)
 
             if not self.MagCell.hasBond(atom1, atom2):
-                self.MagCell.addBond(atom1, atom2)
+                self.MagCell.addBond(atom1, atom2, bondData[i][8])
 
+        print "drawing"
         self.draw()
 
+    def OnPick(self, obj):
+        if self.mode:
+            self.mode.OnPick(obj)
+#        self.mode = None
+
+            
+    def OnChooseBondMode(self, event):
+        self.mode = BondMode()
+        
+    def OnChooseNormalMode(self, event):
+        self.mode = None
+
+class BondMode():
+    def __init__(self):
+        self.atom1 = None
+    
+    def OnPick(self, obj):
+        print "Pick:", obj
+        if isinstance(obj, Atom):
+            if self.atom1==None:
+                self.atom1 = obj
+                print "atom 1 =", self.atom1 
+            else:
+                send(signal = "Bond Added", sender = "VTK Window", atom1 = self.atom1, atom2 = obj)
+#                print "OK!!!!!!!!!!!!!"
+                self.atom1 = None
 
 class Frame(wx.Frame):
     def __init__(self, parent, id):
-        wx.Frame.__init__(self, parent, id, 'Magnetic Cell', size= (900,800))
+        wx.Frame.__init__(self, parent, id, 'Magnetic Cell', size= (700,700))
 
         self.vtkPanel = vtkPanel(self, -1)
         
@@ -1041,7 +1129,7 @@ class Frame(wx.Frame):
 #        event.Skip()
         
     def AddMenus(self):
-                #Add Menus
+        #Add Menus
         menuBar = wx.MenuBar()
         
         #Add File Menu
@@ -1060,11 +1148,19 @@ class Frame(wx.Frame):
         menuBar.Append(modelMenu, "Model")
         self.SetMenuBar(menuBar)
         
+        #Add Mode Menu
+        modeMenu = wx.Menu()
+        normalModeMenuItem = modeMenu.Append(wx.NewId(), "Normal Selection")
+        bondModeMenuItem = modeMenu.Append(wx.NewId(), "Bond Creation")
+        menuBar.Append(modeMenu, "Mode")
+        
         #Bind Events
         self.Bind(wx.EVT_MENU, self.OnCloseMe, quitMenuItem)
         self.Bind(wx.EVT_MENU, self.OnSave, saveMenuItem)
         self.Bind(wx.EVT_MENU, self.OnOpenFile, openMenuItem)
         self.Bind(wx.EVT_MENU, self.vtkPanel.OnDelete, deleteMenuItem)
+        self.Bind(wx.EVT_MENU, self.vtkPanel.OnChooseNormalMode, normalModeMenuItem)
+        self.Bind(wx.EVT_MENU, self.vtkPanel.OnChooseBondMode, bondModeMenuItem)
 #        self.Bind(wx.EVT_MENU, self.OnNew, newMenuItem)
     
  #   def OnNew(self, event):
@@ -1098,10 +1194,10 @@ class App(wx.App):
         self.frame = Frame(None, -1)
         self.frame.Show()
         self.SetTopWindow(self.frame)
-        frame1 = wx.Frame(self.frame, -1, size = (455,245))
+        frame1 = wx.Frame(self.frame, -1, size = (460,245))
         atomPanel(frame1, -1)
         frame1.Show()
-        frame2 = wx.Frame(self.frame, -1, 'Bonds', size = (575,160))
+        frame2 = wx.Frame(self.frame, -1, 'Bonds', size = (655,200))
         bondPanel(frame2, -1)
         frame2.Show()
 #        dialog = jijDialog()
@@ -1122,7 +1218,7 @@ class App(wx.App):
 
 
 if __name__ == '__main__':
-    app = App()
+    app = App(False)
     app.MainLoop()
     
     
