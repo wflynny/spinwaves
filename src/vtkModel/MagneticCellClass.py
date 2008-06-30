@@ -207,11 +207,20 @@ class MagneticCell():
     def getBonds(self):
         return self.Bonds
     
-    def hasBond(self, atom1, atom2):
+    def hasBond(self, atom1, atom2, jMatrix):
+       # print "her in hasBond()"
         for eachBond in self.getBonds():
+#            print "her in hasBond()"
             if eachBond.getAtom1() == atom1 or eachBond.getAtom2() == atom1:
                 if eachBond.getAtom1() == atom2 or eachBond.getAtom2() == atom2:
-                    return True
+#                    print "herherhehrhere"
+                    if jMatrix and eachBond.getJMatrix():
+                        if eachBond.getJMatrix().all() == jMatrix.all():
+                            print "True"
+                            return True
+                    elif (not jMatrix) and (not eachBond.getJMatrix()):
+                        print "True"
+                        return True
         return False
   
 class BondConstraint():

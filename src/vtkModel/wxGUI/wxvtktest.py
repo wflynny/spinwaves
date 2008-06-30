@@ -992,34 +992,69 @@ class vtkPanel(wx.Panel):
 #            print i, AllAtoms[i]
 #        self.MagCell.addBond(AllAtoms[0], AllAtoms[1])
            
-    def draw(self):
+    def draw(self, progDialog = None):
         #remove old renderer
 #        if self.ren1 != None:
  #           self.window.GetRenderWindow().RemoveRenderer(self.ren1)
         
+        destroy = False
+        if not progDialog:
+            progDialog = wx.ProgressDialog("Progress", "Rendering Model...", style = wx.PD_APP_MODAL)
+            destroy = True
+        
+        #progDialog disables the render window, but we still want it to render
+#       self.window.SetRenderWhenDisabled(True)
+        
         # a renderer for the data
         ren1 = vtkRenderer()
         ren1.SetBackground(1,1,1)
+        ren1.SetAllocatedRenderTime(3)
+        
+        progDialog.Update(5, "Rendering Model...")
         
         #Add the renderer to the window
         self.window.GetRenderWindow().AddRenderer(ren1)
             
         #Create vtkDrawer
         self.drawer = vtkDrawer(ren1)
-        
+           
         #Add my picker
         if self.picker:
             self.picker.removeObserver()
         self.picker = Picker(self.drawer, self.window._Iren, ren1)
 
+        progDialog.Update(10)
+
         #Draw the Magnetic Cell
         self.drawer.drawMagneticCell(self.MagCell)
         
-        self.window.setUpRender()    
+        progDialog.Update(30)
+        
+#        self.window.setUpRender()   
+        
 
         self.drawer.addAxes()
         self.drawer.labelAtoms(self.MagCell)
-        self.window.Render()
+        
+#        self.window.setUpRender()
+        
+        progDialog.Update(75)
+        print "reset Cam"
+        
+        
+        if destroy:
+            progDialog.Destroy()
+
+        #Rendering does not work when the window is disabled which it seems
+        #to be when the progress dialog exits
+
+#        self.window.SetRenderWhenDisabled(False)
+        ren1.ResetCamera()
+#        self.window.SetRenderWhenDisabled(True)
+#        self.window.Render()
+#        self.window.SetRenderWhenDisabled(False)
+        self.window._Iren.LeftButtonPressEvent() #This trigers a render, there may be better ways to do this
+        self.window._Iren.LeftButtonReleaseEvent()
         
     def openCif(self, filename):
         self.MagCell = magneticCellFromCif(filename)
@@ -1031,6 +1066,9 @@ class vtkPanel(wx.Panel):
     def OnCellChange(self,spaceGroup,a,b,c,alpha, beta, gamma, magNa, magNb, magNc, cutNa, cutNb, cutNc, atomData):
         """For now this just creates a new Magnetic Cell and draws it"""
         print "Making Magentic Cell"
+        
+        progDialog = wx.ProgressDialog("Progress", "Generating Magnetic Cell...", style = wx.PD_APP_MODAL)
+        
         spaceGroup = SpaceGroups.GetSpaceGroup(spaceGroup)
         
         unitcell = Cell(spaceGroup, 0,0,0, a, b, c, alpha, gamma, beta)
@@ -1038,39 +1076,66 @@ class vtkPanel(wx.Panel):
         for i in range(len(atomData)):
             unitcell.generateAtoms((float(atomData[i][2]), float(atomData[i][3]), float(atomData[i][4])), atomData[i][0])
 
+        progDialog.Update(40)
+        
         print "Unit Cell Generated"
         
         #Create a Magnetic Cell
         self.MagCell = MagneticCell(unitcell, magNa, magNb, magNc, spaceGroup)
         print "Magcell created"
         
+        progDialog.Update(99)
+        
         #Regenerate Bonds as well
         try:
-            self.OnBondChange(self.bondData)
+            self.OnBondChange(self.bondData, progDialog)
         except:#If there are not bonds yet
             print "No Bonds yet"
-            self.draw()
+            self.draw(progDialog)
         print "Drawn"
+        
+        progDialog.Destroy()
 
-    def OnBondChange(self, bondData):
+    def OnBondChange(self, bondData, progDialog = None):
         """Checks if each bond exists, if not, it generates them""" 
         print "Creating Bonds"
-        self.bondData = bondData  #added this so that bonds can be regerated later if there is a change in the cells
+        destroy = False
+        if not progDialog:
+            progDialog = wx.ProgressDialog("Progress", "Creating Bonds...", style = wx.PD_APP_MODAL)
+            destroy = True
+        
+        
+        self.bondData = bondData  #added this so that bonds can be regenerated later if there is a change in the cells
         self.MagCell.clearAllBonds()
+        
+        progDialog.Update(5,"Creating Bonds...")
+        progFrac = 99/(len(bondData) + .01)
+        progress = 0
         for i in range(len(bondData)):
             cell1 = self.MagCell.cellAtPosition((bondData[i][1], bondData[i][2], bondData[i][3]))
             cell2 = self.MagCell.cellAtPosition((bondData[i][5], bondData[i][6], bondData[i][7]))
             
             atom1 = cell1.atomAtIndex(bondData[i][0] - 1)
             atom2 = cell2.atomAtIndex(bondData[i][4] - 1)
+            
+            progDialog.Update(progress)
 
-            if not self.MagCell.hasBond(atom1, atom2):
+            if not self.MagCell.hasBond(atom1, atom2, bondData[i][8]):
                 self.MagCell.addBond(atom1, atom2, bondData[i][8])
+            
+            
+            progress += progFrac
+            print progress
+            progDialog.Update(progress)
 
         print "drawing"
-        self.draw()
+        self.draw(progDialog)
+        
+        if destroy:
+            progDialog.Destroy()
 
     def OnPick(self, obj):
+        print "OnPIck"
         if self.mode:
             self.mode.OnPick(obj)
 #        self.mode = None

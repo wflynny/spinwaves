@@ -46,4 +46,7 @@ class Bond():
     
     def getRGBColor(self):
         return self.r, self.g, self.b
+    
+    def getJMatrix(self):
+        return self.jMat
 

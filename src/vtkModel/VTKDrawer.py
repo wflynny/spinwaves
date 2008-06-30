@@ -11,7 +11,7 @@ class vtkDrawer():
     
     
     #Default Sphere resolution
-    defualt_Sphere_Res = 80
+    defualt_Sphere_Res = 20
     defualtBondRadius = .025
     
     
@@ -31,7 +31,7 @@ class vtkDrawer():
         sphereMap.SetInput(sphere_Source.GetOutput())
             
         # actor coordinates geometry, properties, transformation
-        sphere_Actor = vtkActor()
+        sphere_Actor = vtkLODActor()
         sphere_Actor.SetMapper(sphereMap)
         sphere_Actor.GetProperty().SetColor(atom.getColor())
             
@@ -70,7 +70,7 @@ class vtkDrawer():
         cylinderMap.SetInput(cylinder.GetOutput())
         
         #create cylinder actor
-        aCylinder = vtkActor()
+        aCylinder = vtkLODActor()
         aCylinder.SetMapper(cylinderMap)
         aCylinder.GetProperty().SetColor(0, .1, .6)
         aCylinder.SetScale(.2, distance, .2)
@@ -129,7 +129,7 @@ class vtkDrawer():
         boxMap.SetInput(box.GetOutput())
         
         #create actor
-        abox = vtkActor()
+        abox = vtkLODActor()
         abox.SetMapper(boxMap)
         abox.GetProperty().SetColor(0, .1, .6)
         abox.GetProperty().SetOpacity(.1)
@@ -185,7 +185,7 @@ class vtkDrawer():
         axes.SetOrigin(0, 0, 0)
         axesMapper = vtkPolyDataMapper()
         axesMapper.SetInputConnection(axes.GetOutputPort())
-        axesActor = vtkActor()
+        axesActor = vtkLODActor()
         axesActor.PickableOff()
         axesActor.SetMapper(axesMapper)
         self.ren1.AddActor(axesActor)
