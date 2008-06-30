@@ -13,6 +13,7 @@ from vtkModel.CellClass import *
 #import random
 from wx.py.dispatcher import connect, send
 import vtkModel.SpaceGroups
+import time
 
 
 
@@ -997,10 +998,12 @@ class vtkPanel(wx.Panel):
 #        if self.ren1 != None:
  #           self.window.GetRenderWindow().RemoveRenderer(self.ren1)
         
-        destroy = False
-        if not progDialog:
-            progDialog = wx.ProgressDialog("Progress", "Rendering Model...", style = wx.PD_APP_MODAL)
-            destroy = True
+#        a = wx.ClientDC(self.window)
+        
+#        destroy = False
+#        if not progDialog:
+#            progDialog = wx.ProgressDialog("Progress", "Rendering Model...", parent = self, style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
+#            destroy = True
         
         #progDialog disables the render window, but we still want it to render
 #       self.window.SetRenderWhenDisabled(True)
@@ -1010,7 +1013,7 @@ class vtkPanel(wx.Panel):
         ren1.SetBackground(1,1,1)
         ren1.SetAllocatedRenderTime(3)
         
-        progDialog.Update(5, "Rendering Model...")
+#        progDialog.Update(5, "Rendering Model...")
         
         #Add the renderer to the window
         self.window.GetRenderWindow().AddRenderer(ren1)
@@ -1023,12 +1026,12 @@ class vtkPanel(wx.Panel):
             self.picker.removeObserver()
         self.picker = Picker(self.drawer, self.window._Iren, ren1)
 
-        progDialog.Update(10)
+#        progDialog.Update(10)
 
         #Draw the Magnetic Cell
         self.drawer.drawMagneticCell(self.MagCell)
         
-        progDialog.Update(30)
+#        progDialog.Update(30)
         
 #        self.window.setUpRender()   
         
@@ -1038,23 +1041,22 @@ class vtkPanel(wx.Panel):
         
 #        self.window.setUpRender()
         
-        progDialog.Update(75)
-        print "reset Cam"
-        
-        
-        if destroy:
-            progDialog.Destroy()
+#        progDialog.Update(100)
+#        print "reset Cam"
+#        if destroy:
+#            progDialog.Destroy()
 
         #Rendering does not work when the window is disabled which it seems
         #to be when the progress dialog exits
 
 #        self.window.SetRenderWhenDisabled(False)
         ren1.ResetCamera()
-#        self.window.SetRenderWhenDisabled(True)
 #        self.window.Render()
+#        self.window.SetRenderWhenDisabled(True)
+        self.window.Render()
 #        self.window.SetRenderWhenDisabled(False)
-        self.window._Iren.LeftButtonPressEvent() #This trigers a render, there may be better ways to do this
-        self.window._Iren.LeftButtonReleaseEvent()
+#        self.window._Iren.LeftButtonPressEvent() #This trigers a render, there may be better ways to do this
+#        self.window._Iren.LeftButtonReleaseEvent()
         
     def openCif(self, filename):
         self.MagCell = magneticCellFromCif(filename)
@@ -1067,7 +1069,7 @@ class vtkPanel(wx.Panel):
         """For now this just creates a new Magnetic Cell and draws it"""
         print "Making Magentic Cell"
         
-        progDialog = wx.ProgressDialog("Progress", "Generating Magnetic Cell...", style = wx.PD_APP_MODAL)
+#        progDialog = wx.ProgressDialog("Progress", "Generating Magnetic Cell...", parent = self, style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
         
         spaceGroup = SpaceGroups.GetSpaceGroup(spaceGroup)
         
@@ -1101,7 +1103,7 @@ class vtkPanel(wx.Panel):
         print "Creating Bonds"
         destroy = False
         if not progDialog:
-            progDialog = wx.ProgressDialog("Progress", "Creating Bonds...", style = wx.PD_APP_MODAL)
+            progDialog = wx.ProgressDialog("Progress", "Creating Bonds...", parent = self, style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
             destroy = True
         
         
@@ -1135,7 +1137,7 @@ class vtkPanel(wx.Panel):
             progDialog.Destroy()
 
     def OnPick(self, obj):
-        print "OnPIck"
+        print "OnPick"
         if self.mode:
             self.mode.OnPick(obj)
 #        self.mode = None
