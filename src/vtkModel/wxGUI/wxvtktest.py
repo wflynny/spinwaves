@@ -14,6 +14,7 @@ from vtkModel.CellClass import *
 from wx.py.dispatcher import connect, send
 import vtkModel.SpaceGroups
 import time
+from Session import Session
 
 
 
@@ -30,8 +31,10 @@ import time
 #Atom and cell info window
 
 class atomPanel(wx.Panel):
-    def __init__(self, parent, id):
+    def __init__(self, parent, id, session):
         wx.Panel.__init__(self, parent, id)
+        
+        self.session = session
         
         #Add Space Group
         spaceGroupLabel = wx.StaticText(self, -1, "Space Group:")
@@ -40,7 +43,7 @@ class atomPanel(wx.Panel):
         self.spaceGroupSpinner.SetValue(1)
         
         #Add Atom List
-        self.atomList = atomListGrid(self, -1)
+        self.atomList = atomListGrid(self, -1, session = self.session)
          
         #Add a button on upper right to generate new image
         self.genButton = wx.Button(self, -1, "Generate")
@@ -396,93 +399,14 @@ class atomPanel(wx.Panel):
         self.atomList.SetNumberRows(rows)
 #        self.atomList.GetTable().SetNumberRows(rows)
         event.Skip()
-        
-    
-        
-    
-class atomTable(wx.grid.PyGridTableBase):
-    def __init__(self):
-        wx.grid.PyGridTableBase.__init__(self)
-        self.colLabels = ['   Name   ', 'Atomic Number','       x       ', '       y       ','       z       ']
-        self.rowLabels=['Atom 1']
-        
-        self.data = [
-                     ['','','','','']#Row 1
-                     ]
-    
-    def GetNumberRows(self):
-        return len(self.data)
-    def AppendRows(self, num):
-        for i in range(num):
-            self.AppendRow()
-        return True
-    def GetNumberCols(self):
-        return len(self.colLabels)
-    def GetColLabelValue(self, col):
-        return self.colLabels[col]
-    def GetRowLabelValue(self, row):
-        return self.rowLabels[row]
-    def IsEmptyCell(self, row, col):
-        try:
-            return not self.data[row][col]
-        except IndexError:
-            return True
-    # Get/Set values in the table.  The Python version of these
-    # methods can handle any data-type, (as long as the Editor and
-    # Renderer understands the type too,) not just strings as in the
-    # C++ version.
-    def GetValue(self, row, col):
-        try:
-            return self.data[row][col]
-        except IndexError:
-            return ''
-    def SetValue(self, row, col, value):
-        try:
-            self.data[row][col] = value
-        except IndexError:
-            # add a new row
-            self.AppendRow()
-            self.data[row][col]=value
-        return
-    
-    def AppendRow(self):
-            self.data.append([''] * self.GetNumberCols())
-            self.rowLabels.append('Atom ' + str(self.GetNumberRows()))
-
-            # tell the grid we've added a row
-            msg = wx.grid.GridTableMessage(self,            # The table
-                    wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED, # what we did to it
-                    1                                       # how many
-                    )
-            self.GetView().ProcessTableMessage(msg)
-            return True
-
-    def DeleteRows(self,pos=0,numRows=1):
-        if numRows>=0 and numRows<=self.GetNumberRows():
-            del self.data[pos:pos+numRows]
-            msg = wx.grid.GridTableMessage(self,            # The table
-            wx.grid.GRIDTABLE_NOTIFY_ROWS_DELETED, # what we did to it
-            pos,numRows                                     # how many
-            )
-            #msg = wx.grid.GridTableMessage(self, 0, numRows)
-            self.GetView().ProcessTableMessage(msg)
-            
-            self.UpdateValues()
-            return True
-        else:
-            return False
-        
-    def UpdateValues( self ):
-            """Update all displayed values"""
-            msg =wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
-            self.GetView().ProcessTableMessage(msg)
 
 
 class atomListGrid(wx.grid.Grid):
-    def __init__(self, parent, id):
+    def __init__(self, parent, id, session):
         wx.grid.Grid.__init__(self, parent, id)
-        self.table = atomTable()
-        self.SetTable(self.table)
+        self.session = session
+        self.SetTable(self.session.getAtomTable())
+        self.table = session.getAtomTable()
         self.AutoSize()
     def SetNumberRows(self, num):
         diff = num - self.table.GetNumberRows()
@@ -495,100 +419,11 @@ class atomListGrid(wx.grid.Grid):
         return diff
 
 
-
-
-
 #Bond information window
-class bondTable(wx.grid.PyGridTableBase):
-    def __init__(self):
-        wx.grid.PyGridTableBase.__init__(self)
-        self.colLabels = ['Atom1 Number', '   Na   ','   Nb   ', '   Nc   ', 'Atom2 Number', '   Na   ','   Nb   ', '   Nc   ', ' Jij Matrix ', 'On']
-        self.rowLabels=['Bond 1']
-        
-        self.data = [
-                     ['','','','','','','','','','']#Row 1
-                     ]
-    
-    def GetNumberRows(self):
-        return len(self.data)
-    def AppendRows(self, num):
-        for i in range(num):
-            self.AppendRow()
-        return True
-    def GetNumberCols(self):
-        return len(self.colLabels)
-    def GetColLabelValue(self, col):
-        return self.colLabels[col]
-    def GetRowLabelValue(self, row):
-        return self.rowLabels[row]
-    def IsEmptyCell(self, row, col):
-        try:
-            return not self.data[row][col]
-        except IndexError:
-            return True
-        except ValueError: #Jij Matrix
-            return False
-    # Get/Set values in the table.  The Python version of these
-    # methods can handle any data-type, (as long as the Editor and
-    # Renderer understands the type too,) not just strings as in the
-    # C++ version.
-    def GetValue(self, row, col):
-        try:
-            return self.data[row][col]
-        except IndexError:
-            return ''
-    def SetValue(self, row, col, value):
-        try:
-            self.data[row][col] = value
-        except IndexError:
-            # add a new row
-            self.AppendRow()
-            self.data[row][col]=value
-        return
-    
- #   def AppendRows(self, numRows):
- #       for i in range(numRows):
- #           self.AppendRow()
- #       return True
-    
-    def AppendRow(self):
-            row = [''] * (self.GetNumberCols())
-            self.data.append(row)
-            self.rowLabels.append('Bond ' + str(self.GetNumberRows()))
-
-            # tell the grid we've added a row
-            msg = wx.grid.GridTableMessage(self,            # The table
-                    wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED, # what we did to it
-                    1                                       # how many
-                    )
-            self.GetView().ProcessTableMessage(msg)
-            return True
-    
-    def DeleteRows(self,pos=0,numRows=1):
-        if numRows>=0 and numRows<=self.GetNumberRows():
-            del self.data[pos:pos+numRows]
-            msg = wx.grid.GridTableMessage(self,            # The table
-            wx.grid.GRIDTABLE_NOTIFY_ROWS_DELETED, # what we did to it
-            pos,numRows                                     # how many
-            )
-            #msg = wx.grid.GridTableMessage(self, 0, numRows)
-            self.GetView().ProcessTableMessage(msg)
-            
-            self.UpdateValues()
-            return True
-        else:
-            return False
-        
-    def UpdateValues( self ):
-            """Update all displayed values"""
-            msg =wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
-            self.GetView().ProcessTableMessage(msg)
-
-
 class bondListGrid(wx.grid.Grid):
-    def __init__(self, parent, id):
+    def __init__(self, parent, id, session):
         wx.grid.Grid.__init__(self, parent, id)
-        self.table = bondTable()
+        self.table = session.getBondTable()
         self.SetTable(self.table)
         self.AutoSize()
         
@@ -639,9 +474,12 @@ class bondListGrid(wx.grid.Grid):
 #        wx.grid.Grid.ForceRefresh(self)
 
 class bondPanel(wx.Panel):
-    def __init__(self, parent, id):
+    def __init__(self, parent, id, session):
         wx.Panel.__init__(self, parent, id)
-        self.bondList = bondListGrid(self, -1)
+        
+        self.session = session
+        
+        self.bondList = bondListGrid(self, -1, session)
         
         self.bondSpinner = wx.SpinCtrl(self, -1, "")
         self.bondSpinner.SetRange(1,100)
@@ -922,8 +760,9 @@ class jijDialog(wx.Dialog):
        
 
 class vtkPanel(wx.Panel):
-    def __init__(self, parent, id):
+    def __init__(self, parent, id, session):
         wx.Panel.__init__(self, parent)
+        self.session = session
         self.initVTKWindow()
         self.bindEvents()
         self.mode = None
@@ -948,7 +787,7 @@ class vtkPanel(wx.Panel):
  #       self.window.Enable(1)
     
         self.window.AddObserver("ExitEvent", lambda o,e,f=self: f.Close())
-        self.window.Render()
+#        self.window.Render()
         
 #        self.initializeVTKData()
 #        self.draw
@@ -1000,10 +839,10 @@ class vtkPanel(wx.Panel):
         
 #        a = wx.ClientDC(self.window)
         
-#        destroy = False
-#        if not progDialog:
-#            progDialog = wx.ProgressDialog("Progress", "Rendering Model...", parent = self, style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
-#            destroy = True
+        destroy = False
+        if not progDialog:
+            progDialog = wx.ProgressDialog("Progress", "Rendering Model...", parent = self, style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
+            destroy = True
         
         #progDialog disables the render window, but we still want it to render
 #       self.window.SetRenderWhenDisabled(True)
@@ -1013,7 +852,7 @@ class vtkPanel(wx.Panel):
         ren1.SetBackground(1,1,1)
         ren1.SetAllocatedRenderTime(3)
         
-#        progDialog.Update(5, "Rendering Model...")
+        progDialog.Update(5, "Rendering Model...")
         
         #Add the renderer to the window
         self.window.GetRenderWindow().AddRenderer(ren1)
@@ -1026,25 +865,24 @@ class vtkPanel(wx.Panel):
             self.picker.removeObserver()
         self.picker = Picker(self.drawer, self.window._Iren, ren1)
 
-#        progDialog.Update(10)
+        progDialog.Update(10)
 
         #Draw the Magnetic Cell
-        self.drawer.drawMagneticCell(self.MagCell)
+        self.drawer.drawMagneticCell(self.session.getMagneticCell())
         
-#        progDialog.Update(30)
+        progDialog.Update(30)
         
-#        self.window.setUpRender()   
+        self.window.setUpRender()   
         
 
         self.drawer.addAxes()
-        self.drawer.labelAtoms(self.MagCell)
+        self.drawer.labelAtoms(self.session.getMagneticCell())
         
-#        self.window.setUpRender()
         
-#        progDialog.Update(100)
+        progDialog.Update(100)
 #        print "reset Cam"
-#        if destroy:
-#            progDialog.Destroy()
+        if destroy:
+            progDialog.Destroy()
 
         #Rendering does not work when the window is disabled which it seems
         #to be when the progress dialog exits
@@ -1052,24 +890,23 @@ class vtkPanel(wx.Panel):
 #        self.window.SetRenderWhenDisabled(False)
         ren1.ResetCamera()
 #        self.window.Render()
-#        self.window.SetRenderWhenDisabled(True)
-        self.window.Render()
-#        self.window.SetRenderWhenDisabled(False)
+        self.window.SetRenderWhenDisabled(True)
+        self.window.setUpRender()
+        self.window.SetRenderWhenDisabled(False)
 #        self.window._Iren.LeftButtonPressEvent() #This trigers a render, there may be better ways to do this
 #        self.window._Iren.LeftButtonReleaseEvent()
         
-    def openCif(self, filename):
-        self.MagCell = magneticCellFromCif(filename)
-        self.draw()
     
     #def getStatusText(self):
       #  return self.picker.getPicked()
     
     def OnCellChange(self,spaceGroup,a,b,c,alpha, beta, gamma, magNa, magNb, magNc, cutNa, cutNb, cutNc, atomData):
-        """For now this just creates a new Magnetic Cell and draws it"""
+        """For now this just creates a new Magnetic Cell and draws it
+        This could be transfered to the Session class but a progress bar would be
+        more difficult then"""
         print "Making Magentic Cell"
         
-#        progDialog = wx.ProgressDialog("Progress", "Generating Magnetic Cell...", parent = self, style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
+        progDialog = wx.ProgressDialog("Progress", "Generating Magnetic Cell...", parent = self, style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
         
         spaceGroup = SpaceGroups.GetSpaceGroup(spaceGroup)
         
@@ -1083,58 +920,56 @@ class vtkPanel(wx.Panel):
         print "Unit Cell Generated"
         
         #Create a Magnetic Cell
-        self.MagCell = MagneticCell(unitcell, magNa, magNb, magNc, spaceGroup)
+        self.session.setMagneticCell(MagneticCell(unitcell, magNa, magNb, magNc, spaceGroup))
         print "Magcell created"
         
-        progDialog.Update(99)
+        progDialog.Update(100)
+        
+        progDialog.Destroy()
         
         #Regenerate Bonds as well
         try:
-            self.OnBondChange(self.bondData, progDialog)
+            self.OnBondChange(self.bondData)
         except:#If there are not bonds yet
             print "No Bonds yet"
-            self.draw(progDialog)
+            self.draw()
         print "Drawn"
         
-        progDialog.Destroy()
 
-    def OnBondChange(self, bondData, progDialog = None):
+    def OnBondChange(self, bondData):
         """Checks if each bond exists, if not, it generates them""" 
         print "Creating Bonds"
-        destroy = False
-        if not progDialog:
-            progDialog = wx.ProgressDialog("Progress", "Creating Bonds...", parent = self, style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
-            destroy = True
-        
+
+        progDialog = wx.ProgressDialog("Progress", "Creating Bonds...", parent = self, style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
         
         self.bondData = bondData  #added this so that bonds can be regenerated later if there is a change in the cells
-        self.MagCell.clearAllBonds()
+        self.session.getMagneticCell().clearAllBonds()
         
         progDialog.Update(5,"Creating Bonds...")
         progFrac = 99/(len(bondData) + .01)
         progress = 0
         for i in range(len(bondData)):
-            cell1 = self.MagCell.cellAtPosition((bondData[i][1], bondData[i][2], bondData[i][3]))
-            cell2 = self.MagCell.cellAtPosition((bondData[i][5], bondData[i][6], bondData[i][7]))
+            cell1 = self.session.getMagneticCell().cellAtPosition((bondData[i][1], bondData[i][2], bondData[i][3]))
+            cell2 = self.session.getMagneticCell().cellAtPosition((bondData[i][5], bondData[i][6], bondData[i][7]))
             
             atom1 = cell1.atomAtIndex(bondData[i][0] - 1)
             atom2 = cell2.atomAtIndex(bondData[i][4] - 1)
             
             progDialog.Update(progress)
 
-            if not self.MagCell.hasBond(atom1, atom2, bondData[i][8]):
-                self.MagCell.addBond(atom1, atom2, bondData[i][8])
+            if not self.session.getMagneticCell().hasBond(atom1, atom2, bondData[i][8]):
+                self.session.getMagneticCell().addBond(atom1, atom2, bondData[i][8])
             
             
             progress += progFrac
             print progress
             progDialog.Update(progress)
 
-        print "drawing"
-        self.draw(progDialog)
         
-        if destroy:
-            progDialog.Destroy()
+        progDialog.Update(100)
+        progDialog.Destroy()
+        print "drawing"
+        self.draw()
 
     def OnPick(self, obj):
         print "OnPick"
@@ -1165,10 +1000,11 @@ class BondMode():
                 self.atom1 = None
 
 class Frame(wx.Frame):
-    def __init__(self, parent, id):
+    def __init__(self, parent, id, session):
         wx.Frame.__init__(self, parent, id, 'Magnetic Cell', size= (700,700))
 
-        self.vtkPanel = vtkPanel(self, -1)
+        self.session = session
+        self.vtkPanel = vtkPanel(self, -1, session)
         
         #Add Menus
         self.AddMenus()
@@ -1239,17 +1075,17 @@ class Frame(wx.Frame):
         self.Close(True)
     
     def OnSave(self, event):
-        saveDialog = wx.FileDialog(self, "Save File", style = wx.SAVE)
+        saveDialog = wx.FileDialog(self, "Save File", style = wx.SAVE, wildcard = "*.xml")
         if saveDialog.ShowModal() == wx.ID_OK:
-            print saveDialog.GetPath()
+            self.session.saveSessionToXML(saveDialog.GetPath())
         saveDialog.Destroy()
         
     def OnOpenFile(self, event):
         saveDialog = wx.FileDialog(self, "Open File", style = wx.OPEN, wildcard = "*.cif")
         if saveDialog.ShowModal() == wx.ID_OK:
-            self.vtkPanel.openCif(saveDialog.GetPath())
+            self.session.openCif(saveDialog.GetPath())
         saveDialog.Destroy()
-        
+    
 
 
 
@@ -1258,14 +1094,15 @@ class App(wx.App):
         wx.App.__init__(self, redirect, filename)
     
     def OnInit(self):
-        self.frame = Frame(None, -1)
+        session = Session()
+        self.frame = Frame(None, -1, session = session)
         self.frame.Show()
         self.SetTopWindow(self.frame)
         frame1 = wx.Frame(self.frame, -1, size = (460,245))
-        atomPanel(frame1, -1)
+        atomPanel(frame1, -1, session = session)
         frame1.Show()
         frame2 = wx.Frame(self.frame, -1, 'Bonds', size = (655,200))
-        bondPanel(frame2, -1)
+        bondPanel(frame2, -1, session = session)
         frame2.Show()
 #        dialog = jijDialog()
 #        result = dialog.ShowModal()

@@ -351,7 +351,7 @@ class wxVTKRenderWindowInteractor(baseClass):
         # wx should continue event processing after this handler.
         # We call this BEFORE Render(), so that if Render() raises
         # an exception, wx doesn't re-call OnPaint repeatedly.
-        print "ONPAINT"
+#        print "ONPAINT"
         event.Skip()
         
         dc = wx.PaintDC(self)
@@ -589,7 +589,7 @@ class wxVTKRenderWindowInteractor(baseClass):
         RenderAllowed = 1
         
         if not self.__RenderWhenDisabled:
-            print "RenderWhwn Disabled false"
+  #          print "RenderWhwn Disabled false"
             # the user doesn't want us to render when the toplevel frame
             # is disabled - first find the top level parent
             topParent = wx.GetTopLevelParent(self)
@@ -598,7 +598,7 @@ class wxVTKRenderWindowInteractor(baseClass):
                 # if it's not enabeld, RenderAllowed will be false
                 RenderAllowed = topParent.IsEnabled()
             
-        print "RenderAllowed", RenderAllowed
+ #       print "RenderAllowed", RenderAllowed
         if RenderAllowed:
             if self.__handle and self.__handle == self.GetHandle():
                 self._Iren.GetRenderWindow().Render()

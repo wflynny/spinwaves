@@ -104,4 +104,22 @@ class Cell():
             atom = Atom(self, coord[0], coord[1], coord[2], description, radius, r,g,b)
             self.addAtom(atom)
 
+    def getA(self):
+        return self.a
+    
+    def getB(self):
+        return self.b
+    
+    def getC(self):
+        return self.c
+    
+    def getAlpha(self):
+        return self.alpha
+    
+    def getBeta(self):
+        return self.beta
+    
+    def getGamma(self):
+        return self.gamma
+    
 

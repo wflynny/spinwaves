@@ -222,7 +222,17 @@ class MagneticCell():
                         print "True"
                         return True
         return False
-  
+
+    def getNa(self):
+        return self.Na
+    
+    def getNb(self):
+        return self.Nb
+    
+    def getNc(self):
+        return self.Nc
+    
+
 class BondConstraint():
     def __init__(self, pos1, pos2, symop):
         self.pos1 = pos1
