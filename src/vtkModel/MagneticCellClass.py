@@ -207,13 +207,10 @@ class MagneticCell():
     def getBonds(self):
         return self.Bonds
     
-    def hasBond(self, atom1, atom2, jMatrix):
-       # print "her in hasBond()"
+    def hasBond(self, atom1, atom2, jMatrix = None):
         for eachBond in self.getBonds():
-#            print "her in hasBond()"
             if eachBond.getAtom1() == atom1 or eachBond.getAtom2() == atom1:
                 if eachBond.getAtom1() == atom2 or eachBond.getAtom2() == atom2:
-#                    print "herherhehrhere"
                     if jMatrix and eachBond.getJMatrix():
                         if eachBond.getJMatrix().all() == jMatrix.all():
                             print "True"
@@ -241,34 +238,34 @@ class BondConstraint():
   
   
   
-def magneticCellFromCif(filename):
-    cf = CifFile.ReadCif(filename)
-    
-    #Assuming all data is in one outter block like NIST examples:
-    data = cf[cf.keys()[0]]
-    
-    #Create a Crystollographic Unit Cell
-    a = data['_cell_length_a']
-    b = data['_cell_length_b']
-    c = data['_cell_length_c']
-    
-    alpha = data['_cell_angle_alpha']
-    gamma = data['_cell_angle_gamma']
-    beta = data['_cell_angle_beta']
-    
-    spaceGroup = SpaceGroups.GetSpaceGroup(int(data['_symmetry_Int_Tables_number']))
-    
-    unitcell = Cell(spaceGroup, 0,0,0, a, b, c, alpha, gamma, beta)
-    
-    atomLabels = data['_atom_site_label']
-#Not Currently used        atomType = data['_atom_site_type_symbol']
-    xPositions = data['_atom_site_fract_x']
-    yPositions = data['_atom_site_fract_y']
-    zPositions = data['_atom_site_fract_z']
-    
-    for i in range(len(atomLabels)):
-        unitcell.generateAtoms((float(xPositions[i]), float(yPositions[i]), float(zPositions[i])), atomLabels[i])
+#def magneticCellFromCif(filename):
+#    cf = CifFile.ReadCif(filename)
+#    
+#    #Assuming all data is in one outter block like NIST examples:
+#    data = cf[cf.keys()[0]]
+#    
+#    #Create a Crystollographic Unit Cell
+#    a = data['_cell_length_a']
+#    b = data['_cell_length_b']
+#    c = data['_cell_length_c']
+#    
+#    alpha = data['_cell_angle_alpha']
+#    gamma = data['_cell_angle_gamma']
+#    beta = data['_cell_angle_beta']
+#    
+#    spaceGroup = SpaceGroups.GetSpaceGroup(int(data['_symmetry_Int_Tables_number']))
+#    
+#    unitcell = Cell(spaceGroup, 0,0,0, a, b, c, alpha, gamma, beta)
+#    
+#    atomLabels = data['_atom_site_label']
+##Not Currently used        atomType = data['_atom_site_type_symbol']
+#    xPositions = data['_atom_site_fract_x']
+#    yPositions = data['_atom_site_fract_y']
+#    zPositions = data['_atom_site_fract_z']
+#    
+#    for i in range(len(atomLabels)):
+#        unitcell.generateAtoms((float(xPositions[i]), float(yPositions[i]), float(zPositions[i])), atomLabels[i])
 
     #Create a Magnetic Cell
-    return MagneticCell(unitcell, 1,1,1, spaceGroup)
+#    return MagneticCell(unitcell, 1,1,1, spaceGroup)
     

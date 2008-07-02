@@ -27,6 +27,9 @@ class Cell():
         
     
     #functions
+    def getSpaceGroup(self):
+        return self.Space_Group
+    
     def atomAtPosition(self,position):
         """Returns the atom at the position if one exists, None otherwise"""
         if self.positionIsInCell(position):

@@ -183,7 +183,30 @@ class atomPanel(wx.Panel):
         #For now, the generate button will create a new magnetic cell
         #which will then be drawn by the vtkPanel
         self.Bind(wx.EVT_BUTTON, self.OnGenerate, self.genButton)
+        connect(self.OnFileLoad, signal = "File Load")
 
+    
+    def OnFileLoad(self, spaceGroup, a, b, c, alpha, beta, gamma, magNa, magNb, magNc, cutNa, cutNb, cutNc, atomData):
+        self.spaceGroupSpinner.SetValue(spaceGroup)
+        self.aText.SetValue(a)
+        self.bText.SetValue(b)
+        self.cText.SetValue(c)
+        self.alphaText.SetValue(alpha)
+        self.betaText.SetValue(beta)
+        self.gammaText.SetValue(gamma)
+        self.naText.SetValue(magNa.__str__())
+        self.nbText.SetValue(magNb.__str__())
+        self.ncText.SetValue(magNc.__str__())
+        self.cutoffNaText.SetValue(cutNa.__str__())
+        self.cutoffNbText.SetValue(cutNb.__str__())
+        self.cutoffNcText.SetValue(cutNc.__str__())
+#        for i in range(len(atomData)):
+#            self.atomList.SetCellValue(i, 0, atomData[i][0].__str__())
+#            self.atomList.SetCellValue(i, 1, atomData[i][1].__str__())
+#            self.atomList.SetCellValue(i, 2, atomData[i][2].__str__())
+#            self.atomList.SetCellValue(i, 3, atomData[i][3].__str__())
+#            self.atomList.SetCellValue(i, 4, atomData[i][4].__str__())
+        
     
     def OnGenerate(self, event):
         failed, a, b, c, alpha, beta, gamma, magNa, magNb, magNc, cutNa, cutNb, cutNc, atomData = self.validate()
@@ -498,8 +521,21 @@ class bondPanel(wx.Panel):
         
         self.Bind(wx.EVT_BUTTON, self.OnGenerate, self.genButton)
         connect(self.OnBondAddition, signal = "Bond Added")
-
-
+#        connect(self.OnFileLoad, signal = "File Load")
+#
+#    def OnFileLoad(self, bondData):
+#        for i in range(len(bondData)):
+#            self.bondList.SetCellValue(i, 0, bondData[i][0])
+#            self.bondList.SetCellValue(i, 1, bondData[i][1])
+#            self.bondList.SetCellValue(i, 2, bondData[i][2])
+#            self.bondList.SetCellValue(i, 3, bondData[i][3])
+#            self.bondList.SetCellValue(i, 4, bondData[i][4])
+#            self.bondList.SetCellValue(i, 5, bondData[i][5])
+#            self.bondList.SetCellValue(i, 6, bondData[i][6])
+#            self.bondList.SetCellValue(i, 7, bondData[i][7])
+#            self.bondList.SetCellValue(i, 8, bondData[i][8])
+#            self.bondList.SetCellValue(i, 9, bondData[i][9])
+    
     def OnBondAddition(self, atom1, atom2):
         """This method is called when another window adds a bond and calls send(signal = "Bond Added"..."""
         cell1 = atom1.getUnitCell()
@@ -797,6 +833,10 @@ class vtkPanel(wx.Panel):
         connect(self.OnCellChange, signal = "Cell Change")
         connect(self.OnBondChange, signal = "Bond Change")
         connect(self.OnPick, signal = "Pick Event")
+        connect(self.OnFileLoad, signal = "File Load")
+    
+    def OnFileLoad(self):
+        self.draw()
     
     def OnKeyEvent(self, event):
         event.Skip()
@@ -906,6 +946,8 @@ class vtkPanel(wx.Panel):
         more difficult then"""
         print "Making Magentic Cell"
         
+        
+        #This shoudl eb moved to session class to get rid of repetative code in load file methods
         progDialog = wx.ProgressDialog("Progress", "Generating Magnetic Cell...", parent = self, style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
         
         spaceGroup = SpaceGroups.GetSpaceGroup(spaceGroup)
@@ -941,29 +983,32 @@ class vtkPanel(wx.Panel):
         print "Creating Bonds"
 
         progDialog = wx.ProgressDialog("Progress", "Creating Bonds...", parent = self, style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
-        
+ 
+ #This should be moved to the session       
         self.bondData = bondData  #added this so that bonds can be regenerated later if there is a change in the cells
-        self.session.getMagneticCell().clearAllBonds()
-        
-        progDialog.Update(5,"Creating Bonds...")
-        progFrac = 99/(len(bondData) + .01)
-        progress = 0
-        for i in range(len(bondData)):
-            cell1 = self.session.getMagneticCell().cellAtPosition((bondData[i][1], bondData[i][2], bondData[i][3]))
-            cell2 = self.session.getMagneticCell().cellAtPosition((bondData[i][5], bondData[i][6], bondData[i][7]))
-            
-            atom1 = cell1.atomAtIndex(bondData[i][0] - 1)
-            atom2 = cell2.atomAtIndex(bondData[i][4] - 1)
-            
-            progDialog.Update(progress)
+#        self.session.getMagneticCell().clearAllBonds()
+#        
+#        progDialog.Update(5,"Creating Bonds...")
+#        progFrac = 99/(len(bondData) + .01)
+#        progress = 0
+#        for i in range(len(bondData)):
+#            cell1 = self.session.getMagneticCell().cellAtPosition((bondData[i][1], bondData[i][2], bondData[i][3]))
+#            cell2 = self.session.getMagneticCell().cellAtPosition((bondData[i][5], bondData[i][6], bondData[i][7]))
+#            
+#            atom1 = cell1.atomAtIndex(bondData[i][0] - 1)
+#            atom2 = cell2.atomAtIndex(bondData[i][4] - 1)
+#            
+#            progDialog.Update(progress)
+#
+#            if not self.session.getMagneticCell().hasBond(atom1, atom2, bondData[i][8]):
+#                self.session.getMagneticCell().addBond(atom1, atom2, bondData[i][8])
+#            
+#            
+#            progress += progFrac
+#            print progress
+#            progDialog.Update(progress)
+        self.session.changeBonds(bondData)
 
-            if not self.session.getMagneticCell().hasBond(atom1, atom2, bondData[i][8]):
-                self.session.getMagneticCell().addBond(atom1, atom2, bondData[i][8])
-            
-            
-            progress += progFrac
-            print progress
-            progDialog.Update(progress)
 
         
         progDialog.Update(100)
@@ -1081,11 +1126,16 @@ class Frame(wx.Frame):
         saveDialog.Destroy()
         
     def OnOpenFile(self, event):
-        saveDialog = wx.FileDialog(self, "Open File", style = wx.OPEN, wildcard = "*.cif")
-        if saveDialog.ShowModal() == wx.ID_OK:
-            self.session.openCif(saveDialog.GetPath())
-        saveDialog.Destroy()
+        openDialog = wx.FileDialog(self, "Open File", style = wx.OPEN, wildcard = "XML Session (*.xml)|*.xml|Crystallographic Information File (*.cif)|*.cif")
+        if openDialog.ShowModal() == wx.ID_OK:
+            index = openDialog.GetFilterIndex()
+            if index == 0:
+                self.session.openXMLSession(openDialog.GetPath())
+            if index == 1:
+                self.session.openCif(openDialog.GetPath())
+        openDialog.Destroy()
     
+
 
 
 
@@ -1104,6 +1154,7 @@ class App(wx.App):
         frame2 = wx.Frame(self.frame, -1, 'Bonds', size = (655,200))
         bondPanel(frame2, -1, session = session)
         frame2.Show()
+
 #        dialog = jijDialog()
 #        result = dialog.ShowModal()
 #        if result == wx.ID_OK:
