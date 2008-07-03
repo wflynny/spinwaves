@@ -33,7 +33,6 @@ class Session():
     def openXMLSession(self, filename):
         doc = xml.dom.minidom.parse(filename)
         
-        
         #Get Main node
         nodes = doc.getElementsByTagName('Spinwaves_Session')
         if len(nodes) == 1:
@@ -77,80 +76,89 @@ class Session():
         alpha = unitCellNode.getAttribute('alpha')
         beta = unitCellNode.getAttribute('beta')
         gamma = unitCellNode.getAttribute('gamma')
-        Na = magCellNode.getAttribute('Na')
-        Nb = magCellNode.getAttribute('Nb')
-        Nc = magCellNode.getAttribute('Nc')
+        Na = int(magCellNode.getAttribute('Na'))
+        Nb = int(magCellNode.getAttribute('Nb'))
+        Nc = int(magCellNode.getAttribute('Nc'))
         
         #Get atoms
         atomNodes = atomsNode.getElementsByTagName('atom')
         atomData = []
-        for atomNode in atomNodes:
-            name = atomNode.getAttribute('Name')
-            atomicNum = atomNode.getAttribute('Atomic_Number')
-            x = atomNode.getAttribute('x')
-            y = atomNode.getAttribute('y')
-            z = atomNode.getAttribute('z')
+        for i in range(len(atomNodes)):
+            name = atomNodes[i].getAttribute('Name')
+            atomicNum = atomNodes[i].getAttribute('Atomic_Number')
+            x = atomNodes[i].getAttribute('x')
+            y = atomNodes[i].getAttribute('y')
+            z = atomNodes[i].getAttribute('z')
             atomData.append([name, atomicNum, x,y,z])
+            self.atomTable.SetValue(i, 0, name)
+            self.atomTable.SetValue(i, 1, atomicNum)
+            self.atomTable.SetValue(i, 2, x)
+            self.atomTable.SetValue(i, 3, y)
+            self.atomTable.SetValue(i, 4, z)
         
         bondNodes = bondsNode.getElementsByTagName('bond')
-        bondData = []
-        for bondNode in bondNodes:
-            print "here"
-            atom1Num = bondNode.getAttribute('Atom1_Number')
-            atom1Na = bondNode.getAttribute('Atom1_Na')
-            atom1Nb = bondNode.getAttribute('Atom1_Nb')
-            atom1Nc = bondNode.getAttribute('Atom1_Nc')
-            atom2Num = bondNode.getAttribute('Atom2_Number')
-            atom2Na = bondNode.getAttribute('Atom2_Na')
-            atom2Nb = bondNode.getAttribute('Atom2_Nb')
-            atom2Nc = bondNode.getAttribute('Atom2_Nc')
-            on = bondNode.getAttribute('On')
+#        bondData = []
+        for i in range(len(bondNodes)):
+            atom1Num = bondNodes[i].getAttribute('Atom1_Number')
+            atom1Na = bondNodes[i].getAttribute('Atom1_Na')
+            atom1Nb = bondNodes[i].getAttribute('Atom1_Nb')
+            atom1Nc = bondNodes[i].getAttribute('Atom1_Nc')
+            atom2Num = bondNodes[i].getAttribute('Atom2_Number')
+            atom2Na = bondNodes[i].getAttribute('Atom2_Na')
+            atom2Nb = bondNodes[i].getAttribute('Atom2_Nb')
+            atom2Nc = bondNodes[i].getAttribute('Atom2_Nc')
+            on = bondNodes[i].getAttribute('On')
+            self.bondTable.SetValue(i, 0, atom1Num)
+            self.bondTable.SetValue(i, 1, atom1Na)
+            self.bondTable.SetValue(i, 2, atom1Nb)
+            self.bondTable.SetValue(i, 3, atom1Nc)
+            self.bondTable.SetValue(i, 4, atom2Num)
+            self.bondTable.SetValue(i, 5, atom2Na)
+            self.bondTable.SetValue(i, 6, atom2Nb)
+            self.bondTable.SetValue(i, 7, atom2Nc)
+            self.bondTable.SetValue(i, 9, on)
             
             #Jmatrix 
-            nodes = bondNode.getElementsByTagName('jMatrix')
+            nodes = bondNodes[i].getElementsByTagName('jMatrix')
             if len(nodes) > 0:   
                 if len(nodes) == 1:
                     jNode = nodes[0]
                 else:#There should only be one of these elements
                     raise Exception('not valid XML Session file')
                 
-                j11 = jNode.getAttribute('j11')
-                j12 = jNode.getAttribute('j12')
-                j13 = jNode.getAttribute('j13')
-                j21 = jNode.getAttribute('j21')
-                j22 = jNode.getAttribute('j22')
-                j23 = jNode.getAttribute('j23')
-                j31 = jNode.getAttribute('j31')
-                j32 = jNode.getAttribute('j32')
-                j33 = jNode.getAttribute('j33')
+                j11 = float(jNode.getAttribute('j11'))
+                j12 = float(jNode.getAttribute('j12'))
+                j13 = float(jNode.getAttribute('j13'))
+                j21 = float(jNode.getAttribute('j21'))
+                j22 = float(jNode.getAttribute('j22'))
+                j23 = float(jNode.getAttribute('j23'))
+                j31 = float(jNode.getAttribute('j31'))
+                j32 = float(jNode.getAttribute('j32'))
+                j33 = float(jNode.getAttribute('j33'))
                 
                 jMatrix = numpy.array([[j11,j12,j12],
                                        [j21,j22,j23],
                                        [j31,j32,j33]])
             else:
                 jMatrix = ''
-            print "here2"  
-            bondData.append([atom1Num, atom1Na, atom1Nb, atom1Nc, atom2Num, atom2Na, atom2Nb, atom2Nc, jMatrix, on])
+            
+            self.bondTable.SetValue(i, 8, jMatrix)
+#            bondData.append([atom1Num, atom1Na, atom1Nb, atom1Nc, atom2Num, atom2Na, atom2Nb, atom2Nc, jMatrix, on])
             
         #Create the Magnetic Cell
-        spaceGroup = SpaceGroups.GetSpaceGroup(spaceGroupInt)
-        unitcell = Cell(spaceGroup, 0,0,0, a, b, c, alpha, gamma, beta)
-        for i in range(len(atomData)):
-            unitcell.generateAtoms((float(atomData[i][2]), float(atomData[i][3]), float(atomData[i][4])), atomData[i][0])
-        self.MagCell = MagneticCell(unitcell, 1,1,1, spaceGroup)
-        self.changeBonds(bondData) 
+#        spaceGroup = SpaceGroups.GetSpaceGroup(spaceGroupInt)
+#        unitcell = Cell(spaceGroup, 0,0,0, a, b, c, alpha, gamma, beta)
+#        for i in range(len(atomData)):
+#            unitcell.generateAtoms((float(atomData[i][2]), float(atomData[i][3]), float(atomData[i][4])), atomData[i][0])
+#        self.MagCell = MagneticCell(unitcell, 1,1,1, spaceGroup)
+#        self.changeBonds(bondData) 
         
-        #test
-        print len(bondData)
-        for i in range(len(bondData)):
-            for j in bondData[i]:
-                print j
+        self.cellChange(spaceGroupInt, a, b, c, alpha, beta, gamma, Na, Nb, Nc, Na, Nb, Nc, atomData)
         
         #Send Message to GUI
-        send(signal = "File Load", sender = "Session", spaceGroup = spaceGroupInt, a = a, b = b, c = c, alpha = alpha, beta = beta, gamma = gamma, magNa = Na, magNb = Nb, magNc = Nc, cutNa = Na, cutNb = Nb, cutNc = Nc, atomData = atomData, bondData = bondData)
+        send(signal = "File Load", sender = "Session", spaceGroup = spaceGroupInt, a = a, b = b, c = c, alpha = alpha, beta = beta, gamma = gamma, magNa = Na, magNb = Nb, magNc = Nc, cutNa = Na, cutNb = Nb, cutNc = Nc)
              
-        
-           
+                
     def changeBonds(self, bondData):
         self.MagCell.clearAllBonds()
         for i in range(len(bondData)):
@@ -168,9 +176,24 @@ class Session():
                 else:
                     if not self.MagCell.hasBond(atom1, atom2):
                         self.MagCell.addBond(atom1, atom2)
+                        
+        send(signal = "Model Change", sender = "Session")
                     
         
+    def cellChange(self,spaceGroupInt,a,b,c,alpha, beta, gamma, magNa, magNb, magNc, cutNa, cutNb, cutNc, atomData):    
+        spaceGroup = SpaceGroups.GetSpaceGroup(spaceGroupInt)
         
+        unitcell = Cell(spaceGroup, 0,0,0, a, b, c, alpha, gamma, beta)
+        
+        for i in range(len(atomData)):
+            unitcell.generateAtoms((float(atomData[i][2]), float(atomData[i][3]), float(atomData[i][4])), atomData[i][0])
+        
+        #Create a Magnetic Cell
+        self.setMagneticCell(MagneticCell(unitcell, magNa, magNb, magNc, spaceGroup))
+        
+        #Regenerate Bonds as well
+        self.changeBonds(self.bondTable.data)
+    
     def openCif(self, filename):
         cf = CifFile.ReadCif(filename)
         
@@ -201,6 +224,10 @@ class Session():
         for i in range(len(atomLabels)):
             unitcell.generateAtoms((float(xPositions[i]), float(yPositions[i]), float(zPositions[i])), atomLabels[i])
             atoms.append([atomLabels[i], 0, float(xPositions[i]), float(yPositions[i]), float(zPositions[i])])
+            self.atomTable.SetValue(i, 0, atomLabels[i])
+            self.atomTable.SetValue(i, 2, xPositions[i])
+            self.atomTable.SetValue(i, 3, yPositions[i])
+            self.atomTable.SetValue(i, 4, zPositions[i])
     
         #Create a Magnetic Cell
         self.MagCell = MagneticCell(unitcell, 1,1,1, spaceGroup)
@@ -210,11 +237,18 @@ class Session():
         Nb = 1
         Nc = 1
         
+        self.cellChange(spaceGroupInt, a, b, c, alpha, beta, gamma, magNa = Na, magNb = Nb, magNc = Nc, cutNa = Na, cutNb = Nb, cutNc = Nc, atomData = atoms)
         #send signal to the cell window to show the info that has been loaded and to vtkWindow to draw it
-        send(signal = "File Load", sender = "Session", spaceGroup = spaceGroupInt, a = a, b = b, c = c, alpha = alpha, beta = beta, gamma = gamma, magNa = Na, magNb = Nb, magNc = Nc, cutNa = Na, cutNb = Nb, cutNc = Nc, atomData = atoms, bondData = [])
+        n =  self.atomTable.GetNumberRows()
+        for i in range(n):
+            print self.atomTable.GetValue(i, 0)
+        send(signal = "File Load", sender = "Session", spaceGroup = spaceGroupInt, a = a, b = b, c = c, alpha = alpha, beta = beta, gamma = gamma, magNa = Na, magNb = Nb, magNc = Nc, cutNa = Na, cutNb = Nb, cutNc = Nc)
+        
+        
 
         #set the values in the tables
-        self.atomTable.SetValue(i, 0, atomData)
+#        self.atomTable.SetValue(i, 0, atomData)
+
 
     
     def saveSessionToXML(self, filename):

@@ -186,7 +186,7 @@ class atomPanel(wx.Panel):
         connect(self.OnFileLoad, signal = "File Load")
 
     
-    def OnFileLoad(self, spaceGroup, a, b, c, alpha, beta, gamma, magNa, magNb, magNc, cutNa, cutNb, cutNc, atomData):
+    def OnFileLoad(self, spaceGroup, a, b, c, alpha, beta, gamma, magNa, magNb, magNc, cutNa, cutNb, cutNc):
         self.spaceGroupSpinner.SetValue(spaceGroup)
         self.aText.SetValue(a)
         self.bText.SetValue(b)
@@ -200,6 +200,9 @@ class atomPanel(wx.Panel):
         self.cutoffNaText.SetValue(cutNa.__str__())
         self.cutoffNbText.SetValue(cutNb.__str__())
         self.cutoffNcText.SetValue(cutNc.__str__())
+        self.atomSpinner.SetValue(self.atomList.GetNumberRows())
+        self.atomList.ForceRefresh()
+        self.atomList.AutoSize()
 #        for i in range(len(atomData)):
 #            self.atomList.SetCellValue(i, 0, atomData[i][0].__str__())
 #            self.atomList.SetCellValue(i, 1, atomData[i][1].__str__())
@@ -213,8 +216,14 @@ class atomPanel(wx.Panel):
         if failed:
             return
         spaceGroup = self.spaceGroupSpinner.GetValue() #int
-        send(signal = "Cell Change", sender = "Cell Panel",
-             spaceGroup = spaceGroup,
+#        send(signal = "Cell Change", sender = "Cell Panel",
+#             spaceGroup = spaceGroup,
+#             a = a, b = b, c = c,
+#             alpha = alpha, beta = beta, gamma = gamma,
+#             magNa = magNa, magNb = magNb, magNc = magNc,
+#             cutNa = cutNa, cutNb = cutNb, cutNc = cutNc,
+#             atomData = atomData)
+        self.session.cellChange(spaceGroupInt = spaceGroup,
              a = a, b = b, c = c,
              alpha = alpha, beta = beta, gamma = gamma,
              magNa = magNa, magNb = magNb, magNc = magNc,
@@ -521,8 +530,12 @@ class bondPanel(wx.Panel):
         
         self.Bind(wx.EVT_BUTTON, self.OnGenerate, self.genButton)
         connect(self.OnBondAddition, signal = "Bond Added")
-#        connect(self.OnFileLoad, signal = "File Load")
-#
+        connect(self.OnFileLoad, signal = "File Load")
+
+
+    def OnFileLoad(self):
+        self.bondSpinner.SetValue(self.bondList.GetNumberRows())
+        self.bondList.AutoSize()
 #    def OnFileLoad(self, bondData):
 #        for i in range(len(bondData)):
 #            self.bondList.SetCellValue(i, 0, bondData[i][0])
@@ -557,14 +570,16 @@ class bondPanel(wx.Panel):
         self.bondList.SetCellValue(row, 7, str(pos2[2]))
         self.bondList.SetCellValue(row, 9, 'X') #Turn the bond on
         
-        self.OnGenerate(None)
+        self.bondSpinner.SetValue(self.bondList.GetNumberRows())
+#        self.OnGenerate(None)
     
     def OnGenerate(self, event):
         failed, bondData = self.validate()
         print failed
         if failed:
             return
-        send(signal = "Bond Change", sender = "Bond Panel", bondData = bondData)
+#        send(signal = "Bond Change", sender = "Bond Panel", bondData = bondData)
+        self.session.changeBonds(bondData)
       
     
     def validate(self):
@@ -830,12 +845,12 @@ class vtkPanel(wx.Panel):
    
     def bindEvents(self):
         self.window.Bind(wx.EVT_KEY_DOWN, self.OnKeyEvent)
-        connect(self.OnCellChange, signal = "Cell Change")
-        connect(self.OnBondChange, signal = "Bond Change")
+#        connect(self.OnCellChange, signal = "Cell Change")
+#        connect(self.OnBondChange, signal = "Bond Change")
         connect(self.OnPick, signal = "Pick Event")
-        connect(self.OnFileLoad, signal = "File Load")
+        connect(self.OnModelChange, signal = "Model Change")
     
-    def OnFileLoad(self):
+    def OnModelChange(self):
         self.draw()
     
     def OnKeyEvent(self, event):
@@ -849,8 +864,7 @@ class vtkPanel(wx.Panel):
         event.Skip()
         selectedObj = self.drawer.getObjFromActor(self.picker.getPicked())
         if isinstance(selectedObj, Bond):
-            self.MagCell.deleteBond(selectedObj)
-            #handle atoms next
+            self.session.MagCell.deleteBond(selectedObj)
         
         self.draw()
     
@@ -940,52 +954,52 @@ class vtkPanel(wx.Panel):
     #def getStatusText(self):
       #  return self.picker.getPicked()
     
-    def OnCellChange(self,spaceGroup,a,b,c,alpha, beta, gamma, magNa, magNb, magNc, cutNa, cutNb, cutNc, atomData):
-        """For now this just creates a new Magnetic Cell and draws it
-        This could be transfered to the Session class but a progress bar would be
-        more difficult then"""
-        print "Making Magentic Cell"
-        
-        
-        #This shoudl eb moved to session class to get rid of repetative code in load file methods
-        progDialog = wx.ProgressDialog("Progress", "Generating Magnetic Cell...", parent = self, style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
-        
-        spaceGroup = SpaceGroups.GetSpaceGroup(spaceGroup)
-        
-        unitcell = Cell(spaceGroup, 0,0,0, a, b, c, alpha, gamma, beta)
-        
-        for i in range(len(atomData)):
-            unitcell.generateAtoms((float(atomData[i][2]), float(atomData[i][3]), float(atomData[i][4])), atomData[i][0])
+#    def OnCellChange(self,spaceGroup,a,b,c,alpha, beta, gamma, magNa, magNb, magNc, cutNa, cutNb, cutNc, atomData):
+#        """For now this just creates a new Magnetic Cell and draws it
+#        This could be transfered to the Session class but a progress bar would be
+#        more difficult then"""
+#        print "Making Magentic Cell"
+#        
+#        
+#        #This shoudl eb moved to session class to get rid of repetative code in load file methods
+#        progDialog = wx.ProgressDialog("Progress", "Generating Magnetic Cell...", parent = self, style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
+#        
+#        spaceGroup = SpaceGroups.GetSpaceGroup(spaceGroup)
+#        
+#        unitcell = Cell(spaceGroup, 0,0,0, a, b, c, alpha, gamma, beta)
+#        
+#        for i in range(len(atomData)):
+#            unitcell.generateAtoms((float(atomData[i][2]), float(atomData[i][3]), float(atomData[i][4])), atomData[i][0])
 
-        progDialog.Update(40)
-        
-        print "Unit Cell Generated"
-        
-        #Create a Magnetic Cell
-        self.session.setMagneticCell(MagneticCell(unitcell, magNa, magNb, magNc, spaceGroup))
-        print "Magcell created"
-        
-        progDialog.Update(100)
-        
-        progDialog.Destroy()
-        
-        #Regenerate Bonds as well
-        try:
-            self.OnBondChange(self.bondData)
-        except:#If there are not bonds yet
-            print "No Bonds yet"
-            self.draw()
-        print "Drawn"
-        
-
-    def OnBondChange(self, bondData):
-        """Checks if each bond exists, if not, it generates them""" 
-        print "Creating Bonds"
-
-        progDialog = wx.ProgressDialog("Progress", "Creating Bonds...", parent = self, style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
- 
+#        progDialog.Update(40)
+#        
+#        print "Unit Cell Generated"
+#        
+#        #Create a Magnetic Cell
+#        self.session.setMagneticCell(MagneticCell(unitcell, magNa, magNb, magNc, spaceGroup))
+#        print "Magcell created"
+#        
+#        progDialog.Update(100)
+#        
+#        progDialog.Destroy()
+#        
+#        #Regenerate Bonds as well
+#        try:
+#            self.OnBondChange(self.bondData)
+#        except:#If there are not bonds yet
+#            print "No Bonds yet"
+#            self.draw()
+#        print "Drawn"
+#        
+#
+#    def OnBondChange(self, bondData):
+#        """Checks if each bond exists, if not, it generates them""" 
+#        print "Creating Bonds"
+#
+#        progDialog = wx.ProgressDialog("Progress", "Creating Bonds...", parent = self, style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
+# 
  #This should be moved to the session       
-        self.bondData = bondData  #added this so that bonds can be regenerated later if there is a change in the cells
+ #       self.bondData = bondData  #added this so that bonds can be regenerated later if there is a change in the cells
 #        self.session.getMagneticCell().clearAllBonds()
 #        
 #        progDialog.Update(5,"Creating Bonds...")
@@ -1007,14 +1021,14 @@ class vtkPanel(wx.Panel):
 #            progress += progFrac
 #            print progress
 #            progDialog.Update(progress)
-        self.session.changeBonds(bondData)
-
-
-        
-        progDialog.Update(100)
-        progDialog.Destroy()
-        print "drawing"
-        self.draw()
+#        self.session.changeBonds(bondData)
+#
+#
+#        
+#        progDialog.Update(100)
+#        progDialog.Destroy()
+#        print "drawing"
+#        self.draw()
 
     def OnPick(self, obj):
         print "OnPick"
