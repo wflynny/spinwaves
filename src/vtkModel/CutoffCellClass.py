@@ -19,15 +19,7 @@ class CutoffCell():
                 for k in range(0, Nc):
                     if i !=0 or j != 0 or k != 0: #to not duplicate original unit cell
                         self.AllUnitCells.append(self.unit_cell.translateCell(i,j,k))
-    
-    
-    
-    #does not currently support anything but default bond colors
-#    def addInterCellularBond(self, Atom1, Atom2):
-     
-        #Make Sure the Atoms are not in the same cell
- #       if Atom1.getUnitCell() == Atom2.getUnitCell():
- #           raise Exception("These atoms are in the same Unit Cell:" + Atom1.__str__() + ", " + Atom2.__str__())
+
     def addBond(self, Atom1, Atom2):     
         """Adds a bond and all symmettry equivalent bonds within the magnetic Cell
         
@@ -102,8 +94,6 @@ class CutoffCell():
                             else:  #if not, add the bond to the list of unique bonds
                                 self.Bonds.append(newBond)
 
-                            
-    
     def deleteBond(self, bond):
         """Removes a bond and all symmetry equivalent bonds within the magnetic Cell
         

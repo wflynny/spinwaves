@@ -37,6 +37,7 @@ class MagneticCell():
         #Make Sure the Atoms are not in the same cell
  #       if Atom1.getUnitCell() == Atom2.getUnitCell():
  #           raise Exception("These atoms are in the same Unit Cell:" + Atom1.__str__() + ", " + Atom2.__str__())
+
     def addBond(self, Atom1, Atom2, jMatrix = None):     
         """Adds a bond and all symmettry equivalent bonds within the magnetic Cell
         

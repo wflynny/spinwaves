@@ -175,7 +175,12 @@ class vtkDrawer():
             for bond in MagCell.getBonds():
                 self.drawBond(bond)
 
-
+    #Replacing magnetic cell
+    def drawCutoffCell(self, cutoffCell):
+        for cell in cutoffCell.getAllUnitCells():
+            self.drawUnitCell(cell)
+            for bond in cutoffCell.getBonds():
+                self.drawBond(bond)
             
     def addAxes(self):
         """needs to be run after the window is rendered"""

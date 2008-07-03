@@ -922,7 +922,8 @@ class vtkPanel(wx.Panel):
         progDialog.Update(10)
 
         #Draw the Magnetic Cell
-        self.drawer.drawMagneticCell(self.session.getMagneticCell())
+#        self.drawer.drawMagneticCell(self.session.getMagneticCell())
+        self.drawer.drawCutoffCell(self.session.getCutoffCell())
         
         progDialog.Update(30)
         
@@ -1099,6 +1100,7 @@ class Frame(wx.Frame):
         newMenuItem = fileMenu.Append(wx.NewId(), "&New Magnetic Cell")
         openMenuItem = fileMenu.Append(wx.NewId(), "&Open")
         saveMenuItem = fileMenu.Append(wx.NewId(), "&Save")
+        exportMenuItem = fileMenu.Append(wx.NewId(), "Export")
         quitMenuItem = fileMenu.Append(wx.NewId(), "&Quit")
         menuBar.Append(fileMenu, "&File")
         
@@ -1124,11 +1126,19 @@ class Frame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.vtkPanel.OnChooseNormalMode, normalModeMenuItem)
         self.Bind(wx.EVT_MENU, self.vtkPanel.OnChooseBondMode, bondModeMenuItem)
 #        self.Bind(wx.EVT_MENU, self.OnNew, newMenuItem)
+        self.Bind(wx.EVT_MENU, self.OnExport, exportMenuItem)
     
  #   def OnNew(self, event):
         #Add drawing panel
 #        self.vtkPanel.draw()
 #        self.GetEventHandler().ProcessEvent(wx.SizeEvent())
+    
+    def OnExport(self, evt):
+        saveDialog = wx.FileDialog(self, "Save File", style = wx.SAVE, wildcard = "*.txt")
+        if saveDialog.ShowModal() == wx.ID_OK:
+            self.session.export(saveDialog.GetPath())
+        saveDialog.Destroy()
+
     
     def OnCloseMe(self, event):
         self.Close(True)

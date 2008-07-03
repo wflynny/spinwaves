@@ -14,6 +14,9 @@ class Session():
         self.bondTable = bondTable()
         self.atomTable = atomTable()
         self.MagCell = None
+        #For now the magnetic cell class will be used for the cutoff cell since
+        #they are exactly the same
+#        self.cutoffCell = self.MagCell
         
     def getAtomTable(self):
         return self.atomTable
@@ -24,11 +27,15 @@ class Session():
     def getMagneticCell(self):
         return self.MagCell
     
-    def setMagneticCell(self, magCell):
-        #I am lettin ghe vtkPanel create magnetic cells rightt now
-        #so that it can keep track of progress fo rthe progress bar.
-        self.MagCell = magCell
+    #For now magnetic cell and cuttoff cell are exaclty the same so magnetic cell will
+    #be treated as cutoff cell
+    def getCutoffCell(self):
+        return self.MagCell
     
+#    def setMagneticCell(self, magCell):
+        #I am lettin ghe vtkPanel create magnetic cells right now
+        #so that it can keep track of progress fo rthe progress bar.
+#        self.MagCell = magCell
     
     def openXMLSession(self, filename):
         doc = xml.dom.minidom.parse(filename)
@@ -189,10 +196,11 @@ class Session():
             unitcell.generateAtoms((float(atomData[i][2]), float(atomData[i][3]), float(atomData[i][4])), atomData[i][0])
         
         #Create a Magnetic Cell
-        self.setMagneticCell(MagneticCell(unitcell, magNa, magNb, magNc, spaceGroup))
+        self.MagCell = MagneticCell(unitcell, magNa, magNb, magNc, spaceGroup)
         
         #Regenerate Bonds as well
         self.changeBonds(self.bondTable.data)
+    
     
     def openCif(self, filename):
         cf = CifFile.ReadCif(filename)
@@ -250,7 +258,6 @@ class Session():
 #        self.atomTable.SetValue(i, 0, atomData)
 
 
-    
     def saveSessionToXML(self, filename):
         #Create the document
         doc = xml.dom.minidom.Document()
@@ -337,7 +344,87 @@ class Session():
         xml.dom.ext.PrettyPrint(doc, open(filename, 'w'))
         
         
-       
+    def export(self, filename):
+        size = 5
+        
+        file = open(filename, 'w')
+#        file.write("#Atoms\n#Number X Y Z\n")
+#        for i in range(size):
+#            for j in range(size):
+#                for k in range(size):
+#                    for atom in self.getCutoffCell().getAllAtoms():
+#                        num = atom.getIndexNumber()
+#                        pos = atom.getPosition()
+#                        x = pos[0] + (i * self.getCutoffCell().getNa())
+#                        y = pos[1] + (j * self.getCutoffCell().getNa())
+#                        z = pos[2] + (k * self.getCutoffCell().getNa())
+#                        line = str(num) + " " + str(x) + " " + str(y) + " " + str(z)
+#                        file.write(line + "\n")
+        #Right now this will be extremely slow (8 nested for lops)       
+        class SimpleBond():
+            def __init__(self, pos1, pos2, jMatrix):
+                self.pos1 = pos1
+                self.pos2 = pos2
+                self.jMatrix = jMatrix
+                
+            def sameBond(self, bond2):
+                if self.pos1 == bond2.pos1 or self.pos1 == bond2.pos2:
+                    if self.pos2 == bond2.pos2 or self.pos2 == bond2.pos1:
+                        return True
+                return False
+        
+        class SimpleBondList():
+            def __init__(self):
+                self.list = []
+            
+            def addBond(self, bond):
+                if not self.containsBond(bond):
+                    self.list.append(bond)
+                    
+            def containsBond(self, bond):
+                for eachBond in self.list:
+                    if eachBond.sameBond(bond):
+                        return True
+                return False
+        
+        Na = self.getCutoffCell().getNa()
+        Nb = self.getCutoffCell().getNb()
+        Nc = self.getCutoffCell().getNc()
+        
+        simpleBonds = SimpleBondList()
+        for bond in self.getCutoffCell().getBonds():
+            pos1 = bond.getAtom1().getPosition()
+            pos2 = bond.getAtom2().getPosition()
+            jMat = bond.getJMatrix()
+            for i in range(size):
+                for j in range(size):
+                    for k in range(size):
+                        for a in range(Na):
+                            for b in range(Nb):
+                                for c in range(Nc):
+                                    x1 = pos1[0] + a + (Na * i)
+                                    y1 = pos1[1] + b + (Nb * j)
+                                    z1 = pos1[2] + c + (Nc * k)
+                                    
+                                    x2 = pos2[0] + a + (Na * i)
+                                    y2 = pos2[1] + b + (Nb * j)
+                                    z2 = pos2[2] + c + (Nc * k)    
+                                    bond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMat )
+                                    simpleBonds.addBond(bond)
+                    print "1 Cell done"                               
+
+        
+        file.write("#Bonds\n#X1 Y1 Z1 X2 Y2 Z2 J11 J12 J13 J21 J22 J23 J31 J32 J33\n")
+        for bondN in simpleBonds.list:
+            pos1Str = str(bondN.pos1[0]) + " " + str(bondN.pos1[1]) + " " + str(bondN.pos1[2])
+            pos2Str = str(bondN.pos2[0]) + " " + str(bondN.pos2[1]) + " " + str(bondN.pos2[2])
+            jStr = str(bondN.jMatrix[0][0]) + " " + str(bondN.jMatrix[0][1]) + " " + str(bondN.jMatrix[0][2]) + " " + str(bondN.jMatrix[1][0]) + " " + str(bondN.jMatrix[1][1]) + " " + str(bondN.jMatrix[1][2]) + " " + str(bondN.jMatrix[2][0]) + " " + str(bondN.jMatrix[2][1]) + " " + str(bondN.jMatrix[2][2])
+            file.write(pos1Str + " " + pos2Str + " " + jStr + "\n")
+        
+        file.close()
+        
+        
+        
     
 class atomTable(wx.grid.PyGridTableBase):
     def __init__(self):
