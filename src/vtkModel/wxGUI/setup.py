@@ -1,5 +1,6 @@
 from distutils.core import setup
 import glob
 import py2exe
+from vtkModel import *
 
-setup(console=["AtomGeneratorSample.py"])
+setup(windows=["wxvtktest.py"])

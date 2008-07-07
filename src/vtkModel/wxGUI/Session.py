@@ -345,7 +345,7 @@ class Session():
         
         
     def export(self, filename):
-        size = 5
+        size = 100
         
         file = open(filename, 'w')
 #        file.write("#Atoms\n#Number X Y Z\n")
@@ -396,9 +396,9 @@ class Session():
             pos1 = bond.getAtom1().getPosition()
             pos2 = bond.getAtom2().getPosition()
             jMat = bond.getJMatrix()
-            for i in range(size):
-                for j in range(size):
-                    for k in range(size):
+            for i in range(2):
+                for j in range(2):
+                    for k in range(2):
                         for a in range(Na):
                             for b in range(Nb):
                                 for c in range(Nc):
@@ -410,18 +410,109 @@ class Session():
                                     y2 = pos2[1] + b + (Nb * j)
                                     z2 = pos2[2] + c + (Nc * k)    
                                     bond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMat )
-                                    simpleBonds.addBond(bond)
-                    print "1 Cell done"                               
+                                    simpleBonds.addBond(bond)                              
 
+        #Pick out bonds that link first cutoff cell and another
+        interCutoffBonds = []
+        for eachBond in simpleBonds.list:
+            #Check if one bond is in the first cutoff cell
+            if eachBond.pos1[0] < Na or eachBond.pos2[0] < Na: #x
+                if eachBond.pos1[1] < Nb or eachBond.pos2[1] < Nb: #y
+                    if eachBond.pos1[2] < Nc or eachBond.pos2[2] < Nc: #z
+                        #check if the second bond is not in the first cutoff cell
+                        if not (eachBond.pos1[0] < Na or eachBond.pos2[0] < Na): #x
+                            if not (eachBond.pos1[1] < Nb or eachBond.pos2[1] < Nb): #y
+                                if not (eachBond.pos1[2] < Nc or eachBond.pos2[2] < Nc): #z
+                                    interCutoffBonds.append(eachBond)
+                                    
+        
         
         file.write("#Bonds\n#X1 Y1 Z1 X2 Y2 Z2 J11 J12 J13 J21 J22 J23 J31 J32 J33\n")
-        for bondN in simpleBonds.list:
-            pos1Str = str(bondN.pos1[0]) + " " + str(bondN.pos1[1]) + " " + str(bondN.pos1[2])
-            pos2Str = str(bondN.pos2[0]) + " " + str(bondN.pos2[1]) + " " + str(bondN.pos2[2])
-            jStr = str(bondN.jMatrix[0][0]) + " " + str(bondN.jMatrix[0][1]) + " " + str(bondN.jMatrix[0][2]) + " " + str(bondN.jMatrix[1][0]) + " " + str(bondN.jMatrix[1][1]) + " " + str(bondN.jMatrix[1][2]) + " " + str(bondN.jMatrix[2][0]) + " " + str(bondN.jMatrix[2][1]) + " " + str(bondN.jMatrix[2][2])
-            file.write(pos1Str + " " + pos2Str + " " + jStr + "\n")
+#        finalBondList = []
+        #Translate all bonds within the cutoff cell
+        for bond in self.getCutoffCell().getBonds():
+            pos1 = bond.getAtom1().getPosition()
+            pos2 = bond.getAtom2().getPosition()
+            jMat = bond.getJMatrix()
+            jStr = str(jMat[0][0]) + " " + str(jMat[0][1]) + " " + str(jMat[0][2]) + " " + str(jMat[1][0]) + " " + str(jMat[1][1]) + " " + str(jMat[1][2]) + " " + str(jMat[2][0]) + " " + str(jMat[2][1]) + " " + str(jMat[2][2])
+#            jStr += " " 
+#            jStr += str(jMat[0][1]) 
+#            jStr += " " + str(jMat[0][2]) 
+#            jStr += " " + str(jMat[1][0]) + " " + str(jMat[1][1]) + " " + str(jMat[1][2]) + " " + str(jMat[2][0]) + " " + str(jMat[2][1]) + " " + str(jMat[2][2])
+            for i in range(size):
+                for j in range(size):
+                    for k in range(size):
+                        x1 = pos1[0] + (Na * i)
+                        y1 = pos1[1] + (Nb * j)
+                        z1 = pos1[2] + (Nc * k)
+                        
+                        x2 = pos2[0] + (Na * i)
+                        y2 = pos2[1] + (Nb * j)
+                        z2 = pos2[2] + (Nc * k)    
+#                        smplBond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMat )
+ #                       finalBondList.append(smplBond)
+                        pos1Str = str(x1) + " " + str(y1) + " " + str(z1)
+                        pos2Str = str(x2) + " " + str(y2) + " " + str(z2)
+#There should always be a jMatrix                        if jMat != None:
+                        file.write(pos1Str + " " + pos2Str + " " + jStr + "\n")
+#                    else:
+#                        file.write(pos1Str + " " + pos2Str + "\n")
+        
+        for smplBond in interCutoffBonds:
+            pos1 = smplBond.pos1
+            pos2 = smplBond.pos2
+            jMat = smplBond.getJMatrix()
+            jStr = str(jMat[0][0]) + " " + str(jMat[0][1]) + " " + str(jMat[0][2]) + " " + str(jMat[1][0]) + " " + str(jMat[1][1]) + " " + str(jMat[1][2]) + " " + str(jMat[2][0]) + " " + str(jMat[2][1]) + " " + str(jMat[2][2])
+            aDisp = abs(pos1[0] - pos2[0])
+            bDisp = abs(pos1[1] - pos2[1])
+            cDisp = abs(pos1[2] - pos2[2])
+#            if pos1[0] > pos2[0]:
+#                aDisp = pos1[0]
+#            else:
+#                aDisp = pos2[0]
+#            if pos1[1] > pos2[1]:
+#                bDisp = pos1[1]
+#            else:
+#                bDisp = pos2[1]
+#            if pos1[2] > pos2[2]:
+#                cDisp = pos1[2]
+#            else:
+#                cDisp = pos2[2]
+            for i in range(size - aDisp):
+                for j in range(size - bDisp):
+                    for k in range(size - cDisp):
+                        x1 = pos1[0] + (Na * i)
+                        y1 = pos1[1] + (Nb * j)
+                        z1 = pos1[2] + (Nc * k)
+                        
+                        x2 = pos2[0] + (Na * i)
+                        y2 = pos2[1] + (Nb * j)
+                        z2 = pos2[2] + (Nc * k)    
+#                        smplBond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMat )
+ #                       finalBondList.append(smplBond)
+                        pos1Str = str(x1) + " " + str(y1) + " " + str(z1)
+                        pos2Str = str(x2) + " " + str(y2) + " " + str(z2)
+#There should always be a jMatrix                        if jMat != None:
+                        file.write(pos1Str + " " + pos2Str + " " + jStr + "\n")
+        
+        #Check for reapeats in finalBond List just for testing
+#        def isRepeat(finalBondList):
+#            for i in range(0, len(finalBondList)):
+#                for j in range(i + 1, len(finalBondList)):
+#                    if finalBondList[i].sameBond(finalBondList[j]):
+#                        return True
+#            return False
+#        
+#        if isRepeat(finalBondList):
+#            print "There is a repeat!"
+#        else:
+#            print "NO repeats!"
+        
+        
+
         
         file.close()
+        print "Done"
         
         
         
