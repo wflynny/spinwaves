@@ -7,6 +7,8 @@ from vtkModel import SpaceGroups
 from vtkModel.CellClass import Cell
 from vtkModel.MagneticCellClass import MagneticCell
 import numpy
+import time
+import datetime
 
 class Session():
     """Stores information about a user session"""
@@ -345,7 +347,9 @@ class Session():
         
         
     def export(self, filename):
-        size = 100
+        size = 20
+        
+        initialTime = time.clock()
         
         file = open(filename, 'w')
 #        file.write("#Atoms\n#Number X Y Z\n")
@@ -391,11 +395,44 @@ class Session():
         Nb = self.getCutoffCell().getNb()
         Nc = self.getCutoffCell().getNc()
         
-        simpleBonds = SimpleBondList()
+        
+        def contains(list, element):
+            for item in list:
+                if (item == element).all():
+                    return True
+            return False
+        
+        def indexOf(list, item):
+            for i in range(len(list)):
+                if item.all() == list[i].all():
+                    return i
+            return -1
+        
+        
+        matrices = []
+        for bond in self.getCutoffCell().getBonds():
+#           pos1 = bond.getAtom1().getPosition()
+#           pos2 = bond.getAtom2().getPosition()
+            jMat = bond.getJMatrix()
+#            count = matrices.count(jMat)
+            if not contains(matrices, jMat):
+                matrices.append(jMat)
+        
+        
+        simpleCellBonds = []
         for bond in self.getCutoffCell().getBonds():
             pos1 = bond.getAtom1().getPosition()
             pos2 = bond.getAtom2().getPosition()
             jMat = bond.getJMatrix()
+            newBond = SimpleBond(pos1, pos2, indexOf(matrices,jMat))
+            simpleCellBonds.append(newBond)
+        
+        
+        simpleBonds = SimpleBondList()
+        for bond in simpleCellBonds:
+            pos1 = bond.pos1
+            pos2 = bond.pos2
+            jMatInt = bond.jMatrix
             for i in range(2):
                 for j in range(2):
                     for k in range(2):
@@ -409,7 +446,7 @@ class Session():
                                     x2 = pos2[0] + a + (Na * i)
                                     y2 = pos2[1] + b + (Nb * j)
                                     z2 = pos2[2] + c + (Nc * k)    
-                                    bond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMat )
+                                    bond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMatInt )
                                     simpleBonds.addBond(bond)                              
 
         #Pick out bonds that link first cutoff cell and another
@@ -420,21 +457,29 @@ class Session():
                 if eachBond.pos1[1] < Nb or eachBond.pos2[1] < Nb: #y
                     if eachBond.pos1[2] < Nc or eachBond.pos2[2] < Nc: #z
                         #check if the second bond is not in the first cutoff cell
-                        if not (eachBond.pos1[0] < Na or eachBond.pos2[0] < Na): #x
-                            if not (eachBond.pos1[1] < Nb or eachBond.pos2[1] < Nb): #y
-                                if not (eachBond.pos1[2] < Nc or eachBond.pos2[2] < Nc): #z
+                        if (not eachBond.pos1[0] < Na) or (not eachBond.pos2[0] < Na): #x
+                            if (not eachBond.pos1[1] < Nb) or (not eachBond.pos2[1] < Nb): #y
+                                if (not eachBond.pos1[2] < Nc) or (not eachBond.pos2[2] < Nc): #z
                                     interCutoffBonds.append(eachBond)
                                     
         
         
-        file.write("#Bonds\n#X1 Y1 Z1 X2 Y2 Z2 J11 J12 J13 J21 J22 J23 J31 J32 J33\n")
+        
 #        finalBondList = []
         #Translate all bonds within the cutoff cell
-        for bond in self.getCutoffCell().getBonds():
-            pos1 = bond.getAtom1().getPosition()
-            pos2 = bond.getAtom2().getPosition()
-            jMat = bond.getJMatrix()
-            jStr = str(jMat[0][0]) + " " + str(jMat[0][1]) + " " + str(jMat[0][2]) + " " + str(jMat[1][0]) + " " + str(jMat[1][1]) + " " + str(jMat[1][2]) + " " + str(jMat[2][0]) + " " + str(jMat[2][1]) + " " + str(jMat[2][2])
+
+            
+        file.write("#J Matrices\n#Number J11 J12 J13 J21 J22 J23 J31 J32 J33\n")
+        for i in range(len(matrices)):
+            jMat = matrices[i]
+            jStr = str(i) + " " + str(jMat[0][0]) + " " + str(jMat[0][1]) + " " + str(jMat[0][2]) + " " + str(jMat[1][0]) + " " + str(jMat[1][1]) + " " + str(jMat[1][2]) + " " + str(jMat[2][0]) + " " + str(jMat[2][1]) + " " + str(jMat[2][2])
+            file.write(jStr + "\n")
+        
+        
+        file.write("#Bonds\n#X1 Y1 Z1 X2 Y2 Z2 J\n")
+        for bond in simpleCellBonds:   
+            pos1 = bond.pos1
+            pos2 = bond.pos2
 #            jStr += " " 
 #            jStr += str(jMat[0][1]) 
 #            jStr += " " + str(jMat[0][2]) 
@@ -453,6 +498,7 @@ class Session():
  #                       finalBondList.append(smplBond)
                         pos1Str = str(x1) + " " + str(y1) + " " + str(z1)
                         pos2Str = str(x2) + " " + str(y2) + " " + str(z2)
+                        jStr = str(bond.jMatrix)
 #There should always be a jMatrix                        if jMat != None:
                         file.write(pos1Str + " " + pos2Str + " " + jStr + "\n")
 #                    else:
@@ -461,8 +507,9 @@ class Session():
         for smplBond in interCutoffBonds:
             pos1 = smplBond.pos1
             pos2 = smplBond.pos2
-            jMat = smplBond.getJMatrix()
-            jStr = str(jMat[0][0]) + " " + str(jMat[0][1]) + " " + str(jMat[0][2]) + " " + str(jMat[1][0]) + " " + str(jMat[1][1]) + " " + str(jMat[1][2]) + " " + str(jMat[2][0]) + " " + str(jMat[2][1]) + " " + str(jMat[2][2])
+            jMat = smplBond.jMatrix
+            jStr = str(jMat)
+#            jStr = str(jMat[0][0]) + " " + str(jMat[0][1]) + " " + str(jMat[0][2]) + " " + str(jMat[1][0]) + " " + str(jMat[1][1]) + " " + str(jMat[1][2]) + " " + str(jMat[2][0]) + " " + str(jMat[2][1]) + " " + str(jMat[2][2])
             aDisp = abs(pos1[0] - pos2[0])
             bDisp = abs(pos1[1] - pos2[1])
             cDisp = abs(pos1[2] - pos2[2])
@@ -512,10 +559,329 @@ class Session():
 
         
         file.close()
-        print "Done"
+        seconds = time.clock() - initialTime
+        minutes = int(seconds)/60
+        seconds -= (minutes*60)
+        hours = minutes/60
+        minutes -= hours*60
+        print "Done\nTime:", hours, "hours", minutes, "minutes", seconds, "seconds" 
+        
+       
+        
+    #This one orgnizes it by atom, not bond    
+    def exportForMonteCarlo(self, filename):
+        size = 100
+        
+        initialTime = time.clock()
+        
+        file = open(filename, 'w')
+   
+        class SimpleBond():
+            def __init__(self, pos1, pos2, jMatrix):
+                self.pos1 = pos1
+                self.pos2 = pos2
+                self.jMatrix = jMatrix
+                
+            def sameBond(self, bond2):
+                if self.pos1 == bond2.pos1 or self.pos1 == bond2.pos2:
+                    if self.pos2 == bond2.pos2 or self.pos2 == bond2.pos1:
+                        return True
+                return False
+        
+        Na = self.getCutoffCell().getNa()
+        Nb = self.getCutoffCell().getNb()
+        Nc = self.getCutoffCell().getNc()
+        
+        class SimpleAtom():
+            def __init__(self, pos):
+                self.pos = pos
+                self.cellPos = []
+                self.cellPosX = int(pos[0])/Na
+                self.cellPosY = int(pos[1])/Nb
+                self.cellPosZ = int(pos[2])/Nc
+                self.interactions = {}
+                #self.interactions[position of other atom] = j number
+                
+            def addInteraction(self, pos2, jMat):
+                self.interactions[pos2] = jMat
+            
+            #comparisons based on positions
+            def __lt__(self, other):
+                self.otherCellPosX = int(other.pos[0])/Na
+                self.otherCellPosY = int(other.pos[1])/Nb
+                self.otherCellPosZ = int(other.pos[2])/Nc
+                
+                if otherCellPosX > self.cellPosX:
+                    return False
+                if otherCellPosX < self.cellPosX:
+                    return True
+                #X's equal
+                if otherCellPosY > self.cellPosY:
+                    return False
+                if otherCellPosY < self.cellPosY:
+                    return True
+                #Y's equal
+                if otherCellPosZ > self.cellPosZ:
+                    return False
+                if otherCellPosZ < self.cellPosZ:
+                    return True
+                
+                #They are in the same cell
+                if other.pos[2] > self.pos[2]:
+                    return False
+                if other.pos[2] < self.pos[2]:
+                    return True
+                #Z's equal
+                if other.pos[1] > self.pos[1]:
+                    return False
+                if other.pos[1] < self.pos[1]:
+                    return True
+                #Y's equal
+                if other.pos[0] > self.pos[0]:
+                    return False
+                if other.pos[0] < self.pos[0]:
+                    return True
+                
+                #Equal
+                return False
+            
+            def __gt__(self, other):
+                self.otherCellPosX = int(other.pos[0])/Na
+                self.otherCellPosY = int(other.pos[1])/Nb
+                self.otherCellPosZ = int(other.pos[2])/Nc
+                
+                if otherCellPosX > self.cellPosX:
+                    return True
+                if otherCellPosX < self.cellPosX:
+                    return False
+                #X's equal
+                if otherCellPosY > self.cellPosY:
+                    return True
+                if otherCellPosY < self.cellPosY:
+                    return False
+                #Y's equal
+                if otherCellPosZ > self.cellPosZ:
+                    return True
+                if otherCellPosZ < self.cellPosZ:
+                    return False
+                
+                #All equal
+                if other.pos[2] > self.pos[2]:
+                    return True
+                if other.pos[2] < self.pos[2]:
+                    return False
+                #Z's equal
+                if other.pos[1] > self.pos[1]:
+                    return True
+                if other.pos[1] < self.pos[1]:
+                    return False
+                #Y's equal
+                if other.pos[0] > self.pos[0]:
+                    return True
+                if other.pos[0] < self.pos[0]:
+                    return False
+                
+                
+                return False
+            
+            def __eq__(self, other):
+                if self.pos[0] == other.pos[0]:
+                    if self.pos[1] == other.pos[1]:
+                        if self.pos[2] == other.pos[2]:
+                            return True
+                return False
+            
+            def  __le__(self, other):
+                return (self.__eq__(other) or self.__lt__(other))
+            
+            def __ne__(self, other):
+                return not self.__eq__(other)
+            
+            def __ge__(self, other):
+                return (self.__eq__(other) or self.__gt__(other))
+                
+                
+        
+        class sortedAtomList():
+            def __init__(self):
+                self.atoms = []
+                
+            def append(self, item):
+                self.atoms.append(item)
+            
+            def extend(self, otherList):
+                self.atoms.extend(otherList)
+                
+            def translate(self, x, y, z):
+                newList = sortedAtomList()
+                for atom in self.atoms:
+                    pos = atom.pos
+                    newAtom = simpleAtom((pos[0] + x, pos[1] + y, pos[2] + z))
+                    newInteractions = {}
+                    for position in atom.interactions:
+                        newInteractions[(position[0] + x, position[1] + y, position[2] + z)] = atom.interactions[position]
+                    newAtom.interactions = newInteractions
+                    newList.append(newAtom)
+                
+            def add(self, item):
+                index = addAux(0, len(self.atoms), item)
+                
+            def addAux(self, start, end):
+                
+            
+            def find(self, item):
+                index = findAux(0, len(self.atoms), item)
+                if index >= 0:
+                    return self.atoms[index]
+                return None
+                
+            def findAux(self, start, end):
+                if end < start:
+                    return -1
+                mid = (end + start)/2
+                if item < self.atoms[mid]:
+                    return findAux(start, mid - 1, item)
+                elif item > self.atoms[mid]:
+                    return findAux(mid + 1, end, item)
+                
+                return mid
+                
         
         
+        class SimpleBondList():
+            def __init__(self):
+                self.list = []
+                
+            def sort(self):
+                self.list.sort()
+                
+            def addBond(self, bond):
+                if not self.containsBond(bond):
+                    self.list.append(bond)
+                    
+            def containsBond(self, bond):
+                for eachBond in self.list:
+                    if eachBond.sameBond(bond):
+                        return True
+                return False
         
+        
+        def contains(list, element):
+            for item in list:
+                if (item == element).all():
+                    return True
+            return False
+        
+        def indexOf(list, item):
+            for i in range(len(list)):
+                if item.all() == list[i].all():
+                    return i
+            return -1
+        
+        
+        #Create list of matrices
+        matrices = []
+        for bond in self.getCutoffCell().getBonds():
+#           pos1 = bond.getAtom1().getPosition()
+#           pos2 = bond.getAtom2().getPosition()
+            jMat = bond.getJMatrix()
+#            count = matrices.count(jMat)
+            if not contains(matrices, jMat):
+                matrices.append(jMat)
+        
+        
+        #create simple bonds within cutoff cell
+        simpleCellBonds = []
+        for bond in self.getCutoffCell().getBonds():
+            pos1 = bond.getAtom1().getPosition()
+            pos2 = bond.getAtom2().getPosition()
+            jMat = bond.getJMatrix()
+            newBond = SimpleBond(pos1, pos2, indexOf(matrices,jMat))
+            simpleCellBonds.append(newBond)
+        
+        
+        simpleBonds = SimpleBondList()
+        for bond in simpleCellBonds:
+            pos1 = bond.pos1
+            pos2 = bond.pos2
+            jMatInt = bond.jMatrix
+            for i in range(2):
+                for j in range(2):
+                    for k in range(2):
+                        for a in range(Na):
+                            for b in range(Nb):
+                                for c in range(Nc):
+                                    x1 = pos1[0] + a + (Na * i)
+                                    y1 = pos1[1] + b + (Nb * j)
+                                    z1 = pos1[2] + c + (Nc * k)
+                                    
+                                    x2 = pos2[0] + a + (Na * i)
+                                    y2 = pos2[1] + b + (Nb * j)
+                                    z2 = pos2[2] + c + (Nc * k)    
+                                    bond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMatInt )
+                                    simpleBonds.addBond(bond)                              
+
+        #Pick out bonds that link first cutoff cell and another
+        interCutoffBonds = []
+        for eachBond in simpleBonds.list:
+            #Check if one bond is in the first cutoff cell
+            if eachBond.pos1[0] < Na or eachBond.pos2[0] < Na: #x
+                if eachBond.pos1[1] < Nb or eachBond.pos2[1] < Nb: #y
+                    if eachBond.pos1[2] < Nc or eachBond.pos2[2] < Nc: #z
+                        #check if the second bond is not in the first cutoff cell
+                        if (not eachBond.pos1[0] < Na) or (not eachBond.pos2[0] < Na): #x
+                            if (not eachBond.pos1[1] < Nb) or (not eachBond.pos2[1] < Nb): #y
+                                if (not eachBond.pos1[2] < Nc) or (not eachBond.pos2[2] < Nc): #z
+                                    interCutoffBonds.append(eachBond)
+                                    
+        
+        atoms = sortedAtomList()
+        for bond in simpleCellBonds:
+            pos1 = bond.pos1
+            pos2 = bond.pos2
+            jMat = bond.jMatrix
+            atom1 = atoms.find(SimpleAtom(pos1))
+            atom2 = atoms.find(SimpleAtom(pos2))
+            if not atom1:
+                atom1 = SimpleAtom(pos1)
+                atoms.append(atom1)
+            if not atom2:
+                atom2 = SimpleAtom(pos2)
+                atoms.append(atom2)
+            atom1.add(atom2, jMat)
+            atom2.add(atom1, jMat)
+        atoms.sort()
+        
+        
+        #This can all be done in layers of the Z plane later to save memory
+        #rather than dealing with the entire cube at once
+        
+        #translate the cutoff cell and the bonds contained within it
+        allAtoms = sortedAtomList()
+        for i in range(size):
+            for j in range(size):
+                for k in range(size):
+                    atoms2 = atoms.translate(i, j, k)
+                    allAtoms.extend(atoms2.atoms)
+                    
+        
+  
+        for smplBond in interCutoffBonds:
+            pos1 = smplBond.pos1
+            pos2 = smplBond.pos2
+            jMat = smplBond.jMatrix
+#            jStr = str(jMat[0][0]) + " " + str(jMat[0][1]) + " " + str(jMat[0][2]) + " " + str(jMat[1][0]) + " " + str(jMat[1][1]) + " " + str(jMat[1][2]) + " " + str(jMat[2][0]) + " " + str(jMat[2][1]) + " " + str(jMat[2][2])
+            aDisp = abs(pos1[0] - pos2[0])
+            bDisp = abs(pos1[1] - pos2[1])
+            cDisp = abs(pos1[2] - pos2[2])
+            for i in range(size - aDisp):
+                for j in range(size - bDisp):
+                    for k in range(size - cDisp):
+                        #The one that was translated from the original cell can be simply appended
+  
+            
+            #check if it is sorted
+
     
 class atomTable(wx.grid.PyGridTableBase):
     def __init__(self):

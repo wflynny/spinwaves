@@ -15,6 +15,7 @@ from wx.py.dispatcher import connect, send
 import vtkModel.SpaceGroups
 import time
 from Session import Session
+import numpy
 
 
 
@@ -497,6 +498,7 @@ class bondListGrid(wx.grid.Grid):
             if result == wx.ID_OK:
                 print dialog.getMatrix()
                 self.table.SetValue(row, 8, numpy.array(dialog.getMatrix()))
+#                self.SetCellValue(row, 8, numpy.array(dialog.getMatrix())) must be a string
 
             dialog.Destroy()
 
@@ -701,9 +703,13 @@ class bondPanel(wx.Panel):
 #                    attr.SetBackgroundColour(bgColor)
 #                    self.bondList.SetAttr(row, 8, attr)
 #                    failed = True
-                jij = self.bondList.GetCellValue(row, 8)  #allow a bond to be made with no Jij Matrix
-                if jij == '':
+                Jcell = self.bondList.GetCellValue(row, 8)#string
+                #allow a bond to be made with no Jij Matrix
+                if Jcell == '':
                     jij = None
+                else:
+                    jij = self.bondList.table.GetValue(row, 8)#numpy.array
+                print isinstance(jij, str)
             
                 
                 bondData.append([atom1Num, Na1,Nb1,Nc1, atom2Num, Na2,Nb2,Nc2, jij])
@@ -1197,7 +1203,7 @@ class App(wx.App):
 
 
 if __name__ == '__main__':
-    app = App(True)
+    app = App(False)
     app.MainLoop()
     
     
