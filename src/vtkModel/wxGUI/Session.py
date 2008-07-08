@@ -345,9 +345,11 @@ class Session():
         #Write to the file
         xml.dom.ext.PrettyPrint(doc, open(filename, 'w'))
         
+       
+       
         
     def export(self, filename):
-        size = 20
+        size = 10
         
         initialTime = time.clock()
         
@@ -569,10 +571,16 @@ class Session():
        
         
     #This one orgnizes it by atom, not bond    
+    
+    
+    
+    
+    
+    
     def exportForMonteCarlo(self, filename):
-        size = 100
+        size = 5
         
-        initialTime = time.clock()
+        timer = Timer()
         
         file = open(filename, 'w')
    
@@ -593,17 +601,20 @@ class Session():
         Nc = self.getCutoffCell().getNc()
         
         class SimpleAtom():
-            def __init__(self, pos):
+            def __init__(self, pos, index):
                 self.pos = pos
+                self.index = index
                 self.cellPos = []
                 self.cellPosX = int(pos[0])/Na
                 self.cellPosY = int(pos[1])/Nb
                 self.cellPosZ = int(pos[2])/Nc
-                self.interactions = {}
+                self.interactions = []
                 #self.interactions[position of other atom] = j number
                 
-            def addInteraction(self, pos2, jMat):
-                self.interactions[pos2] = jMat
+            #might want to change this to position later when all atoms wont be created in same list
+            def addInteraction(self, atom2, jMat):
+#                self.interactions[atom2] = jMat
+                self.interactions.append([atom2, jMat])
             
             #comparisons based on positions
             def __lt__(self, other):
@@ -700,7 +711,42 @@ class Session():
             def __ge__(self, other):
                 return (self.__eq__(other) or self.__gt__(other))
                 
+           
                 
+        class SimpleAtomList():
+            def __init__(self):
+                self.atoms = []
+                
+            def addBond(self, pos1, pos2, jMatrix):
+                #Make sure each position is not yet represented the easy but inefficient way
+                pos1Index = -1
+                pos2Index = -1
+                for i in range(len(self.atoms)):
+                    currentPos = self.atoms[i].pos
+                    if currentPos == pos1:
+                        pos1Index = i
+                    if currentPos == pos2:
+                        pos2Index = i
+                
+                if pos1Index < 0:
+                    atom1 = SimpleAtom(pos1, len(self.atoms))
+                    self.atoms.append(atom1)
+#                    print self.atoms[atom1.index] == atom1
+                else:
+                    atom1 = self.atoms[pos1Index]
+                    
+                if pos2Index < 0:
+                    atom2 = SimpleAtom(pos2, len(self.atoms))
+                    self.atoms.append(atom2)
+#                    print self.atoms[atom2.index] == atom2
+                else:
+                    atom2 = self.atoms[pos2Index]
+                    
+                atom1.addInteraction(atom2, jMatrix)
+                atom2.addInteraction(atom1, jMatrix)
+                
+        
+        
         
         class sortedAtomList():
             def __init__(self):
@@ -726,7 +772,7 @@ class Session():
             def add(self, item):
                 index = addAux(0, len(self.atoms), item)
                 
-            def addAux(self, start, end):
+#            def addAux(self, start, end):
                 
             
             def find(self, item):
@@ -774,7 +820,7 @@ class Session():
         
         def indexOf(list, item):
             for i in range(len(list)):
-                if item.all() == list[i].all():
+                if (item == list[i]).all():
                     return i
             return -1
         
@@ -834,42 +880,49 @@ class Session():
                                 if (not eachBond.pos1[2] < Nc) or (not eachBond.pos2[2] < Nc): #z
                                     interCutoffBonds.append(eachBond)
                                     
+     
+     
+     #The easy but slow way
+     
+            
+        file.write("#J Matrices\n#Number J11 J12 J13 J21 J22 J23 J31 J32 J33\n")
+        for i in range(len(matrices)):
+            jMat = matrices[i]
+            jStr = str(i) + " " + str(jMat[0][0]) + " " + str(jMat[0][1]) + " " + str(jMat[0][2]) + " " + str(jMat[1][0]) + " " + str(jMat[1][1]) + " " + str(jMat[1][2]) + " " + str(jMat[2][0]) + " " + str(jMat[2][1]) + " " + str(jMat[2][2])
+            file.write(jStr + "\n")
         
-        atoms = sortedAtomList()
-        for bond in simpleCellBonds:
+        
+        finalBondList = []
+        for bond in simpleCellBonds:   
             pos1 = bond.pos1
             pos2 = bond.pos2
-            jMat = bond.jMatrix
-            atom1 = atoms.find(SimpleAtom(pos1))
-            atom2 = atoms.find(SimpleAtom(pos2))
-            if not atom1:
-                atom1 = SimpleAtom(pos1)
-                atoms.append(atom1)
-            if not atom2:
-                atom2 = SimpleAtom(pos2)
-                atoms.append(atom2)
-            atom1.add(atom2, jMat)
-            atom2.add(atom1, jMat)
-        atoms.sort()
+#            jStr += " " 
+#            jStr += str(jMat[0][1]) 
+#            jStr += " " + str(jMat[0][2]) 
+#            jStr += " " + str(jMat[1][0]) + " " + str(jMat[1][1]) + " " + str(jMat[1][2]) + " " + str(jMat[2][0]) + " " + str(jMat[2][1]) + " " + str(jMat[2][2])
+            for i in range(size):
+                for j in range(size):
+                    for k in range(size):
+                        x1 = pos1[0] + (Na * i)
+                        y1 = pos1[1] + (Nb * j)
+                        z1 = pos1[2] + (Nc * k)
+                        
+                        x2 = pos2[0] + (Na * i)
+                        y2 = pos2[1] + (Nb * j)
+                        z2 = pos2[2] + (Nc * k)    
+#                        smplBond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMat )
+ #                       finalBondList.append(smplBond)
+                        pos1Str = str(x1) + " " + str(y1) + " " + str(z1)
+                        pos2Str = str(x2) + " " + str(y2) + " " + str(z2)
+                        finalBondList.append(SimpleBond((x1,y1,z1),(x2,y2,z2),bond.jMatrix))
+
+        print "Added all bond within cutoff Cells"
         
-        
-        #This can all be done in layers of the Z plane later to save memory
-        #rather than dealing with the entire cube at once
-        
-        #translate the cutoff cell and the bonds contained within it
-        allAtoms = sortedAtomList()
-        for i in range(size):
-            for j in range(size):
-                for k in range(size):
-                    atoms2 = atoms.translate(i, j, k)
-                    allAtoms.extend(atoms2.atoms)
-                    
-        
-  
         for smplBond in interCutoffBonds:
             pos1 = smplBond.pos1
             pos2 = smplBond.pos2
             jMat = smplBond.jMatrix
+            jStr = str(jMat)
 #            jStr = str(jMat[0][0]) + " " + str(jMat[0][1]) + " " + str(jMat[0][2]) + " " + str(jMat[1][0]) + " " + str(jMat[1][1]) + " " + str(jMat[1][2]) + " " + str(jMat[2][0]) + " " + str(jMat[2][1]) + " " + str(jMat[2][2])
             aDisp = abs(pos1[0] - pos2[0])
             bDisp = abs(pos1[1] - pos2[1])
@@ -877,11 +930,149 @@ class Session():
             for i in range(size - aDisp):
                 for j in range(size - bDisp):
                     for k in range(size - cDisp):
+                        x1 = pos1[0] + (Na * i)
+                        y1 = pos1[1] + (Nb * j)
+                        z1 = pos1[2] + (Nc * k)
+                        
+                        x2 = pos2[0] + (Na * i)
+                        y2 = pos2[1] + (Nb * j)
+                        z2 = pos2[2] + (Nc * k)    
+#                        smplBond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMat )
+ #                       finalBondList.append(smplBond)
+                        pos1Str = str(x1) + " " + str(y1) + " " + str(z1)
+                        pos2Str = str(x2) + " " + str(y2) + " " + str(z2)
+                        finalBondList.append(SimpleBond((x1,y1,z1),(x2,y2,z2),smplBond.jMatrix))
+        
+#        print "added all bonds, checking for reapeats"
+#        timer.printTime()
+#        
+#        #Check for reapeats in finalBond List just for testing
+#        def isRepeat(finalBondList):
+#            for i in range(0, len(finalBondList)):
+#                for j in range(i + 1, len(finalBondList)):
+#                    if finalBondList[i].sameBond(finalBondList[j]):
+#                        return True
+#            return False
+#        
+#        if isRepeat(finalBondList):
+#            print "There is a repeat!"
+#        else:
+#            print "NO repeats!"
+#            
+        timer.printTime()
+        
+        atomList = SimpleAtomList()
+        for bond in finalBondList:
+            atomList.addBond(bond.pos1, bond.pos2, bond.jMatrix)
+            
+#        print "bonds added to associative atom list, checking if it is balanced"
+        timer.printTime()
+        
+        #Check the simple atom list
+ #       def atomBalanced(atom):
+ #           for otherAtom in atomList.atoms:
+ #               if atomInteractsWithAtom(atom, otherAtom):
+ #                   if atomInteractsWithAtom(otherAtom, atom):
+ #                       return True
+ #                   else:
+ #                       return False
+ #           return False
+ #               
+ #               
+ #       def atomInteractsWithAtom(atom, otherAtom):
+ #           for interaction in otherAtom.interactions:
+ #               if atom == interaction[0]:
+ #                   return True
+ #           return False
+ #       
+ #       
+ #       for atom in atomList.atoms:
+ #           if not atomBalanced(atom):
+ #               print "Not Balanced!!!"
+ #               break
+ #       else:
+ #           print "Balanced!"
+            
+
+            
+        
+        #print out the simple atom list
+        file.write("#AtomNumber AtomPosition(X Y Z) OtherIndex OtherPos Jmatrix OtherIndex OtherPos Jmatrix...\n")
+        for atom in atomList.atoms:
+            atomStr = str(atom.index) + " " + str(atom.pos[0]) + " " + str(atom.pos[1]) + " " + str(atom.pos[2])
+            for interactionKey in atom.interactions:
+                otherAtom = interactionKey[0]
+                jMat = interactionKey[1]
+                atomStr += " " + str(otherAtom.index) + " " + str(otherAtom.pos[0]) + " " + str(otherAtom.pos[1]) + " " + str(otherAtom.pos[2])
+                atomStr += " " + str(jMat)
+            file.write(atomStr + "\n")
+        
+        file.close()
+            
+        timer.printTime()
+            
+        
+        #More efficient method with a sorted list and eventually in layers
+#        atoms = sortedAtomList()
+#        for bond in simpleCellBonds:
+#            pos1 = bond.pos1
+#            pos2 = bond.pos2
+#            jMat = bond.jMatrix
+#            atom1 = atoms.find(SimpleAtom(pos1))
+#            atom2 = atoms.find(SimpleAtom(pos2))
+#            if not atom1:
+#                atom1 = SimpleAtom(pos1)
+#                atoms.append(atom1)
+#            if not atom2:
+#                atom2 = SimpleAtom(pos2)
+#                atoms.append(atom2)
+#            atom1.add(atom2, jMat)
+#            atom2.add(atom1, jMat)
+ #       atoms.sort()
+ #       
+ #       
+ #       #This can all be done in layers of the Z plane later to save memory
+ #       #rather than dealing with the entire cube at once
+ #       
+ #       #translate the cutoff cell and the bonds contained within it
+ #       allAtoms = sortedAtomList()
+ #       for i in range(size):
+ #           for j in range(size):
+ #               for k in range(size):
+ #                   atoms2 = atoms.translate(i, j, k)
+ #                   allAtoms.extend(atoms2.atoms)
+ #                   
+ #       
+ # 
+ #       for smplBond in interCutoffBonds:
+ #           pos1 = smplBond.pos1
+ #           pos2 = smplBond.pos2
+ #           jMat = smplBond.jMatrix
+##            jStr = str(jMat[0][0]) + " " + str(jMat[0][1]) + " " + str(jMat[0][2]) + " " + str(jMat[1][0]) + " " + str(jMat[1][1]) + " " + str(jMat[1][2]) + " " + str(jMat[2][0]) + " " + str(jMat[2][1]) + " " + str(jMat[2][2])
+ #           aDisp = abs(pos1[0] - pos2[0])
+ #           bDisp = abs(pos1[1] - pos2[1])
+ #           cDisp = abs(pos1[2] - pos2[2])
+ #           for i in range(size - aDisp):
+ #               for j in range(size - bDisp):
+ #                   for k in range(size - cDisp):
                         #The one that was translated from the original cell can be simply appended
   
             
             #check if it is sorted
 
+class Timer():
+    """for diagnostics"""
+    def __init__(self):
+        self.initialTime = time.clock()
+    
+    def printTime(self):
+        seconds = time.clock() - self.initialTime
+        minutes = int(seconds)/60
+        seconds -= (minutes*60)
+        hours = minutes/60
+        minutes -= hours*60
+        print "Time:", hours, "hours", minutes, "minutes", seconds, "seconds" 
+ 
     
 class atomTable(wx.grid.PyGridTableBase):
     def __init__(self):

@@ -1142,7 +1142,7 @@ class Frame(wx.Frame):
     def OnExport(self, evt):
         saveDialog = wx.FileDialog(self, "Save File", style = wx.SAVE, wildcard = "*.txt")
         if saveDialog.ShowModal() == wx.ID_OK:
-            self.session.export(saveDialog.GetPath())
+            self.session.exportForMonteCarlo(saveDialog.GetPath())
         saveDialog.Destroy()
 
     
