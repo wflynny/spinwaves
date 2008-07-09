@@ -1112,8 +1112,8 @@ class Frame(wx.Frame):
         
         #Add Model Menu
         modelMenu = wx.Menu()
-        addCellMenuItem = modelMenu.Append(wx.NewId(), "Add Atom")
-        addBondMenuItem = modelMenu.Append(wx.NewId(), "Add Bond")
+#        addCellMenuItem = modelMenu.Append(wx.NewId(), "Add Atom")
+#        addBondMenuItem = modelMenu.Append(wx.NewId(), "Add Bond")
         deleteMenuItem = modelMenu.Append(wx.NewId(), "Delete")
         menuBar.Append(modelMenu, "Model")
         self.SetMenuBar(menuBar)

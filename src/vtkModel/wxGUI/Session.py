@@ -578,7 +578,7 @@ class Session():
     
     
     def exportForMonteCarlo(self, filename):
-        size = 5
+        size = 10
         
         timer = Timer()
         

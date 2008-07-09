@@ -27,6 +27,8 @@ class simpleAtom():
         self.s = numpy.array([0,0,random.uniform(-1,1)])
         self.interactions = []
 
+
+
 def readFile(filename):
     #read in the interactions file
     file = open(filename, 'r')
@@ -83,7 +85,7 @@ def Energy(atom, S):
         s1 = S
         s2 = atoms[interaction[0]].s
         Jij = jMatrices[interaction[1]]
-        E += numpy.dot(numpy.dot(s1,Jij),s2)
+        E -= numpy.dot(numpy.dot(s1,Jij),s2) #E = -sum(S1*Jij*S2)
     return E
         
 
@@ -111,9 +113,9 @@ def flipSpins():
   
 if __name__ == '__main__':      
     k = 1000
-    tMax = 20
+    tMax = 15
     tMin = .01
-    tFactor = .95
+    tFactor = .9
     timer = Timer()
     atoms, jMatrices = readFile("C:\export.txt")
     print "File Read"
@@ -121,34 +123,58 @@ if __name__ == '__main__':
     #double check
        #Check the simple atom list
 #    checkBalanced(atoms)
-    testFile = open("C:/testResults.txt", 'w')
+    testFile = open("C:/testResults100.txt", 'w')
 
-    for i in range(10):
-        T = tMax
-        while T > tMin:  
-            for i in range(k):
-                flipSpins()
-    #            pylab.plot([0], [atoms[0].s[2]], 'ro')
-    #            pylab.axis([-1, 1, -1, 1])
-    #            pylab.show()
-            T = tFactor*T
-            print "T:", T
-            print "50:", atoms[50].s
-            print "500:", atoms[500].s
-            print "2000:", atoms[2000].s
-            print "5000:", atoms[5000].s
-            print "7500:", atoms[7500].s
-            print "10000:", atoms[10000].s
-            
-            for atom in atoms:
-                testFile.write(str(atom.s[2]) + "     ")
+    magnetizations = []
+    temperatures = []
+    T = tMax
+    while T > tMin:  
+        for i in range(k):
+            flipSpins()
+#            pylab.plot([0], [atoms[0].s[2]], 'ro')
+#            pylab.axis([-1, 1, -1, 1])
+#            pylab.show()
+        T = tFactor*T
+#        print "T:", T
+#        print "50:", atoms[50].s
+#        print "500:", atoms[500].s
+#        print "2000:", atoms[2000].s
+#        print "5000:", atoms[5000].s
+#        print "7500:", atoms[7500].s
+#        print "10000:", atoms[10000].s
         
-            #Just to see how much they change
-        timer.printTime()
-        testFile.write('\n')
-        
-    testFile.close()
+        #Add average magnetization
+        avgMag = 0.0
+        for atom in atoms:
+            avgMag += atom.s[2]
+        avgMag = avgMag/len(atoms)
+        magnetizations.append(avgMag)
+        temperatures.append(T)
     
+        #Just to see how much they change
+        timer.printTime()
+        
+
+    for atom in atoms:
+        testFile.write(str(atom.s[2]) + "   ")
+    testFile.write('\n')
+    testFile.close()
+    #find max value
+    max = 0
+    min = 0
+    for num in magnetizations:
+        if num > max:
+            max = num
+        elif num < min:
+            min = num
+
+#    pylab.plot(range(len(magnetizations)), magnetizations, 'ro')
+#    pylab.axis([0, len(magnetizations), min, max])
+    pylab.plot(temperatures, magnetizations, 'ro')
+    pylab.axis([temperatures[len(temperatures)-1], temperatures[0], min, max])
+    #    savefig('secondfig.png')
+    pylab.show()
+        
     
     
     
