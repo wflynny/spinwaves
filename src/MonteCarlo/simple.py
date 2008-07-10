@@ -23,7 +23,7 @@ class Timer():
 
 class simpleAtom():
     def __init__(self, pos):
-        self. pos = pos
+        self.pos = pos
         self.s = numpy.array([0,0,random.uniform(-1,1)])
         self.interactions = []
 
@@ -112,8 +112,8 @@ def flipSpins():
   
   
 if __name__ == '__main__':      
-    k = 1000
-    tMax = 15
+    k = 100
+    tMax = 10
     tMin = .01
     tFactor = .9
     timer = Timer()
@@ -155,8 +155,9 @@ if __name__ == '__main__':
         timer.printTime()
         
 
-    for atom in atoms:
-        testFile.write(str(atom.s[2]) + "   ")
+    for i in range(len(atoms)):
+        atom = atoms[i]
+        testFile.write(str(i) + " " + str(atom.s[2]) + "   ")
     testFile.write('\n')
     testFile.close()
     #find max value
