@@ -39,7 +39,7 @@ class Picker():
             actors = self.ren1.GetActors()
 #            for i in range(actors.GetNumberOfItems()):
 #                print actors.GetNextActor()
-#            print modelObj
+            print modelObj
 #            print self.SelectedActor
     
     def removeObserver(self):
