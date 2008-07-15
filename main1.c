@@ -204,7 +204,7 @@ int test(struct atom atoms[], int numAtoms)
 }
 
 */
-
+/*
 typedef struct
 {
         int length;
@@ -218,45 +218,54 @@ typedef struct
         interactionsStruct interactionsArray[];
 }atomArrayStruct;  
 
-
-
-
 void test3(int k , float tMax, float tMin, float tFactor, atomArrayStruct atoms)
 {
      return
 }
+*/
+
+typedef float Spin[3];
+
+//Global list of atoms so that the atoms can be added one at a time
+//Atom *atoms;  //not necessary if python keeps the address
 
 
-typedef float spintype[3];
-
-typedef struct{
+typedef struct
+{
         int *interaction_matrix;
         int *nbr_list;
-        spintype spin; 
-        } Atom;
+        float *spin;
+//        Spin spin;
+} Atom;
         
-void new_atom(int n){
-     
+Atom* new_atom_list(int n)
+{
      Atom *a;
      a=malloc(n*sizeof(Atom));
-     return a;
+     return a;//return to calling python method to add the atoms
+}
+
+void del_atom(Atom *p) {free(p);}
+
+void set_atom(Atom *p, int k, int *mat, int matLength, int* neighbors, int nbrLength, Spin spin)
+{
+     p[k].interaction_matrix = mat;
+     p[k].nbr_list = neighbors;
+     p[k].spin = spin;
+}
+
+void atomTest(Atom *p, int num)
+{
+     int length;
+     length = sizeof(*p)/sizeof(Atom);
+     printf("length: %d\n", length);  //just a test, does not know the amount allocated to it with malloc
+     
+     int i;
+     for (i = 0; i < num; i++)
+     {
+         printf("atom %d) mat[0]:%d mat[1]:%d mat[2]:%d\n", i, p[i].interaction_matrix[0], p[i].interaction_matrix[1], p[i].interaction_matrix[2]);
      }
-
-void del_atom(atom *p) {free(p)}
-
-void set_atom(atom *p, int *mat, int* neighbors, spin* spin){
-     p[k].matrix=mat;
-     p[k].neighbor=neighbor;
-     
-     
-     
-     }
-
-
-
-
-
-
+}
 
 int main(int argc, char *argv[])
 {
