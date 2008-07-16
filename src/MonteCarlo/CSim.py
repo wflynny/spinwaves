@@ -8,7 +8,7 @@ import sys
  
   
 if __name__ == '__main__':      
-    k = 100
+    k = 1000
     tMax = 10
     tMin = .01
     tFactor = .9
