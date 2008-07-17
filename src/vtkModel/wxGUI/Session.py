@@ -578,7 +578,7 @@ class Session():
     
     
     def exportForMonteCarlo(self, filename):
-        size = 10
+        size = 20
         
         timer = Timer()
         
@@ -601,13 +601,12 @@ class Session():
         Nc = self.getCutoffCell().getNc()
         
         class SimpleAtom():
-            def __init__(self, pos, index):
+            def __init__(self, pos):
                 self.pos = pos
-                self.index = index
-                self.cellPos = []
-                self.cellPosX = int(pos[0])/Na
-                self.cellPosY = int(pos[1])/Nb
-                self.cellPosZ = int(pos[2])/Nc
+#                self.cellPos = []
+#                self.cellPosX = int(pos[0])/Na
+#                self.cellPosY = int(pos[1])/Nb
+#                self.cellPosZ = int(pos[2])/Nc
                 self.interactions = []
                 #self.interactions[position of other atom] = j number
                 
@@ -729,23 +728,23 @@ class Session():
                         pos2Index = i
                 
                 if pos1Index < 0:
-                    atom1 = SimpleAtom(pos1, len(self.atoms))
+                    atom1 = SimpleAtom(pos1)
                     self.atoms.append(atom1)
 #                    print self.atoms[atom1.index] == atom1
-                else:
-                    atom1 = self.atoms[pos1Index]
+#                else:
+#                    atom1 = self.atoms[pos1Index]
                     
                 if pos2Index < 0:
-                    atom2 = SimpleAtom(pos2, len(self.atoms))
+                    atom2 = SimpleAtom(pos2)
                     self.atoms.append(atom2)
 #                    print self.atoms[atom2.index] == atom2
-                else:
-                    atom2 = self.atoms[pos2Index]
+#                else:
+#                    atom2 = self.atoms[pos2Index]
                     
-                atom1.addInteraction(atom2, jMatrix)
-                atom2.addInteraction(atom1, jMatrix)
-                
-        
+#Unnecesary the way it is currently beig used
+#                atom1.addInteraction(atom2, jMatrix)
+#                atom2.addInteraction(atom1, jMatrix)
+                  
         
         
         class sortedAtomList():
@@ -793,7 +792,6 @@ class Session():
                 return mid
                 
         
-        
         class SimpleBondList():
             def __init__(self):
                 self.list = []
@@ -804,6 +802,8 @@ class Session():
             def addBond(self, bond):
                 if not self.containsBond(bond):
                     self.list.append(bond)
+#                else:
+#                    print "Duplicate Bonds!" #should not get here
                     
             def containsBond(self, bond):
                 for eachBond in self.list:
@@ -815,6 +815,12 @@ class Session():
         def contains(list, element):
             for item in list:
                 if (item == element).all():
+                    return True
+            return False
+        
+        def atomListContains(list, element):
+            for item in list:
+                if item == element:
                     return True
             return False
         
@@ -846,7 +852,12 @@ class Session():
             simpleCellBonds.append(newBond)
         
         
-        simpleBonds = SimpleBondList()
+        def PosInFirstCutoff(pos):
+            return (pos[0] < Na and pos[1] < Nb and pos[2] < Nc)
+        
+        
+        cellAtoms = []
+        cellBonds = SimpleBondList()
         for bond in simpleCellBonds:
             pos1 = bond.pos1
             pos2 = bond.pos2
@@ -863,28 +874,25 @@ class Session():
                                     
                                     x2 = pos2[0] + a + (Na * i)
                                     y2 = pos2[1] + b + (Nb * j)
-                                    z2 = pos2[2] + c + (Nc * k)    
-                                    bond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMatInt )
-                                    simpleBonds.addBond(bond)                              
+                                    z2 = pos2[2] + c + (Nc * k)  
+                                    newPos1 = (x1,y1,z1)
+                                    newPos2 = (x2,y2,z2)
+                                    if PosInFirstCutoff(newPos1):
+                                        newAtom = SimpleAtom(newPos1)
+                                        bond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMatInt )
+                                        if not atomListContains(cellAtoms, newAtom):
+                                            cellAtoms.append(newAtom)
+                                        cellBonds.addBond(bond)
+                                    if PosInFirstCutoff(newPos2):
+                                        newAtom = SimpleAtom(newPos2)
+                                        bond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMatInt )
+                                        if not atomListContains(cellAtoms, newAtom):
+                                            cellAtoms.append(newAtom)
+                                        cellBonds.addBond(bond)
+                
+        
 
-        #Pick out bonds that link first cutoff cell and another
-        interCutoffBonds = []
-        for eachBond in simpleBonds.list:
-            #Check if one bond is in the first cutoff cell
-            if eachBond.pos1[0] < Na or eachBond.pos2[0] < Na: #x
-                if eachBond.pos1[1] < Nb or eachBond.pos2[1] < Nb: #y
-                    if eachBond.pos1[2] < Nc or eachBond.pos2[2] < Nc: #z
-                        #check if the second bond is not in the first cutoff cell
-                        if (not eachBond.pos1[0] < Na) or (not eachBond.pos2[0] < Na): #x
-                            if (not eachBond.pos1[1] < Nb) or (not eachBond.pos2[1] < Nb): #y
-                                if (not eachBond.pos1[2] < Nc) or (not eachBond.pos2[2] < Nc): #z
-                                    interCutoffBonds.append(eachBond)
-                                    
-     
-     
-     #The easy but slow way
-     
-            
+         
         file.write("#J Matrices\n#Number J11 J12 J13 J21 J22 J23 J31 J32 J33\n")
         for i in range(len(matrices)):
             jMat = matrices[i]
@@ -892,61 +900,65 @@ class Session():
             file.write(jStr + "\n")
         
         
-        finalBondList = []
-        for bond in simpleCellBonds:   
+        
+        allAtoms = []
+        numAtomsPerCell = len(cellAtoms)
+        
+        print "atoms in cell: ", numAtomsPerCell
+        
+        for i in range(size):
+            for j in range(size):
+                for k in range(size):
+                    for index in range(len(cellAtoms)):
+                        pos = cellAtoms[index].pos
+                        x = pos[0] + (Na * i)
+                        y = pos[1] + (Nb * j)
+                        z = pos[2] + (Nc * k)
+                        newAtom = SimpleAtom((x,y,z))
+#                        print (len(allAtoms)%numAtomsPerCell == index)#just a check, should always be true
+                        allAtoms.append(newAtom)
+
+ 
+        #Add bonds cellBonds to allAtoms (currently not most efficient way, but its a short list
+        for bond in cellBonds.list:
+            #Make sure each position is not yet represented the easy but inefficient way
             pos1 = bond.pos1
             pos2 = bond.pos2
-#            jStr += " " 
-#            jStr += str(jMat[0][1]) 
-#            jStr += " " + str(jMat[0][2]) 
-#            jStr += " " + str(jMat[1][0]) + " " + str(jMat[1][1]) + " " + str(jMat[1][2]) + " " + str(jMat[2][0]) + " " + str(jMat[2][1]) + " " + str(jMat[2][2])
-            for i in range(size):
-                for j in range(size):
-                    for k in range(size):
-                        x1 = pos1[0] + (Na * i)
-                        y1 = pos1[1] + (Nb * j)
-                        z1 = pos1[2] + (Nc * k)
-                        
-                        x2 = pos2[0] + (Na * i)
-                        y2 = pos2[1] + (Nb * j)
-                        z2 = pos2[2] + (Nc * k)    
-#                        smplBond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMat )
- #                       finalBondList.append(smplBond)
-                        pos1Str = str(x1) + " " + str(y1) + " " + str(z1)
-                        pos2Str = str(x2) + " " + str(y2) + " " + str(z2)
-                        finalBondList.append(SimpleBond((x1,y1,z1),(x2,y2,z2),bond.jMatrix))
+            pos1Index = -1
+            pos2Index = -1
+            for i in range(len(allAtoms)):
+                currentPos = allAtoms[i].pos
+                if currentPos == pos1:
+                    pos1Index = i
+                    break
+                
+            for i in range(len(allAtoms)):
+                currentPos = allAtoms[i].pos  
+                if currentPos == pos2:
+                    pos2Index = i
+                    break
+            
+            if pos1Index < 0 or pos2Index < 0:
+                print "Atom list does not contain all atoms!" 
+            else:
+                allAtoms[pos1Index].addInteraction(pos2Index, bond.jMatrix)
+                allAtoms[pos2Index].addInteraction(pos1Index, bond.jMatrix)
 
-        print "Added all bond within cutoff Cells"
+
+        timer.printTime()
+        print"translating..."
         
-        for smplBond in interCutoffBonds:
-            pos1 = smplBond.pos1
-            pos2 = smplBond.pos2
-            jMat = smplBond.jMatrix
-            jStr = str(jMat)
-#            jStr = str(jMat[0][0]) + " " + str(jMat[0][1]) + " " + str(jMat[0][2]) + " " + str(jMat[1][0]) + " " + str(jMat[1][1]) + " " + str(jMat[1][2]) + " " + str(jMat[2][0]) + " " + str(jMat[2][1]) + " " + str(jMat[2][2])
-            aDisp = abs(pos1[0] - pos2[0])
-            bDisp = abs(pos1[1] - pos2[1])
-            cDisp = abs(pos1[2] - pos2[2])
-            for i in range(size - aDisp):
-                for j in range(size - bDisp):
-                    for k in range(size - cDisp):
-                        x1 = pos1[0] + (Na * i)
-                        y1 = pos1[1] + (Nb * j)
-                        z1 = pos1[2] + (Nc * k)
-                        
-                        x2 = pos2[0] + (Na * i)
-                        y2 = pos2[1] + (Nb * j)
-                        z2 = pos2[2] + (Nc * k)    
-#                        smplBond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMat )
- #                       finalBondList.append(smplBond)
-                        pos1Str = str(x1) + " " + str(y1) + " " + str(z1)
-                        pos2Str = str(x2) + " " + str(y2) + " " + str(z2)
-                        finalBondList.append(SimpleBond((x1,y1,z1),(x2,y2,z2),smplBond.jMatrix))
+        #translate bonds
+        for i in range(len(allAtoms)- numAtomsPerCell):
+            for interaction in allAtoms[i].interactions:
+                allAtoms[i+numAtomsPerCell].addInteraction(interaction[0] + numAtomsPerCell, interaction[1])
         
-#        print "added all bonds, checking for reapeats"
+        
+        
+#        print "done translating, checking list"
 #        timer.printTime()
-#        
-#        #Check for reapeats in finalBond List just for testing
+        
+        #Check for reapeats in finalBond List just for testing
 #        def isRepeat(finalBondList):
 #            for i in range(0, len(finalBondList)):
 #                for j in range(i + 1, len(finalBondList)):
@@ -959,56 +971,54 @@ class Session():
 #        else:
 #            print "NO repeats!"
 #            
-        timer.printTime()
+#        timer.printTime()
         
-        atomList = SimpleAtomList()
-        for bond in finalBondList:
-            atomList.addBond(bond.pos1, bond.pos2, bond.jMatrix)
-            
-#        print "bonds added to associative atom list, checking if it is balanced"
-        timer.printTime()
         
         #Check the simple atom list
- #       def atomBalanced(atom):
- #           for otherAtom in atomList.atoms:
- #               if atomInteractsWithAtom(atom, otherAtom):
- #                   if atomInteractsWithAtom(otherAtom, atom):
- #                       return True
- #                   else:
- #                       return False
- #           return False
- #               
- #               
- #       def atomInteractsWithAtom(atom, otherAtom):
- #           for interaction in otherAtom.interactions:
- #               if atom == interaction[0]:
- #                   return True
- #           return False
- #       
- #       
- #       for atom in atomList.atoms:
- #           if not atomBalanced(atom):
- #               print "Not Balanced!!!"
- #               break
- #       else:
- #           print "Balanced!"
+        def atomBalanced(atomIndex):
+            atom = allAtoms[atomIndex]
+            for otherAtomIndex in range(len(allAtoms)):
+                otherAtom = allAtoms[otherAtomIndex]
+                if atomInteractsWithAtom(atomIndex, otherAtom):
+                    if atomInteractsWithAtom(otherAtomIndex, atom):
+                        return True
+                    else:
+                        return False
+            return False
+        
+        def atomInteractsWithAtom(atomIndex, otherAtom):
+            for interaction in otherAtom.interactions:
+                if atomIndex == interaction[0]:
+                    return True
+            return False
+        
+        
+#        for atomIndex in range(len(allAtoms)):
+#            if not atomBalanced(atomIndex):
+#                print "Not Balanced!!!"
+#                break
+#        else:
+#            print "Balanced!"
             
-
+        
+        timer.printTime()
+        print "number of atoms: ", len(allAtoms), "\n writing to disk..."
             
         
         #print out the simple atom list
-        file.write("#AtomNumber AtomPosition(X Y Z) OtherIndex OtherPos Jmatrix OtherIndex OtherPos Jmatrix...\n")
-        for atom in atomList.atoms:
-            atomStr = str(atom.index) + " " + str(atom.pos[0]) + " " + str(atom.pos[1]) + " " + str(atom.pos[2])
-            for interactionKey in atom.interactions:
-                otherAtom = interactionKey[0]
-                jMat = interactionKey[1]
-                atomStr += " " + str(otherAtom.index) + " " + str(otherAtom.pos[0]) + " " + str(otherAtom.pos[1]) + " " + str(otherAtom.pos[2])
+        file.write("#AtomNumber AtomPosition(X Y Z) OtherIndex Jmatrix OtherIndex Jmatrix...\n")
+        for atomIndex in range(len(allAtoms)):
+            atom = allAtoms[atomIndex]
+            atomStr = str(atomIndex) + " " + str(atom.pos[0]) + " " + str(atom.pos[1]) + " " + str(atom.pos[2])
+            for interaction in atom.interactions:
+                otherAtom = interaction[0]
+                jMat = interaction[1]
+                atomStr += " " + str(otherAtom)
                 atomStr += " " + str(jMat)
             file.write(atomStr + "\n")
         
         file.close()
-            
+        print "done"
         timer.printTime()
             
         
@@ -1059,6 +1069,8 @@ class Session():
   
             
             #check if it is sorted
+
+
 
 class Timer():
     """for diagnostics"""

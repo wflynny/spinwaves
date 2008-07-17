@@ -8,7 +8,7 @@ import sys
  
   
 if __name__ == '__main__':      
-    k = 1000
+    k = 10
     tMax = 10
     tMin = .01
     tFactor = .9
@@ -22,9 +22,10 @@ if __name__ == '__main__':
 #    else:
 #        monteCarloDll = N.ctypeslib.load_library('libpolarization2.so', '.') #linux
         
-    atoms, jMatrices = readFile("C:\export1.txt")
+    atoms, jMatrices = readFile("C:\Newexport1.txt")
 
     atomListPointer = monteCarloDll.new_atom_list(c_int(len(atoms)))
+    print atomListPointer
 
     #to keep pointers
     matListList = []
@@ -62,6 +63,9 @@ if __name__ == '__main__':
 
     #Create JMatrix List in C
     matPointer = monteCarloDll.new_jMatrix_list(c_int(len(jMatrices)))
+    
+    print jMatrices
+    print "matpointer: ", matPointer
     
     for i in range(len(jMatrices)):
         j = jMatrices[i]
@@ -101,7 +105,7 @@ if __name__ == '__main__':
 #        print j
 #    monteCarloDll.matrixTest(matPointer, c_int(len(jMatrices)))
     
-    monteCarloDll.del_jMat(matPointer)
-    monteCarloDll.del_atom(atomListPointer)
+    monteCarloDll.del_jMat(matPointer, c_int(len(jMatrices)))
+    monteCarloDll.del_atom(atomListPointer, c_int(len(atoms)))
     
     timer.printTime()

@@ -65,12 +65,16 @@ def readFile(filename):
             i = 4
             while i < len(values):
                 otherAtomIndex = int(values[i])
-                otherAtomPos = (float(values[i+1]), float(values[i+2]), float(values[i+3]))
+   #format changed to no longer include position of other atom
+#                otherAtomPos = (float(values[i+1]), float(values[i+2]), float(values[i+3]))
 #                print "other atom pos:", otherAtomPos
-                jMatInt = int(values[i+4])
-#               print "jamtrix", jMatInt
-#               time.sleep(20)
-                i += 5
+#                jMatInt = int(values[i+4])
+                jMatInt = int(values[i+1])
+#                print "other atom index = ", otherAtomIndex
+#                print "jamtrix", jMatInt
+#                time.sleep(20)
+#                i += 5
+                i += 2
                 newAtom.interactions.append([otherAtomIndex, jMatInt])
             
             if int(values[0]) != len(atoms):

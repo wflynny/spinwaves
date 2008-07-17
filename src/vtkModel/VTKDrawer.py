@@ -26,11 +26,11 @@ class vtkDrawer():
         sphere_Source.SetThetaResolution(self.defualt_Sphere_Res)
         sphere_Source.SetPhiResolution(self.defualt_Sphere_Res)
             
-        # map to graphics objects
+        #map to graphics objects
         sphereMap = vtkPolyDataMapper()
         sphereMap.SetInput(sphere_Source.GetOutput())
             
-        # actor coordinates geometry, properties, transformation
+        #actor coordinates geometry, properties, transformation
         sphere_Actor = vtkLODActor()
         sphere_Actor.SetMapper(sphereMap)
         sphere_Actor.GetProperty().SetColor(atom.getColor())
@@ -40,6 +40,31 @@ class vtkDrawer():
         self.ren1.AddActor(sphere_Actor)
         
         self.actors[sphere_Actor] = atom
+        
+        
+        #Add arrow (currently not changing length or direction
+        arrowSource = vtkArrowSource()
+#        arrowSource.SetShaftRadius(arrowSource.GetShaftRadius()/5)
+#        arrowSource.SetTipLength(arrowSource.GetTipLength()/5)
+#        arrowSource.SetTipRadius(arrowSource.GetTipRadius()/5)
+
+        aTransform = vtkTransform()
+        aTransform.Scale(.2,.2,.2)
+        transform = vtkTransformPolyDataFilter()
+        transform.SetTransform(aTransform)
+        transform.SetInputConnection(arrowSource.GetOutputPort())
+        
+        
+        arrowMap = vtkPolyDataMapper()
+        arrowMap.SetInput(transform.GetOutput())
+        
+        arrowActor = vtkLODActor()
+        arrowActor.SetMapper(arrowMap)
+        arrowActor.SetPosition(atom.getPosition())
+        arrowActor.GetProperty().SetColor((1,0,0))
+        
+        self.ren1.AddActor(arrowActor)
+        
     
     
     
