@@ -97,7 +97,14 @@ void add_matrix(InteractionMatrix *m, int index, float j11, float j12, float j13
 //     printf("%f %f %f %f %f %f %f %f %f\n", j11, j12, j13, j21, j22, j23, j31, j32, j33);
 }     
 
-void del_jMat(InteractionMatrix *m){free(m);}
+void del_jMat(InteractionMatrix *m, int numMats)
+{
+     int i;
+     for(i = 0;  i < numMats; i++)
+     { 
+           free(m + i);
+     }
+}
 
 Atom* new_atom_list(int n)
 {
@@ -106,7 +113,14 @@ Atom* new_atom_list(int n)
      return a;//return to calling python method to add the atoms
 }
 
-void del_atom(Atom *p) {free(p);}
+void del_atom(Atom *p, int numAtoms) 
+{
+     int i;
+     for(i = 0;  i < numAtoms; i++)
+     { 
+           free(p + i);
+     }
+}
 
 void set_atom(Atom *p, int k, int *mat, int* neighbors, int numInteractions, Spin spin)
 {
@@ -256,6 +270,7 @@ float* getSpins(Atom *atoms, int index)
 //numAtoms may need to be switched to long for long lists of atoms
 void simulate(Atom *atoms, int numAtoms, InteractionMatrix *jMatrices, int k, float maxTemp, float minTemp, float tFactor)
 {
+     printf("%d", numAtoms);
      //set the seed for the random numbers
 //     time_t *time1;
 //     srand(123123);
