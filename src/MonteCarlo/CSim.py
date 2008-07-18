@@ -23,22 +23,27 @@ if __name__ == '__main__':
 #        monteCarloDll = N.ctypeslib.load_library('libpolarization2.so', '.') #linux
         
     atoms, jMatrices = readFile("C:\Newexport1.txt")
+    
+#    print atoms
+    print jMatrices
+    
 
-    atomListPointer = monteCarloDll.new_atom_list(c_int(len(atoms)))
-    print atomListPointer
+    successCode = c_int(0)
+    atomListPointer = monteCarloDll.new_atom_list(c_int(len(atoms)), ctypes.byref(successCode))
+    print "Success Code: ", successCode
 
     #to keep pointers
     matListList = []
     nbr_ListList = []
 
     #Create atom list in C
+    s1Class = c_float * 3
     for i in range(len(atoms)):
 #    for i in range(5):
         atom = atoms[i]
         numInteractions = len(atom.interactions)
         matListClass = c_int * numInteractions
         nbrListClass = c_int * numInteractions
-        s1Class = c_float * 3
         
         matList = matListClass()
         neighbors = nbrListClass()
@@ -62,7 +67,9 @@ if __name__ == '__main__':
     timer.printTime()
 
     #Create JMatrix List in C
-    matPointer = monteCarloDll.new_jMatrix_list(c_int(len(jMatrices)))
+    matPointer = monteCarloDll.new_jMatrix_list(c_int(len(jMatrices)), ctypes.byref(successCode))
+    print "Success Code: ", successCode
+    
     
     print jMatrices
     print "matpointer: ", matPointer
@@ -104,8 +111,16 @@ if __name__ == '__main__':
 #    for j in jMatrices:
 #        print j
 #    monteCarloDll.matrixTest(matPointer, c_int(len(jMatrices)))
+
+    
+    for i in range(len(atoms)):
+        spin = s1Class(monteCarloDll.getSpin(atomListPointer, c_int(i)))
+        print str(spin[0]) + " " + str(spin[1]) + " " + str(spin[2])
+    
+   
     
     monteCarloDll.del_jMat(matPointer, c_int(len(jMatrices)))
     monteCarloDll.del_atom(atomListPointer, c_int(len(atoms)))
+    
     
     timer.printTime()

@@ -80,6 +80,8 @@ def readFile(filename):
             if int(values[0]) != len(atoms):
                 print "problem, indeces don't match up!"
             atoms.append(newAtom)
+#            print "newAtom:", newAtom.pos, newAtom.interactions
+#            time.sleep(5)
             
     return atoms, jMatrices
   

@@ -1106,7 +1106,8 @@ class Frame(wx.Frame):
         newMenuItem = fileMenu.Append(wx.NewId(), "&New Magnetic Cell")
         openMenuItem = fileMenu.Append(wx.NewId(), "&Open")
         saveMenuItem = fileMenu.Append(wx.NewId(), "&Save")
-        exportMenuItem = fileMenu.Append(wx.NewId(), "Export")
+        exportMenuItem = fileMenu.Append(wx.NewId(), "Export for Monte Carlo")
+        loadSpinsMenuItem = fileMenu.Append(wx.NewId(), "Load Spins from file")
         quitMenuItem = fileMenu.Append(wx.NewId(), "&Quit")
         menuBar.Append(fileMenu, "&File")
         
@@ -1133,6 +1134,7 @@ class Frame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.vtkPanel.OnChooseBondMode, bondModeMenuItem)
 #        self.Bind(wx.EVT_MENU, self.OnNew, newMenuItem)
         self.Bind(wx.EVT_MENU, self.OnExport, exportMenuItem)
+        self.Bind(wx.EVT_MENU, self.OnLoadSpins, loadSpinsMenuItem)
     
  #   def OnNew(self, event):
         #Add drawing panel
@@ -1165,6 +1167,11 @@ class Frame(wx.Frame):
                 self.session.openCif(openDialog.GetPath())
         openDialog.Destroy()
     
+    def OnLoadSpins(self, event):
+        openDialog = wx.FileDialog(self, "Open Spin File", style = wx.OPEN, wildcard = "*.txt")
+        if openDialog.ShowModal() == wx.ID_OK:
+            self.session.loadSpinFile(openDialog.GetPath())
+        openDialog.Destroy()
 
 
 

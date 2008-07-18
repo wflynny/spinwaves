@@ -578,7 +578,7 @@ class Session():
     
     
     def exportForMonteCarlo(self, filename):
-        size = 20
+        size = 2
         
         timer = Timer()
         
@@ -1022,53 +1022,30 @@ class Session():
         timer.printTime()
             
         
-        #More efficient method with a sorted list and eventually in layers
-#        atoms = sortedAtomList()
-#        for bond in simpleCellBonds:
-#            pos1 = bond.pos1
-#            pos2 = bond.pos2
-#            jMat = bond.jMatrix
-#            atom1 = atoms.find(SimpleAtom(pos1))
-#            atom2 = atoms.find(SimpleAtom(pos2))
-#            if not atom1:
-#                atom1 = SimpleAtom(pos1)
-#                atoms.append(atom1)
-#            if not atom2:
-#                atom2 = SimpleAtom(pos2)
-#                atoms.append(atom2)
-#            atom1.add(atom2, jMat)
-#            atom2.add(atom1, jMat)
- #       atoms.sort()
- #       
- #       
- #       #This can all be done in layers of the Z plane later to save memory
- #       #rather than dealing with the entire cube at once
- #       
- #       #translate the cutoff cell and the bonds contained within it
- #       allAtoms = sortedAtomList()
- #       for i in range(size):
- #           for j in range(size):
- #               for k in range(size):
- #                   atoms2 = atoms.translate(i, j, k)
- #                   allAtoms.extend(atoms2.atoms)
- #                   
- #       
- # 
- #       for smplBond in interCutoffBonds:
- #           pos1 = smplBond.pos1
- #           pos2 = smplBond.pos2
- #           jMat = smplBond.jMatrix
-##            jStr = str(jMat[0][0]) + " " + str(jMat[0][1]) + " " + str(jMat[0][2]) + " " + str(jMat[1][0]) + " " + str(jMat[1][1]) + " " + str(jMat[1][2]) + " " + str(jMat[2][0]) + " " + str(jMat[2][1]) + " " + str(jMat[2][2])
- #           aDisp = abs(pos1[0] - pos2[0])
- #           bDisp = abs(pos1[1] - pos2[1])
- #           cDisp = abs(pos1[2] - pos2[2])
- #           for i in range(size - aDisp):
- #               for j in range(size - bDisp):
- #                   for k in range(size - cDisp):
-                        #The one that was translated from the original cell can be simply appended
-  
+    def loadSpinFile(self, fileName):
+        file = open(fileName, 'r')
+        lines = file.readlines()
+        file.close()
+        
+        for atom in self.getCutoffCell().getAllAtoms():
+            atom.setSpin(getSpin(atom.getPosition()), lines)
+        
+        
+        def getSpin(position, lines):
+            x = str(position[0])
+            y = str(position[1])
+            z = str(position[2])
             
-            #check if it is sorted
+            for line in lines:
+                if x == line[1] and y == line[2] and z == line[3]:
+                    spin = (float(line[4]), float(line[5]), float(line[6]))
+                    break
+            
+            return spin
+                
+            
+        
+        
 
 
 
