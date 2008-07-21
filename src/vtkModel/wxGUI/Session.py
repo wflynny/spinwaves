@@ -951,7 +951,9 @@ class Session():
         #translate bonds
         for i in range(len(allAtoms)- numAtomsPerCell):
             for interaction in allAtoms[i].interactions:
-                allAtoms[i+numAtomsPerCell].addInteraction(interaction[0] + numAtomsPerCell, interaction[1])
+                newInteraction = interaction[0] + numAtomsPerCell
+                if newInteraction < len(allAtoms):
+                    allAtoms[i+numAtomsPerCell].addInteraction(newInteraction, interaction[1])
         
         
         

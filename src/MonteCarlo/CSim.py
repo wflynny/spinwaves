@@ -4,6 +4,7 @@ from ctypes import c_float, c_int
 import cstruct
 import numpy as N
 import sys
+import time
 
  
   
@@ -60,20 +61,24 @@ if __name__ == '__main__':
         #to keep pointers
         matListList.append(matList)
         nbr_ListList.append(neighbors)
+#        print "atom" + str(i) + ") numInteractions:", numInteractions, len(neighbors), len(matList)
         
         monteCarloDll.set_atom(atomListPointer, c_int(i), matList, neighbors, c_int(numInteractions), s1)
     
     print "atoms added"
+#    time.sleep(10)
     timer.printTime()
 
     #Create JMatrix List in C
     matPointer = monteCarloDll.new_jMatrix_list(c_int(len(jMatrices)), ctypes.byref(successCode))
-    print "Success Code: ", successCode
+    print "Matrix Success Code: ", successCode
+    time.sleep(5)
+
     
     
     print jMatrices
-    print "matpointer: ", matPointer
-    
+    print "matpointer python: ", matPointer
+    print 'mylen', len(jMatrices)
     for i in range(len(jMatrices)):
         j = jMatrices[i]
         j11 = c_float(j[0][0])
@@ -86,9 +91,14 @@ if __name__ == '__main__':
         j32 = c_float(j[2][1])
         j33 = c_float(j[2][2])
         monteCarloDll.add_matrix(matPointer, c_int(i),j11, j12, j13, j21, j22, j23, j31, j32, j33)
+        print 'added'
+        
+
+    print 'jmatrix python', jMatrices
+#    monteCarloDll.del_jMat(matPointer)
+#    print "jmat deleted"
+#    time.sleep(5)
     
-
-
     monteCarloDll.simulate(atomListPointer, c_int(len(atoms)), matPointer, c_int(k), c_float(tMax), c_float(tMin), c_float(tFactor))
 
 
@@ -114,13 +124,17 @@ if __name__ == '__main__':
 
     
     for i in range(len(atoms)):
-        spin = s1Class(monteCarloDll.getSpin(atomListPointer, c_int(i)))
-        print str(spin[0]) + " " + str(spin[1]) + " " + str(spin[2])
+        spin = s1Class()
+        #monteCarloDll.getSpin(atomListPointer, c_int(i), ctypes.byref(spin))
+        #print str(spin[0]) + " " + str(spin[1]) + " " + str(spin[2])
     
    
+    monteCarloDll.del_jMat(matPointer)
+    monteCarloDll.del_atom(atomListPointer)
     
-    monteCarloDll.del_jMat(matPointer, c_int(len(jMatrices)))
-    monteCarloDll.del_atom(atomListPointer, c_int(len(atoms)))
+    
     
     
     timer.printTime()
+    print "done"
+    time.sleep(10)
