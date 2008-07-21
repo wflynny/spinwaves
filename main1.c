@@ -33,8 +33,15 @@ float randFloat(float min, float max)  //uses randf() to generate a random float
 
 void initializeRandState()
 {
-     dsfmt_state = (dsfmt_t*)malloc(sizeof(dsfmt_t));
-     dsfmt_init_gen_rand(dsfmt_state, time(NULL));
+     uint32_t bob=32;
+//     printf("before\nsizeof(dsfmt_t) = %f\n", sizeof(dsfmt_t));
+//     dsfmt_t *state = (dsfmt_t*)malloc(16);//128bit
+//     printf("after\n");
+
+     dsfmt_state = (dsfmt_t*)malloc(16);//128bit
+     dsfmt_init_gen_rand(dsfmt_state, bob );
+//     dsfmt_init_gen_rand(dsfmt_state, time(NULL));
+//       dsfmt_init_gen_rand(state, time(NULL));
 }
 
 void randSpin(Spin spin)
@@ -75,11 +82,27 @@ typedef struct
         Spin spin;
 } Atom;
         
+void del_jMat(InteractionMatrix *m)
+{
+     printf("%x %d", m, m);
+      int i, j;
+      printf("deleting\n");
+      for(i = 0; i < 3; i++)
+      {
+            for(j = 0; j < 3; j++)
+            {
+                  printf("%d %d %f \n", i,j,m[0][i][j]);
+                  }
+                  }
+     free(m);
+}
 
 InteractionMatrix* new_jMatrix_list(int n, int *success)
 {
      InteractionMatrix *m;
      m = (InteractionMatrix*)malloc(n*sizeof(InteractionMatrix));
+     printf("jmatrix start %d  end: %d\n", m, m+n);
+     system("PAUSE");
      if(m == NULL)
      {
           *success = 0;
@@ -88,7 +111,8 @@ InteractionMatrix* new_jMatrix_list(int n, int *success)
      {
          *success = 1;
      }
-          
+//     del_jMat(m);
+//     printf("deleted\n");
      return m;//return pointer to python
 }
 
@@ -106,18 +130,8 @@ void add_matrix(InteractionMatrix *m, int index, float j11, float j12, float j13
 //     printf("%f %f %f %f %f %f %f %f %f\n", j11, j12, j13, j21, j22, j23, j31, j32, j33);
 }     
 
-void del_jMat(InteractionMatrix *m, int numMats)
+void del_atom(Atom *p) 
 {
-     int i;
-     for(i = 0;  i < numMats; i++)
-     { 
-           free(m + i);
-     }
-}
-
-void del_atom(Atom *p, int numAtoms) 
-{
-     int i;
      free(p);
      //for(i = numAtoms-1;  i >0; i--)
      //{ 
@@ -130,7 +144,7 @@ Atom* new_atom_list(int n, int *success)
 {
      Atom *a;
      a=(Atom*)malloc(n*sizeof(Atom));
-     printf("N = %d\n", n);
+     printf("N = %d  start = %x end = %x\n", n, a, a+n);
      system("PAUSE");
      if(a == NULL)
      {
@@ -140,20 +154,32 @@ Atom* new_atom_list(int n, int *success)
      {
          *success = 1;
      }
-     del_atom(a, n);
      return a;//return to calling python method to add the atoms
 }
 
 
 void set_atom(Atom *p, int k, int *mat, int* neighbors, int numInteractions, Spin spin)
 {
+//     printf("spin: (%f, %f, %f) ", spin[0],spin[1], spin[2]);
+//     printf("%d) %x  %x  %x\n", k, p, p + k, p + k + 1);
      p[k].interaction_matrix = mat;
      p[k].nbr_list = neighbors;
-     
+//     printf("here1\n");
      p[k].spin[0] = spin[0];
+//     printf("here2\n");
      p[k].spin[1] = spin[1];
+//     printf("here3\n");
      p[k].spin[2] = spin[2];
+//     printf("here4\n");
      p[k].numInteractions = numInteractions;
+     
+/*     printf("%d)", k);
+     int i;
+     for(i = 0; i < numInteractions; i++)
+     {
+           printf("%d %d\n", mat[i], neighbors[i]);
+     }
+     system("PAUSE");*/
      
 /*     int i, j;
      printf("K = %d\n", k);
@@ -171,9 +197,13 @@ void set_atom(Atom *p, int k, int *mat, int* neighbors, int numInteractions, Spi
 //     printf("mat* = %d   mat[0],[1],[2] = (%d,%d,%d)   p[k].mat* = %d p[k].mat[0],[1],[2] = (%d,%d, %d)\n", mat, mat[0], mat[1], mat[2], p[k].interaction_matrix, p[k].interaction_matrix[0],p[k].interaction_matrix[1], p[k].interaction_matrix[2]);
 }
 
-float* getSpin(Atom *p, int index)
+void getSpin(Atom *p, int index, Spin spin)
 {
-       return p[index].spin;
+       printf("(%f, %f, %f)\n", p[index].spin[0], p[index].spin[1], p[index].spin[2]);
+       spin[0] = p[index].spin[0];
+       spin[1] = p[index].spin[1];
+       spin[2] = p[index].spin[2];
+       return;
 }
 
 void atomTest(Atom *p, int num)
@@ -227,7 +257,6 @@ struct atom
 
 float matCalc(float *s1, InteractionMatrix jMat, float s2[3])
 {
-//      printf("here");
  //     printf("%f, %f, %f\n", s1[0], s1[1], s1[2]);
 //      system("PAUSE");
       //multiply s1 by jMat
@@ -258,13 +287,18 @@ float Energy(Atom *atoms, Atom *a, float s1[3], InteractionMatrix* jMatrices)
       float E = 0;
       float *s2;
       int j, index;
-//      printf("s1: %f, %f, %f", s1[0],s1[1], s1[2]);
+//      printf("s1: %x (%f, %f, %f)  atom* = %x\n", s1, s1[0],s1[1], s1[2], a);
       for(j = 0; j < a->numInteractions; j++)
       {
               s2 = atoms[a->nbr_list[j]].spin;
+//              printf("s2: %x (%f, %f, %f)", s2, s2[0], s2[1], s2[2]);
               index = a->interaction_matrix[j];
+//              printf("here2");
               E -= matCalc(s1, jMatrices[index], s2);
+//              printf("here3\n");
       }
+//      printf("ok E = %f\n", E);
+      
       return E;
 }
 
@@ -273,12 +307,15 @@ void flipSpins(Atom *atoms, int numAtoms, InteractionMatrix *jMatrices, float T)
      int index;
      float oldE, newE;
      Spin newS;
+//     printf("flipping spins");
      for(index = 0; index < numAtoms; index++)
      {
+//             printf("atom %d) s = (%f,%f,%f) \n", index, atoms[index].spin[0], atoms[index].spin[1], atoms[index].spin[2]);
              randSpin(newS);
 //             printf("oldE ");
              oldE = Energy(atoms, atoms+index, atoms[index].spin, jMatrices);
 //             printf("newE ");
+//             printf("news = (%f, %f, %f)\n", newS[0], newS[1], newS[2]);
              newE = Energy(atoms, atoms+index, newS, jMatrices);
              if(newE < oldE)
              {
@@ -316,24 +353,48 @@ float* getSpins(Atom *atoms, int index)
 //numAtoms may need to be switched to long for long lists of atoms
 void simulate(Atom *atoms, int numAtoms, InteractionMatrix *jMatrices, int k, float maxTemp, float minTemp, float tFactor)
 {
-     printf("%d", numAtoms);
+     int i,j;
+     printf("C side interaction matrix list %d\n", jMatrices);
+     for (i=0; i<3; i++)
+     for (j=0; j<3; j++){
+         printf("%d %d Jij=%f\n",i,j,jMatrices[0][i][j]);
+         }
+     
+     
+     
+     printf("\nnumAtoms = %d\n", numAtoms);
      //set the seed for the random numbers
 //     time_t *time1;
 //     srand(123123);
 //     printf("here");
       initializeRandState();
+//      printf("here\n");
      
-     int i;
      float T = maxTemp;
      while(T > minTemp)
      {
              for(i = 0; i < k; i++)
              {
 //                     printf("flipping spins");
-                     flipSpins(atoms, numAtoms, jMatrices, T);
+//                     flipSpins(atoms, numAtoms, jMatrices, T);
              }
              T = T*tFactor;
      }
+ 
+ 
+     printf("mid C side interaction matrix list %d\n", jMatrices);
+     for (i=0; i<3; i++)
+     for (j=0; j<3; j++){
+         printf("%d %d Jij=%f\n",i,j,jMatrices[0][i][j]);
+         }
+
+ 
+ 
+     
+     //free random state
+     printf("freeing state\n");
+     printf("dsfmt_state %d\n", dsfmt_state);
+     //free(dsfmt_state);
      
      //for test purposes
      float avgMag = 0;
@@ -344,6 +405,18 @@ void simulate(Atom *atoms, int numAtoms, InteractionMatrix *jMatrices, int k, fl
      }
      avgMag = avgMag/numAtoms;
      printf("average Magnetization: %f\n",avgMag);
+//     del_jMat(jMatrices);
+ //    printf("deleted\n");
+  //   system("PAUSE");
+
+     printf("Post C side interaction matrix list %d\n", jMatrices);
+     for (i=0; i<3; i++)
+     for (j=0; j<3; j++){
+         printf("%d %d Jij=%f\n",i,j,jMatrices[0][i][j]);
+         }
+
+
+     return;
 }
 
 
@@ -453,8 +526,7 @@ int main(int argc, char *argv[])
 {
 //    time_t mytime = time(0);
     int i, j;
-    dsfmt_state = (dsfmt_t*)malloc(sizeof(dsfmt_t));
-    dsfmt_init_gen_rand(dsfmt_state, time(NULL));
+    initializeRandState();
     float sum = 0;
     int num = 2000000;
     for(j = 0; j < 20; j++)
@@ -468,6 +540,7 @@ int main(int argc, char *argv[])
               printf("%f", sum);
             system("PAUSE");
     }
+    free(dsfmt_state);
     
     return 0;
 }
