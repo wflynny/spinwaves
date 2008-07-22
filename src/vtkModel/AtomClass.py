@@ -1,5 +1,5 @@
 class Atom():
-    def __init__(self, unit_Cell, x,y,z, description = "", radius=.05,r = 1,g=0,b = 0, spin = None):
+    def __init__(self, unit_Cell, x,y,z, description = "", radius=.05,r = 1,g=0,b = 0, spin = (-1,0,1)):
         """
         x,y,z are fractional coordinates in the unit cell
         unit_Cell is the unit cell containing the atom (instance of Cell class)
@@ -23,6 +23,12 @@ class Atom():
         self.unit_Cell = unit_Cell
         
 
+    def getSpin(self):
+        return self.spin
+    
+    def setSpin(self, spin):
+        self.spin = spin
+    
     def getRadius(self):
         return self.radius
     

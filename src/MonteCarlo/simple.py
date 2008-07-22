@@ -82,6 +82,7 @@ def readFile(filename):
             atoms.append(newAtom)
 #            print "newAtom:", newAtom.pos, newAtom.interactions
 #            time.sleep(5)
+    file.close()
             
     return atoms, jMatrices
   

@@ -40,7 +40,7 @@ class Bond():
     
     def __str__(self):
         str = "Bond between " + self.Atom1.__str__() + " and " + self.Atom2.__str__()
-        if self.jMat:
+        if self.jMat != None:
             str += ":\n" + self.jMat.__str__()
         return str
     

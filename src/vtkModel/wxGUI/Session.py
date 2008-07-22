@@ -1025,25 +1025,40 @@ class Session():
             
         
     def loadSpinFile(self, fileName):
-        file = open(fileName, 'r')
-        lines = file.readlines()
-        file.close()
-        
-        for atom in self.getCutoffCell().getAllAtoms():
-            atom.setSpin(getSpin(atom.getPosition()), lines)
-        
-        
         def getSpin(position, lines):
             x = str(position[0])
             y = str(position[1])
             z = str(position[2])
             
+            spin = None
+            
             for line in lines:
-                if x == line[1] and y == line[2] and z == line[3]:
-                    spin = (float(line[4]), float(line[5]), float(line[6]))
-                    break
+                if not line.startswith('#'):
+                    values = line.split()
+                    if x == values[1] and y == values[2] and z == values[3]:
+                        spin = (float(values[4]), float(values[5]), float(values[6]))
+                        break
             
             return spin
+        
+        
+        file = open(fileName, 'r')
+        lines = file.readlines()
+        file.close()
+        
+        for atom in self.getCutoffCell().getAllAtoms():
+            newSpin = getSpin(atom.getPosition(), lines)
+            if newSpin != None:
+                atom.setSpin(newSpin)
+                
+        #for test purposes
+        print "test:"
+        for atom in self.getCutoffCell().getAllAtoms():
+            print atom.getSpin()
+        
+        send(signal = "Model Change", sender = "Session")
+        
+        
                 
             
         

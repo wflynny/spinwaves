@@ -19,7 +19,7 @@ class vtkDrawer():
         return self.actors[actor]
     
     
-    def drawAtom(self, atom):
+    def drawAtom(self, atom):   
         #sphere geometry
         sphere_Source = vtkSphereSource()
         sphere_Source.SetRadius(atom.getRadius())
@@ -42,29 +42,58 @@ class vtkDrawer():
         self.actors[sphere_Actor] = atom
         
         
-        #Add arrow (currently not changing length or direction
-        arrowSource = vtkArrowSource()
-#        arrowSource.SetShaftRadius(arrowSource.GetShaftRadius()/5)
-#        arrowSource.SetTipLength(arrowSource.GetTipLength()/5)
-#        arrowSource.SetTipRadius(arrowSource.GetTipRadius()/5)
-
-        aTransform = vtkTransform()
-        aTransform.Scale(.2,.2,.2)
-        transform = vtkTransformPolyDataFilter()
-        transform.SetTransform(aTransform)
-        transform.SetInputConnection(arrowSource.GetOutputPort())
+        #Add arrow
+        if atom.getSpin() != None:
+            arrowSource = vtkArrowSource()
+    #        arrowSource.SetShaftRadius(arrowSource.GetShaftRadius()/5)
+    #        arrowSource.SetTipLength(arrowSource.GetTipLength()/5)
+    #        arrowSource.SetTipRadius(arrowSource.GetTipRadius()/5)
+    
+            aTransform = vtkTransform()
+            aTransform.Scale(.2,.2,.2)
+            transform = vtkTransformPolyDataFilter()
+            transform.SetTransform(aTransform)
+            transform.SetInputConnection(arrowSource.GetOutputPort())
+            
+            arrowMap = vtkPolyDataMapper()
+            arrowMap.SetInput(transform.GetOutput())
+            
+            arrowActor = vtkLODActor()
+            arrowActor.SetMapper(arrowMap)
+            arrowActor.SetPosition(atom.getPosition())
+            arrowActor.GetProperty().SetColor((1,0,0))
+            
+            
+            #Spin Vector
+            x = atom.getSpin()[0]
+            y = atom.getSpin()[1]
+            z = atom.getSpin()[2]
+            
+            #create unit vetor
+            vectLength = (x**2 + y**2 + z**2)**.5
+            unitX = x/vectLength
+            unitY = y/vectLength
+            unitZ = z/vectLength
+            
+            #Angle
+            #cross product of Unit vectors arrow direction and desired orientation
+            i, j, k = self.crossProduct(1, 0, 0, unitX, unitY, unitZ)  #default orientation for the arrow is along x axis
+            theta = scipy.arcsin((i**2+j**2+k**2)**.5)*180/math.pi
+#            print i,j,k
+            
+            #if the angle is obtuse, theta must be corrected
+            if self.dotProduct(1, 0, 0, unitX, unitY, unitZ) >= 0:
+                print "acute", atom.getSpin(), theta
+                arrowActor.RotateWXYZ(theta, i, j, k)
+            else:
+                print "obtuse", atom.getSpin(), theta
+                arrowActor.RotateWXYZ(180 - theta, i, j, k)
+            
+            self.ren1.AddActor(arrowActor)
         
         
-        arrowMap = vtkPolyDataMapper()
-        arrowMap.SetInput(transform.GetOutput())
         
-        arrowActor = vtkLODActor()
-        arrowActor.SetMapper(arrowMap)
-        arrowActor.SetPosition(atom.getPosition())
-        arrowActor.GetProperty().SetColor((1,0,0))
-        
-        self.ren1.AddActor(arrowActor)
-        
+    
     
     
     
@@ -136,7 +165,7 @@ class vtkDrawer():
     def crossProduct(self, x1, y1, z1, x2, y2, z2):
         """x,y,z represent vector coordinates - used by makeCylinder"""
         i = (y1*z2) - (z1*y2)
-        j = (x1*z2) - (z1*x2)
+        j = -(x1*z2) + (z1*x2)
         k = (x1*y2) - (y1*x2)
         return i, j, k
     
