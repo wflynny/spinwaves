@@ -96,7 +96,7 @@ class Cell():
     def getAtomIndex(self, atom):
         return self.Atoms.index(atom)
     
-    def generateAtoms(self, position, description, radius = .05):
+    def generateAtoms(self, position, description, anisotropy, radius = .05):
         locations = SymmetryUtilities.expandPosition(self.Space_Group, numpy.array([position[0],position[1], position[2]]))[0]
         randGen = random.Random()
         r = random.uniform(0,1)
@@ -104,7 +104,7 @@ class Cell():
         b = random.uniform(0,1)
         for coord in locations:
     #        r,g,b = atom1.getColor()
-            atom = Atom(self, coord[0], coord[1], coord[2], description, radius, r,g,b)
+            atom = Atom(self, coord[0], coord[1], coord[2], description, anisotropy, radius, r,g,b)
             self.addAtom(atom)
 
     def getA(self):

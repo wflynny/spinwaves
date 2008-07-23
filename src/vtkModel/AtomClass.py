@@ -1,11 +1,13 @@
 class Atom():
-    def __init__(self, unit_Cell, x,y,z, description = "", radius=.05,r = 1,g=0,b = 0, spin = (-1,0,1)):
+    def __init__(self, unit_Cell, x,y,z, description = "", anisotropy = (0,0,0), radius=.05,r = 1,g=0,b = 0, spin = (0,0,0)):
         """
         x,y,z are fractional coordinates in the unit cell
         unit_Cell is the unit cell containing the atom (instance of Cell class)
         radius is the radius of the sphere actor
         r,g,b are the red, green, blue values of the actor
         """
+        self.anisotropy = anisotropy
+        print "New atom  anisotropy: ", anisotropy
         self.description = description
         self.radius = radius
         self.color = [r,g,b]

@@ -10,8 +10,8 @@ import time
   
 if __name__ == '__main__':      
     k = 10
-    tMax = .00001
-    tMin = .00000001
+    tMax = 10
+    tMin = .01
     tFactor = .90
     timer = Timer()
     inFilePath = "C:\Newexport1.txt"

@@ -195,7 +195,7 @@ class Session():
         unitcell = Cell(spaceGroup, 0,0,0, a, b, c, alpha, gamma, beta)
         
         for i in range(len(atomData)):
-            unitcell.generateAtoms((float(atomData[i][2]), float(atomData[i][3]), float(atomData[i][4])), atomData[i][0])
+            unitcell.generateAtoms((float(atomData[i][2]), float(atomData[i][3]), float(atomData[i][4])), atomData[i][0], anisotropy = (atomData[i][5], atomData[i][6], atomData[i][7]))
         
         #Create a Magnetic Cell
         self.MagCell = MagneticCell(unitcell, magNa, magNb, magNc, spaceGroup)
@@ -1083,11 +1083,11 @@ class Timer():
 class atomTable(wx.grid.PyGridTableBase):
     def __init__(self):
         wx.grid.PyGridTableBase.__init__(self)
-        self.colLabels = ['   Name   ', 'Atomic Number','       x       ', '       y       ','       z       ']
+        self.colLabels = ['  Name  ', 'Atomic Number','   x   ', '   y   ','   z   ','  Dx  ','  Dy  ','  Dz  ']
         self.rowLabels=['Atom 1']
         
         self.data = [
-                     ['','','','','']#Row 1
+                     ['','','','','',0.,0.,0.]#Row 1
                      ]
     
     def GetNumberRows(self):
@@ -1127,6 +1127,9 @@ class atomTable(wx.grid.PyGridTableBase):
     
     def AppendRow(self):
             self.data.append([''] * self.GetNumberCols())
+            self.SetValue(self.GetNumberRows()-1, 5, 0.0)
+            self.SetValue(self.GetNumberRows()-1, 6, 0.0)
+            self.SetValue(self.GetNumberRows()-1, 7, 0.0)
             self.rowLabels.append('Atom ' + str(self.GetNumberRows()))
 
             # tell the grid we've added a row
@@ -1166,7 +1169,7 @@ class bondTable(wx.grid.PyGridTableBase):
         self.rowLabels=['Bond 1']
         
         self.data = [
-                     ['','','','','','','','','','']#Row 1
+                     ['','','','','','','','',numpy.array([[0.,0.,0.],[0.,0.,0.],[0.,0.,0.]]),'']#Row 1
                      ]
     
     def GetNumberRows(self):
@@ -1214,6 +1217,7 @@ class bondTable(wx.grid.PyGridTableBase):
     def AppendRow(self):
             row = [''] * (self.GetNumberCols())
             self.data.append(row)
+            self.SetValue(self.GetNumberRows()-1, 8, numpy.array([[0.,0.,0.],[0.,0.,0.],[0.,0.,0.]]))
             self.rowLabels.append('Bond ' + str(self.GetNumberRows()))
 
             # tell the grid we've added a row
