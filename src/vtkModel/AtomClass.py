@@ -1,5 +1,5 @@
 class Atom():
-    def __init__(self, unit_Cell, x,y,z, description = "", anisotropy = (0,0,0), radius=.05,r = 1,g=0,b = 0, spin = (0,0,0)):
+    def __init__(self, unit_Cell, x,y,z, description = "", anisotropy = (0,0,0), radius=.05,r = 1,g=0,b = 0, spin = None):
         """
         x,y,z are fractional coordinates in the unit cell
         unit_Cell is the unit cell containing the atom (instance of Cell class)
@@ -25,6 +25,9 @@ class Atom():
         self.unit_Cell = unit_Cell
         
 
+    def getAnisotropy(self):
+        return self.anisotropy
+    
     def getSpin(self):
         return self.spin
     
