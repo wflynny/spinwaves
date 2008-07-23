@@ -35,7 +35,7 @@ void initializeRandState()
 {
      dsfmt_init_gen_rand(&dsfmt_state, time(NULL));
 }
-
+/*
 void randSpin(Spin spin)
 {
      float random = randf();
@@ -49,9 +49,9 @@ void randSpin(Spin spin)
      }
 //     printf("Spin: %f\n", spin[2]);
 }
+*/
 
 
-/*
 void randSpin(Spin spin)
 {
        //Marsaglia Method
@@ -80,7 +80,7 @@ void randSpin(Spin spin)
 //       printf("Spin: (%f, %f, %f) ", Sx, Sy, Sz);
        return;
 }
-*/
+
 typedef struct
 {
         int numInteractions;
@@ -280,7 +280,7 @@ float matCalc(float *s1, InteractionMatrix jMat, float s2[3])
       float z1 = (jMat[2][0] * s1[0]) + (jMat[2][1] * s1[1]) + (jMat[2][2] * s1[2]);
 
       //return the dot product
-      return ((x1*s2[0]) + (y1*s2[1]) + (z1*s1[2]));
+      return ((x1*s2[0]) + (y1*s2[1]) + (z1*s2[2]));
 }
 
 
