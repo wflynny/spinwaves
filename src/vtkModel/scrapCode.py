@@ -1679,3 +1679,453 @@ class AtomFrame(wx.Frame):
             #check if it is sorted
 
 
+
+
+
+
+    def exportForMonteCarlo(self, filename):
+        size = 2
+        
+        timer = Timer()
+        
+        file = open(filename, 'w')
+   
+        class SimpleBond():
+            def __init__(self, pos1, pos2, jMatrix):
+                self.pos1 = pos1
+                self.pos2 = pos2
+                self.jMatrix = jMatrix
+                
+            def sameBond(self, bond2):
+                if self.pos1 == bond2.pos1 or self.pos1 == bond2.pos2:
+                    if self.pos2 == bond2.pos2 or self.pos2 == bond2.pos1:
+                        return True
+                return False
+        
+        Na = self.getCutoffCell().getNa()
+        Nb = self.getCutoffCell().getNb()
+        Nc = self.getCutoffCell().getNc()
+        
+        class SimpleAtom():
+            def __init__(self, pos):
+                self.pos = pos
+#                self.cellPos = []
+#                self.cellPosX = int(pos[0])/Na
+#                self.cellPosY = int(pos[1])/Nb
+#                self.cellPosZ = int(pos[2])/Nc
+                self.interactions = []
+                #self.interactions[position of other atom] = j number
+                
+            #might want to change this to position later when all atoms wont be created in same list
+            def addInteraction(self, atom2, jMat):
+#                self.interactions[atom2] = jMat
+                self.interactions.append([atom2, jMat])
+            
+            #comparisons based on positions
+            def __lt__(self, other):
+                self.otherCellPosX = int(other.pos[0])/Na
+                self.otherCellPosY = int(other.pos[1])/Nb
+                self.otherCellPosZ = int(other.pos[2])/Nc
+                
+                if otherCellPosX > self.cellPosX:
+                    return False
+                if otherCellPosX < self.cellPosX:
+                    return True
+                #X's equal
+                if otherCellPosY > self.cellPosY:
+                    return False
+                if otherCellPosY < self.cellPosY:
+                    return True
+                #Y's equal
+                if otherCellPosZ > self.cellPosZ:
+                    return False
+                if otherCellPosZ < self.cellPosZ:
+                    return True
+                
+                #They are in the same cell
+                if other.pos[2] > self.pos[2]:
+                    return False
+                if other.pos[2] < self.pos[2]:
+                    return True
+                #Z's equal
+                if other.pos[1] > self.pos[1]:
+                    return False
+                if other.pos[1] < self.pos[1]:
+                    return True
+                #Y's equal
+                if other.pos[0] > self.pos[0]:
+                    return False
+                if other.pos[0] < self.pos[0]:
+                    return True
+                
+                #Equal
+                return False
+            
+            def __gt__(self, other):
+                self.otherCellPosX = int(other.pos[0])/Na
+                self.otherCellPosY = int(other.pos[1])/Nb
+                self.otherCellPosZ = int(other.pos[2])/Nc
+                
+                if otherCellPosX > self.cellPosX:
+                    return True
+                if otherCellPosX < self.cellPosX:
+                    return False
+                #X's equal
+                if otherCellPosY > self.cellPosY:
+                    return True
+                if otherCellPosY < self.cellPosY:
+                    return False
+                #Y's equal
+                if otherCellPosZ > self.cellPosZ:
+                    return True
+                if otherCellPosZ < self.cellPosZ:
+                    return False
+                
+                #All equal
+                if other.pos[2] > self.pos[2]:
+                    return True
+                if other.pos[2] < self.pos[2]:
+                    return False
+                #Z's equal
+                if other.pos[1] > self.pos[1]:
+                    return True
+                if other.pos[1] < self.pos[1]:
+                    return False
+                #Y's equal
+                if other.pos[0] > self.pos[0]:
+                    return True
+                if other.pos[0] < self.pos[0]:
+                    return False
+                
+                
+                return False
+            
+            def __eq__(self, other):
+                if self.pos[0] == other.pos[0]:
+                    if self.pos[1] == other.pos[1]:
+                        if self.pos[2] == other.pos[2]:
+                            return True
+                return False
+            
+            def  __le__(self, other):
+                return (self.__eq__(other) or self.__lt__(other))
+            
+            def __ne__(self, other):
+                return not self.__eq__(other)
+            
+            def __ge__(self, other):
+                return (self.__eq__(other) or self.__gt__(other))
+                
+           
+                
+        class SimpleAtomList():
+            def __init__(self):
+                self.atoms = []
+                
+            def addBond(self, pos1, pos2, jMatrix):
+                #Make sure each position is not yet represented the easy but inefficient way
+                pos1Index = -1
+                pos2Index = -1
+                for i in range(len(self.atoms)):
+                    currentPos = self.atoms[i].pos
+                    if currentPos == pos1:
+                        pos1Index = i
+                    if currentPos == pos2:
+                        pos2Index = i
+                
+                if pos1Index < 0:
+                    atom1 = SimpleAtom(pos1)
+                    self.atoms.append(atom1)
+#                    print self.atoms[atom1.index] == atom1
+#                else:
+#                    atom1 = self.atoms[pos1Index]
+                    
+                if pos2Index < 0:
+                    atom2 = SimpleAtom(pos2)
+                    self.atoms.append(atom2)
+#                    print self.atoms[atom2.index] == atom2
+#                else:
+#                    atom2 = self.atoms[pos2Index]
+                    
+#Unnecesary the way it is currently beig used
+#                atom1.addInteraction(atom2, jMatrix)
+#                atom2.addInteraction(atom1, jMatrix)
+                  
+        
+        
+        class sortedAtomList():
+            def __init__(self):
+                self.atoms = []
+                
+            def append(self, item):
+                self.atoms.append(item)
+            
+            def extend(self, otherList):
+                self.atoms.extend(otherList)
+                
+            def translate(self, x, y, z):
+                newList = sortedAtomList()
+                for atom in self.atoms:
+                    pos = atom.pos
+                    newAtom = simpleAtom((pos[0] + x, pos[1] + y, pos[2] + z))
+                    newInteractions = {}
+                    for position in atom.interactions:
+                        newInteractions[(position[0] + x, position[1] + y, position[2] + z)] = atom.interactions[position]
+                    newAtom.interactions = newInteractions
+                    newList.append(newAtom)
+                
+            def add(self, item):
+                index = addAux(0, len(self.atoms), item)
+                
+#            def addAux(self, start, end):
+                
+            
+            def find(self, item):
+                index = findAux(0, len(self.atoms), item)
+                if index >= 0:
+                    return self.atoms[index]
+                return None
+                
+            def findAux(self, start, end):
+                if end < start:
+                    return -1
+                mid = (end + start)/2
+                if item < self.atoms[mid]:
+                    return findAux(start, mid - 1, item)
+                elif item > self.atoms[mid]:
+                    return findAux(mid + 1, end, item)
+                
+                return mid
+                
+        
+        class SimpleBondList():
+            def __init__(self):
+                self.list = []
+                
+            def sort(self):
+                self.list.sort()
+                
+            def addBond(self, bond):
+                if not self.containsBond(bond):
+                    self.list.append(bond)
+#                else:
+#                    print "Duplicate Bonds!" #should not get here
+                    
+            def containsBond(self, bond):
+                for eachBond in self.list:
+                    if eachBond.sameBond(bond):
+                        return True
+                return False
+        
+        
+        def contains(list, element):
+            for item in list:
+                if (item == element).all():
+                    return True
+            return False
+        
+        def atomListContains(list, element):
+            for item in list:
+                if item == element:
+                    return True
+            return False
+        
+        def indexOf(list, item):
+            for i in range(len(list)):
+                if (item == list[i]).all():
+                    return i
+            return -1
+        
+        
+        #Create list of matrices
+        matrices = []
+        for bond in self.getCutoffCell().getBonds():
+#           pos1 = bond.getAtom1().getPosition()
+#           pos2 = bond.getAtom2().getPosition()
+            jMat = bond.getJMatrix()
+#            count = matrices.count(jMat)
+            if not contains(matrices, jMat):
+                matrices.append(jMat)
+        
+        
+        #create simple bonds within cutoff cell
+        simpleCellBonds = []
+        for bond in self.getCutoffCell().getBonds():
+            pos1 = bond.getAtom1().getPosition()
+            pos2 = bond.getAtom2().getPosition()
+            jMat = bond.getJMatrix()
+            newBond = SimpleBond(pos1, pos2, indexOf(matrices,jMat))
+            simpleCellBonds.append(newBond)
+        
+        
+        def PosInFirstCutoff(pos):
+            return (pos[0] < Na and pos[1] < Nb and pos[2] < Nc)
+        
+        
+        cellAtoms = []
+        cellBonds = SimpleBondList()
+        for bond in simpleCellBonds:
+            pos1 = bond.pos1
+            pos2 = bond.pos2
+            jMatInt = bond.jMatrix
+            for i in range(2):
+                for j in range(2):
+                    for k in range(2):
+                        for a in range(Na):
+                            for b in range(Nb):
+                                for c in range(Nc):
+                                    x1 = pos1[0] + a + (Na * i)
+                                    y1 = pos1[1] + b + (Nb * j)
+                                    z1 = pos1[2] + c + (Nc * k)
+                                    
+                                    x2 = pos2[0] + a + (Na * i)
+                                    y2 = pos2[1] + b + (Nb * j)
+                                    z2 = pos2[2] + c + (Nc * k)  
+                                    newPos1 = (x1,y1,z1)
+                                    newPos2 = (x2,y2,z2)
+                                    if PosInFirstCutoff(newPos1):
+                                        newAtom = SimpleAtom(newPos1)
+                                        bond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMatInt )
+                                        if not atomListContains(cellAtoms, newAtom):
+                                            cellAtoms.append(newAtom)
+                                        cellBonds.addBond(bond)
+                                    if PosInFirstCutoff(newPos2):
+                                        newAtom = SimpleAtom(newPos2)
+                                        bond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMatInt )
+                                        if not atomListContains(cellAtoms, newAtom):
+                                            cellAtoms.append(newAtom)
+                                        cellBonds.addBond(bond)
+                
+        
+
+         
+        file.write("#J Matrices\n#Number J11 J12 J13 J21 J22 J23 J31 J32 J33\n")
+        for i in range(len(matrices)):
+            jMat = matrices[i]
+            jStr = str(i) + " " + str(jMat[0][0]) + " " + str(jMat[0][1]) + " " + str(jMat[0][2]) + " " + str(jMat[1][0]) + " " + str(jMat[1][1]) + " " + str(jMat[1][2]) + " " + str(jMat[2][0]) + " " + str(jMat[2][1]) + " " + str(jMat[2][2])
+            file.write(jStr + "\n")
+        
+        
+        
+        allAtoms = []
+        numAtomsPerCell = len(cellAtoms)
+        
+        print "atoms in cell: ", numAtomsPerCell
+        
+        for i in range(size):
+            for j in range(size):
+                for k in range(size):
+                    for index in range(len(cellAtoms)):
+                        pos = cellAtoms[index].pos
+                        x = pos[0] + (Na * i)
+                        y = pos[1] + (Nb * j)
+                        z = pos[2] + (Nc * k)
+                        newAtom = SimpleAtom((x,y,z))
+#                        print (len(allAtoms)%numAtomsPerCell == index)#just a check, should always be true
+                        allAtoms.append(newAtom)
+
+ 
+        #Add bonds cellBonds to allAtoms (currently not most efficient way, but its a short list
+        for bond in cellBonds.list:
+            #Make sure each position is not yet represented the easy but inefficient way
+            pos1 = bond.pos1
+            pos2 = bond.pos2
+            pos1Index = -1
+            pos2Index = -1
+            for i in range(len(allAtoms)):
+                currentPos = allAtoms[i].pos
+                if currentPos == pos1:
+                    pos1Index = i
+                    break
+                
+            for i in range(len(allAtoms)):
+                currentPos = allAtoms[i].pos  
+                if currentPos == pos2:
+                    pos2Index = i
+                    break
+            
+            if pos1Index < 0 or pos2Index < 0:
+                print "Atom list does not contain all atoms!" 
+            else:
+                allAtoms[pos1Index].addInteraction(pos2Index, bond.jMatrix)
+                allAtoms[pos2Index].addInteraction(pos1Index, bond.jMatrix)
+
+
+        timer.printTime()
+        print"translating..."
+        
+        #translate bonds
+        for i in range(len(allAtoms)- numAtomsPerCell):
+            for interaction in allAtoms[i].interactions:
+                newInteraction = interaction[0] + numAtomsPerCell
+                if newInteraction < len(allAtoms):
+                    allAtoms[i+numAtomsPerCell].addInteraction(newInteraction, interaction[1])
+        
+        
+        
+#        print "done translating, checking list"
+#        timer.printTime()
+        
+        #Check for reapeats in finalBond List just for testing
+#        def isRepeat(finalBondList):
+#            for i in range(0, len(finalBondList)):
+#                for j in range(i + 1, len(finalBondList)):
+#                    if finalBondList[i].sameBond(finalBondList[j]):
+#                        return True
+#            return False
+#        
+#        if isRepeat(finalBondList):
+#            print "There is a repeat!"
+#        else:
+#            print "NO repeats!"
+#            
+#        timer.printTime()
+        
+        
+        #Check the simple atom list
+        def atomBalanced(atomIndex):
+            atom = allAtoms[atomIndex]
+            for otherAtomIndex in range(len(allAtoms)):
+                otherAtom = allAtoms[otherAtomIndex]
+                if atomInteractsWithAtom(atomIndex, otherAtom):
+                    if atomInteractsWithAtom(otherAtomIndex, atom):
+                        return True
+                    else:
+                        return False
+            return False
+        
+        def atomInteractsWithAtom(atomIndex, otherAtom):
+            for interaction in otherAtom.interactions:
+                if atomIndex == interaction[0]:
+                    return True
+            return False
+        
+        
+#        for atomIndex in range(len(allAtoms)):
+#            if not atomBalanced(atomIndex):
+#                print "Not Balanced!!!"
+#                break
+#        else:
+#            print "Balanced!"
+            
+        
+        timer.printTime()
+        print "number of atoms: ", len(allAtoms), "\n writing to disk..."
+            
+        
+        #print out the simple atom list
+        file.write("#AtomNumber AtomPosition(X Y Z) OtherIndex Jmatrix OtherIndex Jmatrix...\n")
+        for atomIndex in range(len(allAtoms)):
+            atom = allAtoms[atomIndex]
+            atomStr = str(atomIndex) + " " + str(atom.pos[0]) + " " + str(atom.pos[1]) + " " + str(atom.pos[2])
+            for interaction in atom.interactions:
+                otherAtom = interaction[0]
+                jMat = interaction[1]
+                atomStr += " " + str(otherAtom)
+                atomStr += " " + str(jMat)
+            file.write(atomStr + "\n")
+        
+        file.close()
+        print "done"
+        timer.printTime()
+

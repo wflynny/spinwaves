@@ -77,7 +77,7 @@ class Cell():
         for atomn in self.Atoms:  #should preserve order of Atoms
             position = atomn.getPosition()
             color = atomn.getColor()
-            new_cell.addAtom(Atom(new_cell, position[0], position[1], position[2], atomn.getDescription(), atomn.getRadius(), color[0], color[1], color[2]))
+            new_cell.addAtom(Atom(new_cell, position[0], position[1], position[2], atomn.getDescription(), atomn.getRadius(), color[0], color[1], color[2], anisotropy = atomn.getAnisotropy()))
 
 #Bonds no longer associated with cells
 #        for bondn in self.Bonds:

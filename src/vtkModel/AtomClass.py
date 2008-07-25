@@ -25,6 +25,9 @@ class Atom():
         self.unit_Cell = unit_Cell
         
 
+    def getAnisotropy(self):
+        return self.anisotropy
+    
     def getSpin(self):
         return self.spin
     

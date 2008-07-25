@@ -232,14 +232,17 @@ class MonteCarloPanel(wx.Panel):
         if openDialog.ShowModal() == wx.ID_OK:
             self.inPathText.SetValue(openDialog.GetPath())
         openDialog.Destroy()
+        event.Skip()
         
     def OnOutFileBrowse(self, event):
         saveDialog = wx.FileDialog(self, "Save File", style = wx.SAVE, wildcard = "Spin File(*.txt)|*.txt")
         if saveDialog.ShowModal() == wx.ID_OK:
             self.outPathText.SetValue(saveDialog.GetPath())
         saveDialog.Destroy()
+        event.Skip()
         
     def OnRun(self, event):
+        event.Skip()
         failed, tMax, tMin, tFactor, steps = self.validate()
         if not failed:
             print steps, tMax, tMin, tFactor
