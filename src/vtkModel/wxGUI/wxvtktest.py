@@ -414,6 +414,46 @@ class atomPanel(wx.Panel):
                 self.atomList.SetAttr(row, 4, attr)
                 failed = True
                 
+            
+            numDx = None
+            try:
+                numDx = float(self.atomList.GetCellValue(row,5))
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour("white")
+                self.atomList.SetAttr(row, 5, attr)
+            except:
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour(bgColor)
+                self.atomList.SetAttr(row, 5, attr)
+                failed = True
+                
+            
+            numDy = None
+            try:
+                numDy = float(self.atomList.GetCellValue(row,6))
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour("white")
+                self.atomList.SetAttr(row, 6, attr)
+            except:
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour(bgColor)
+                self.atomList.SetAttr(row, 6, attr)
+                failed = True
+                
+            
+            numDz = None
+            try:
+                numDz = float(self.atomList.GetCellValue(row,7))
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour("white")
+                self.atomList.SetAttr(row, 7, attr)
+            except:
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour(bgColor)
+                self.atomList.SetAttr(row, 7, attr)
+                failed = True
+            
+            
             name = self.atomList.GetCellValue(row, 0)
             
             
@@ -421,7 +461,7 @@ class atomPanel(wx.Panel):
             #this rerenders the cells to they show the color change
             
             
-            data.append([name, atomicNum, numXCoord, numYCoord, numZCoord])
+            data.append([name, atomicNum, numXCoord, numYCoord, numZCoord, numDx, numDy, numDz])
         
         return failed, numA, numB, numC, numAlpha, numBeta, numGamma, numMagNa, numMagNb, numMagNc, numCutNa, numCutNb, numCutNc, data
          

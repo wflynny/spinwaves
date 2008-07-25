@@ -194,8 +194,15 @@ class Session():
         
         unitcell = Cell(spaceGroup, 0,0,0, a, b, c, alpha, gamma, beta)
         
+        
         for i in range(len(atomData)):
-            unitcell.generateAtoms((float(atomData[i][2]), float(atomData[i][3]), float(atomData[i][4])), atomData[i][0])
+            #Since I am adding anisotropy later, some things(files) will not have it
+            anisotropy = None
+            try:
+                anisotropy = (atomData[i][5], atomData[i][6], atomData[i][7])
+            except IndexError:
+                print "Anisotropy not included!"
+            unitcell.generateAtoms((float(atomData[i][2]), float(atomData[i][3]), float(atomData[i][4])), atomData[i][0], anisotropy = anisotropy)
         
         #Create a Magnetic Cell
         self.MagCell = MagneticCell(unitcell, magNa, magNb, magNc, spaceGroup)
@@ -1079,15 +1086,16 @@ class Timer():
         minutes -= hours*60
         print "Time:", hours, "hours", minutes, "minutes", seconds, "seconds" 
  
+ 
     
 class atomTable(wx.grid.PyGridTableBase):
     def __init__(self):
         wx.grid.PyGridTableBase.__init__(self)
-        self.colLabels = ['   Name   ', 'Atomic Number','       x       ', '       y       ','       z       ']
+        self.colLabels = ['   Name   ', 'Atomic Number','    x    ', '    y    ','    z    ', '  Dx  ', '  Dy  ', '  Dz  ']
         self.rowLabels=['Atom 1']
         
         self.data = [
-                     ['','','','','']#Row 1
+                     ['','','','','', 0.0, 0.0, 0.0]#Row 1
                      ]
     
     def GetNumberRows(self):
@@ -1128,6 +1136,9 @@ class atomTable(wx.grid.PyGridTableBase):
     def AppendRow(self):
             self.data.append([''] * self.GetNumberCols())
             self.rowLabels.append('Atom ' + str(self.GetNumberRows()))
+            self.SetValue(self.GetNumberRows() - 1, 5, 0.0)
+            self.SetValue(self.GetNumberRows() - 1, 6, 0.0)
+            self.SetValue(self.GetNumberRows() - 1, 7, 0.0)
 
             # tell the grid we've added a row
             msg = wx.grid.GridTableMessage(self,            # The table
