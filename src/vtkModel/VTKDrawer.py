@@ -83,10 +83,10 @@ class vtkDrawer():
             
             #if the angle is obtuse, theta must be corrected
             if self.dotProduct(1, 0, 0, unitX, unitY, unitZ) >= 0:
-                print "acute", atom.getSpin(), theta
+#                print "acute", atom.getSpin(), theta
                 arrowActor.RotateWXYZ(theta, i, j, k)
             else:
-                print "obtuse", atom.getSpin(), theta
+#                print "obtuse", atom.getSpin(), theta
                 arrowActor.RotateWXYZ(180 - theta, i, j, k)
             
             self.ren1.AddActor(arrowActor)

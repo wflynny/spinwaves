@@ -414,44 +414,6 @@ class atomPanel(wx.Panel):
                 self.atomList.SetAttr(row, 4, attr)
                 failed = True
                 
-            numDx = None
-            try:
-                numDx = float(self.atomList.GetCellValue(row,5))
-                attr = wx.grid.GridCellAttr()
-                attr.SetBackgroundColour("white")
-                self.atomList.SetAttr(row, 5, attr)
-            except:
-                attr = wx.grid.GridCellAttr()
-                attr.SetBackgroundColour(bgColor)
-                self.atomList.SetAttr(row, 5, attr)
-                failed = True
-                
-            
-            numDy = None
-            try:
-                numDy = float(self.atomList.GetCellValue(row,6))
-                attr = wx.grid.GridCellAttr()
-                attr.SetBackgroundColour("white")
-                self.atomList.SetAttr(row, 6, attr)
-            except:
-                attr = wx.grid.GridCellAttr()
-                attr.SetBackgroundColour(bgColor)
-                self.atomList.SetAttr(row, 6, attr)
-                failed = True
-                
-            
-            numDz = None
-            try:
-                numDz = float(self.atomList.GetCellValue(row,7))
-                attr = wx.grid.GridCellAttr()
-                attr.SetBackgroundColour("white")
-                self.atomList.SetAttr(row, 7, attr)
-            except:
-                attr = wx.grid.GridCellAttr()
-                attr.SetBackgroundColour(bgColor)
-                self.atomList.SetAttr(row, 7, attr)
-                failed = True
-                
             name = self.atomList.GetCellValue(row, 0)
             
             
@@ -459,7 +421,7 @@ class atomPanel(wx.Panel):
             #this rerenders the cells to they show the color change
             
             
-            data.append([name, atomicNum, numXCoord, numYCoord, numZCoord, numDx, numDy, numDz])
+            data.append([name, atomicNum, numXCoord, numYCoord, numZCoord])
         
         return failed, numA, numB, numC, numAlpha, numBeta, numGamma, numMagNa, numMagNb, numMagNc, numCutNa, numCutNb, numCutNc, data
          
@@ -531,7 +493,7 @@ class bondListGrid(wx.grid.Grid):
             else:
                 self.table.SetValue(row,9,'')
         elif col==8 and row >=0:  #Jij matrix
-            dialog = jijDialog(self.table.GetValue(row, 8))
+            dialog = jijDialog()
             result = dialog.ShowModal()
             if result == wx.ID_OK:
                 print dialog.getMatrix()
@@ -788,13 +750,12 @@ class bondPanel(wx.Panel):
         rows = self.bondSpinner.GetValue()
         self.bondList.SetNumberRows(rows)
 #        self.atomList.GetTable().SetNumberRows(rows)
-        self.bondList.AutoSize()
         event.Skip()
  
 
 
 class jijDialog(wx.Dialog):
-    def __init__(self, defaultValues):
+    def __init__(self):
         wx.Dialog.__init__(self, None, -1, 'Jij Matrix', size = (300,300))
         okButton = wx.Button(self, wx.ID_OK, "OK", pos = (25, 225), size = (100, 25))
         okButton.SetDefault()
@@ -813,11 +774,6 @@ class jijDialog(wx.Dialog):
         self.grid.SetRowLabelValue(1,"b")
         self.grid.SetRowLabelValue(2,"c")
         self.grid.AutoSize()
-        
-        #Set the defualt values
-        for i in range(3):
-            for j in range(3):
-                self.grid.SetCellValue(i,j,str(defaultValues[i][j]))
         
         #For validating when 'ok' button is pressed
         self.Bind(wx.EVT_BUTTON, self.OnOk, okButton)

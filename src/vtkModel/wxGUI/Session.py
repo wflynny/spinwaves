@@ -98,10 +98,7 @@ class Session():
             x = atomNodes[i].getAttribute('x')
             y = atomNodes[i].getAttribute('y')
             z = atomNodes[i].getAttribute('z')
-            Dx = atomNodes[i].getAttribute('Dx')
-            Dy = atomNodes[i].getAttribute('Dy')
-            Dz = atomNodes[i].getAttribute('Dz')
-            atomData.append([name, atomicNum, x,y,z, Dx, Dy, Dz])
+            atomData.append([name, atomicNum, x,y,z])
             self.atomTable.SetValue(i, 0, name)
             self.atomTable.SetValue(i, 1, atomicNum)
             self.atomTable.SetValue(i, 2, x)
@@ -198,7 +195,7 @@ class Session():
         unitcell = Cell(spaceGroup, 0,0,0, a, b, c, alpha, gamma, beta)
         
         for i in range(len(atomData)):
-            unitcell.generateAtoms((float(atomData[i][2]), float(atomData[i][3]), float(atomData[i][4])), atomData[i][0], anisotropy = (atomData[i][5], atomData[i][6], atomData[i][7]))
+            unitcell.generateAtoms((float(atomData[i][2]), float(atomData[i][3]), float(atomData[i][4])), atomData[i][0])
         
         #Create a Magnetic Cell
         self.MagCell = MagneticCell(unitcell, magNa, magNb, magNc, spaceGroup)
@@ -306,10 +303,6 @@ class Session():
             atomElement.setAttribute('x', str(self.atomTable.GetValue(i, 2)))
             atomElement.setAttribute('y', str(self.atomTable.GetValue(i, 3)))
             atomElement.setAttribute('z', str(self.atomTable.GetValue(i, 4)))
-            #Add single ion anisotropy terms here
-            atomElement.setAttribute('Dx', str(self.atomTable.GetValue(i, 5)))
-            atomElement.setAttribute('Dy', str(self.atomTable.GetValue(i, 6)))
-            atomElement.setAttribute('Dz', str(self.atomTable.GetValue(i, 7)))
             atomsElement.appendChild(atomElement)
             
           
@@ -577,7 +570,11 @@ class Session():
         
        
         
-    #This one orgnizes it by atom, not b
+    #This one orgnizes it by atom, not bond    
+    
+    
+    
+    
     
     
     def exportForMonteCarlo(self, filename):
@@ -588,11 +585,9 @@ class Session():
         file = open(filename, 'w')
    
         class SimpleBond():
-            def __init__(self, pos1, anisotropy1, pos2, anisotropy2, jMatrix):
+            def __init__(self, pos1, pos2, jMatrix):
                 self.pos1 = pos1
-                self.anisotropy1 = anisotropy1
                 self.pos2 = pos2
-                self.anisotropy2 = anisotropy2
                 self.jMatrix = jMatrix
                 
             def sameBond(self, bond2):
@@ -606,9 +601,8 @@ class Session():
         Nc = self.getCutoffCell().getNc()
         
         class SimpleAtom():
-            def __init__(self, pos, anisotropy):
+            def __init__(self, pos):
                 self.pos = pos
-                self.anisotropy = anisotropy
 #                self.cellPos = []
 #                self.cellPosX = int(pos[0])/Na
 #                self.cellPosY = int(pos[1])/Nb
@@ -852,11 +846,9 @@ class Session():
         simpleCellBonds = []
         for bond in self.getCutoffCell().getBonds():
             pos1 = bond.getAtom1().getPosition()
-            anisotropy1 = bond.getAtom1().getAnisotropy()
             pos2 = bond.getAtom2().getPosition()
-            anisotropy2 = bond.getAtom2().getAnisotropy()
             jMat = bond.getJMatrix()
-            newBond = SimpleBond(pos1, anisotropy1, pos2, anisotropy2, indexOf(matrices,jMat))
+            newBond = SimpleBond(pos1, pos2, indexOf(matrices,jMat))
             simpleCellBonds.append(newBond)
         
         
@@ -868,9 +860,7 @@ class Session():
         cellBonds = SimpleBondList()
         for bond in simpleCellBonds:
             pos1 = bond.pos1
-            an1 = bond.anisotropy1
             pos2 = bond.pos2
-            an2 = bond.anisotropy2
             jMatInt = bond.jMatrix
             for i in range(2):
                 for j in range(2):
@@ -888,14 +878,14 @@ class Session():
                                     newPos1 = (x1,y1,z1)
                                     newPos2 = (x2,y2,z2)
                                     if PosInFirstCutoff(newPos1):
-                                        newAtom = SimpleAtom(newPos1, an1)
-                                        bond = SimpleBond( (x1,y1,z1), an1, (x2,y2,z2), an2, jMatInt )
+                                        newAtom = SimpleAtom(newPos1)
+                                        bond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMatInt )
                                         if not atomListContains(cellAtoms, newAtom):
                                             cellAtoms.append(newAtom)
                                         cellBonds.addBond(bond)
                                     if PosInFirstCutoff(newPos2):
-                                        newAtom = SimpleAtom(newPos2, an2)
-                                        bond = SimpleBond( (x1,y1,z1), an1, (x2,y2,z2), an2, jMatInt )
+                                        newAtom = SimpleAtom(newPos2)
+                                        bond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMatInt )
                                         if not atomListContains(cellAtoms, newAtom):
                                             cellAtoms.append(newAtom)
                                         cellBonds.addBond(bond)
@@ -921,11 +911,10 @@ class Session():
                 for k in range(size):
                     for index in range(len(cellAtoms)):
                         pos = cellAtoms[index].pos
-                        anisotropy = cellAtoms[index].anisotropy
                         x = pos[0] + (Na * i)
                         y = pos[1] + (Nb * j)
                         z = pos[2] + (Nc * k)
-                        newAtom = SimpleAtom((x,y,z), anisotropy)
+                        newAtom = SimpleAtom((x,y,z))
 #                        print (len(allAtoms)%numAtomsPerCell == index)#just a check, should always be true
                         allAtoms.append(newAtom)
 
@@ -1019,11 +1008,10 @@ class Session():
             
         
         #print out the simple atom list
-        file.write("#AtomNumber AtomPosition(X Y Z) Anisotropy(X Y Z) OtherIndex Jmatrix OtherIndex Jmatrix...\n")
+        file.write("#AtomNumber AtomPosition(X Y Z) OtherIndex Jmatrix OtherIndex Jmatrix...\n")
         for atomIndex in range(len(allAtoms)):
             atom = allAtoms[atomIndex]
             atomStr = str(atomIndex) + " " + str(atom.pos[0]) + " " + str(atom.pos[1]) + " " + str(atom.pos[2])
-            atomStr += " " + str(atom.anisotropy[0]) + " " + str(atom.anisotropy[1]) + " " + str(atom.anisotropy[2])  #add anisotropy
             for interaction in atom.interactions:
                 otherAtom = interaction[0]
                 jMat = interaction[1]
@@ -1095,11 +1083,11 @@ class Timer():
 class atomTable(wx.grid.PyGridTableBase):
     def __init__(self):
         wx.grid.PyGridTableBase.__init__(self)
-        self.colLabels = ['  Name  ', 'Atomic Number','   x   ', '   y   ','   z   ','  Dx  ','  Dy  ','  Dz  ']
+        self.colLabels = ['   Name   ', 'Atomic Number','       x       ', '       y       ','       z       ']
         self.rowLabels=['Atom 1']
         
         self.data = [
-                     ['','','','','',0.,0.,0.]#Row 1
+                     ['','','','','']#Row 1
                      ]
     
     def GetNumberRows(self):
@@ -1139,9 +1127,6 @@ class atomTable(wx.grid.PyGridTableBase):
     
     def AppendRow(self):
             self.data.append([''] * self.GetNumberCols())
-            self.SetValue(self.GetNumberRows()-1, 5, 0.0)
-            self.SetValue(self.GetNumberRows()-1, 6, 0.0)
-            self.SetValue(self.GetNumberRows()-1, 7, 0.0)
             self.rowLabels.append('Atom ' + str(self.GetNumberRows()))
 
             # tell the grid we've added a row
@@ -1181,7 +1166,7 @@ class bondTable(wx.grid.PyGridTableBase):
         self.rowLabels=['Bond 1']
         
         self.data = [
-                     ['','','','','','','','',numpy.array([[0.,0.,0.],[0.,0.,0.],[0.,0.,0.]]),'']#Row 1
+                     ['','','','','','','','','','']#Row 1
                      ]
     
     def GetNumberRows(self):
@@ -1230,9 +1215,6 @@ class bondTable(wx.grid.PyGridTableBase):
             row = [''] * (self.GetNumberCols())
             self.data.append(row)
             self.rowLabels.append('Bond ' + str(self.GetNumberRows()))
-            lastRow = self.GetNumberRows()-1
-            defaultVal = numpy.array([[0.,0.,0.],[0.,0.,0.],[0.,0.,0.]])
-            self.SetValue(lastRow, 8, defaultVal)
 
             # tell the grid we've added a row
             msg = wx.grid.GridTableMessage(self,            # The table

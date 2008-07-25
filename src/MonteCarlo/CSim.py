@@ -5,17 +5,10 @@ import cstruct
 import numpy as N
 import sys
 import time
+import wx
 
- 
-  
-if __name__ == '__main__':      
-    k = 10
-    tMax = 10
-    tMin = .01
-    tFactor = .90
+def simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath): 
     timer = Timer()
-    inFilePath = "C:\Newexport1.txt"
-    outFilePath = "C:\spins.txt"
     
     if sys.platform=='win32':
         print 'win32'
@@ -164,3 +157,178 @@ if __name__ == '__main__':
     
     timer.printTime()
     print "done"
+
+
+
+class MonteCarloPanel(wx.Panel):
+    def __init__(self, parent, id, defaultSteps, defaultTMax, defaultTMin, defaultTFactor, defaultInPath, defaultOutPath):
+        wx.Panel.__init__(self, parent, id)
+        
+        #Create the Flex Grid Sizer
+        topSizer = wx.FlexGridSizer(4,2,2,2)
+        
+        #Add Temperacure Max text
+        tMaxLabel = wx.StaticText(self, -1, "Max Temperature:")
+        self.tMaxText = wx.TextCtrl(self, -1, value = str(defaultTMax), size = (60, -1), style = wx.TE_RICH2)
+        topSizer.Add(tMaxLabel)
+        topSizer.Add(self.tMaxText)
+
+        #Add Temperacure Min text
+        tMinLabel = wx.StaticText(self, -1, "Min Temperature:")
+        self.tMinText = wx.TextCtrl(self, -1, value = str(defaultTMin), size = (60, -1), style = wx.TE_RICH2)
+        topSizer.Add(tMinLabel)
+        topSizer.Add(self.tMinText)
+        
+        #Add Temperature Factor Text
+        tFactorLabel = wx.StaticText(self, -1, "Temperature Factor:")
+        self.tFactorText = wx.TextCtrl(self, -1, value = str(defaultTFactor), size = (60, -1), style = wx.TE_RICH2)
+        topSizer.Add(tFactorLabel, 0)
+        topSizer.Add(self.tFactorText, 0)
+        
+        #Add Steps per Temperature Level
+        stepsLabel = wx.StaticText(self, -1, "Steps Per Temperacture Level:")
+        self.stepsText = wx.TextCtrl(self, -1, value = str(defaultSteps), size = (60, -1), style = wx.TE_RICH2)
+        topSizer.Add(stepsLabel, 0)
+        topSizer.Add(self.stepsText, 0)
+        
+        
+        bottomSizer = wx.FlexGridSizer(2,3,2,2)
+        
+        #Add Bond File Path
+        inPathLabel = wx.StaticText(self, -1, "Bond File Path:")
+        self.inPathText = wx.TextCtrl(self, -1, value= defaultInPath, size = (120, -1), style = wx.TE_RICH2)
+        bottomSizer.Add(inPathLabel, 0)
+        bottomSizer.Add(self.inPathText, 0)
+        self.inPathBrowseButton = wx.Button(self, -1, "Browse")
+        bottomSizer.Add(self.inPathBrowseButton)
+        
+        #Add Spin Output File Path
+        outPathLabel = wx.StaticText(self, -1, "Spin Output Path:")
+        self.outPathText = wx.TextCtrl(self, -1, value = defaultOutPath, size = (120, -1), style = wx.TE_RICH2)
+        bottomSizer.Add(outPathLabel, 0)
+        bottomSizer.Add(self.outPathText, 0)
+        self.outPathBrowseButton = wx.Button(self, -1, "Browse")
+        bottomSizer.Add(self.outPathBrowseButton)
+        
+        
+        self.runButton = wx.Button(self, -1, "Run Simulation")
+        
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(topSizer, 0)
+        sizer.Add((1,20), 0, wx.EXPAND)#Spacer between filenames and simulation parameters
+        sizer.Add(bottomSizer, 0)
+        sizer.Add((1,15), 0, wx.EXPAND)#Spacer before run button
+        sizer.Add(self.runButton,0, wx.ALIGN_CENTER)
+        
+        self.SetSizer(sizer)
+        
+        #Add event handlers for the buttons
+        self.Bind(wx.EVT_BUTTON, self.OnInFileBrowse, self.inPathBrowseButton)
+        self.Bind(wx.EVT_BUTTON, self.OnOutFileBrowse, self.outPathBrowseButton)
+        self.Bind(wx.EVT_BUTTON, self.OnRun, self.runButton)
+        
+    def OnInFileBrowse(self, event):
+        openDialog = wx.FileDialog(self, "Open File", style = wx.OPEN, wildcard = "Bond Export File(*.txt)|*.txt")
+        if openDialog.ShowModal() == wx.ID_OK:
+            self.inPathText.SetValue(openDialog.GetPath())
+        openDialog.Destroy()
+        
+    def OnOutFileBrowse(self, event):
+        saveDialog = wx.FileDialog(self, "Save File", style = wx.SAVE, wildcard = "Spin File(*.txt)|*.txt")
+        if saveDialog.ShowModal() == wx.ID_OK:
+            self.outPathText.SetValue(saveDialog.GetPath())
+        saveDialog.Destroy()
+        
+    def OnRun(self, event):
+        failed, tMax, tMin, tFactor, steps = self.validate()
+        if not failed:
+            print steps, tMax, tMin, tFactor
+            time.sleep(10)
+            try:
+                simulate(steps, tMax, tMin, tFactor, self.inPathText.GetValue(), self.outPathText.GetValue())
+            except IOError:
+                wx.MessageDialog(None, "Bad File Name!", "File Name Error", wx.OK).ShowModal()
+        
+    def validate(self):
+        tMax = self.tMaxText.GetValue()
+        tMin = self.tMinText.GetValue()
+        tFactor = self.tFactorText.GetValue()
+        steps = self.stepsText.GetValue()
+        #For now, I will not validate the file path
+        #inPath = self.inPathtext.GetValue()#Can check if it is readable
+        
+        bgColor = "pink"
+        failed = False
+        #Validate tMax(must be a float)
+        numTmax = None
+        try:
+            numTmax = float(tMax)
+            self.tMaxText.SetStyle(0, len(tMax), wx.TextAttr(colBack = "white"))
+        except:
+            self.tMaxText.SetStyle(0, len(tMax), wx.TextAttr(colBack = bgColor))
+            failed = True
+        
+        #Validate tMin(must be a float)
+        numTmin = None
+        try:
+            numTmin = float(tMin)
+            self.tMinText.SetStyle(0, len(tMin), wx.TextAttr(colBack = "white"))
+        except:
+            self.tMinText.SetStyle(0, len(tMin), wx.TextAttr(colBack = bgColor))
+            failed = True
+        
+        #Validate tFactor(must be a float)
+        numTfactor = None
+        try:
+            numTfactor = float(tFactor)
+            self.tFactorText.SetStyle(0, len(tFactor), wx.TextAttr(colBack = "white"))
+        except:
+            self.tFactorText.SetStyle(0, len(tFactor), wx.TextAttr(colBack = bgColor))
+            failed = True
+            
+        #Validate steps(must be an int)
+        numSteps = None
+        try:
+            numSteps = int(steps)
+            self.stepsText.SetStyle(0, len(steps), wx.TextAttr(colBack = "white"))
+        except:
+            self.stepsText.SetStyle(0, len(steps), wx.TextAttr(colBack = bgColor))
+            failed = True
+            
+        return failed, numTmax, numTmin, numTfactor, numSteps 
+ 
+         
+       
+            
+            
+            
+
+
+class App(wx.App):
+    def __init__(self, redirect = False, filename = None):
+        wx.App.__init__(self, redirect, filename)
+    
+    def OnInit(self):
+        #Defaults
+        k = 100
+        tMax = 10
+        tMin = .01
+        tFactor = .90
+        inFilePath = "C:\Export.txt"
+        outFilePath = "C:\Spins.txt"
+            
+        
+        self.frame = wx.Frame(None, -1, size = (300,250))
+        MonteCarloPanel(self.frame, -1, k, tMax, tMin, tFactor, inFilePath, outFilePath)
+        self.frame.Show()
+        self.SetTopWindow(self.frame)
+        
+        return True
+
+
+if __name__ == '__main__':       
+    app = App(False)
+    app.MainLoop()
+    
+    #simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath)
+    
