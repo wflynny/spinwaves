@@ -202,6 +202,8 @@ class Session():
                 anisotropy = (atomData[i][5], atomData[i][6], atomData[i][7])
             except IndexError:
                 print "Anisotropy not included!"
+            if anisotropy == None:
+                anisotropy = (0,0,0)#Can't be None
             unitcell.generateAtoms((float(atomData[i][2]), float(atomData[i][3]), float(atomData[i][4])), atomData[i][0], anisotropy = anisotropy)
         
         #Create a Magnetic Cell
@@ -684,11 +686,11 @@ class Session():
         for bond in self.getCutoffCell().getBonds():
             pos1 = bond.getAtom1().getPosition()
             anisotropy1 = bond.getAtom1().getAnisotropy()
-            print anisotropy1
+#            print anisotropy1
             pos2 = bond.getAtom2().getPosition()
             anisotropy2 = bond.getAtom2().getAnisotropy()
-            print anisotropy2
-            time.sleep(.1)
+#            print anisotropy2
+#            time.sleep(.1)
             jMat = bond.getJMatrix()
             newBond = SimpleBond(pos1, pos2, indexOf(matrices,jMat), anisotropy1, anisotropy2)
             simpleCellBonds.append(newBond)

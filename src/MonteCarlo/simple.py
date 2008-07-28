@@ -22,8 +22,9 @@ class Timer():
     
 
 class simpleAtom():
-    def __init__(self, pos):
+    def __init__(self, pos, anisotropy):
         self.pos = pos
+        self.anisotropy = anisotropy
         self.s = numpy.array([0,0,random.uniform(-1,1)])
         self.interactions = []
 
@@ -59,10 +60,10 @@ def readFile(filename):
             values = line.split()
 #            print values
 #            time.sleep(2)
-            newAtom = simpleAtom((float(values[1]), float(values[2]), float(values[3])))
+            newAtom = simpleAtom((float(values[1]), float(values[2]), float(values[3])), (float(values[4]), float(values[5]), float(values[6])) )
 #            print "atom pos:", newAtom.pos
 #            time.sleep(5)
-            i = 4
+            i = 7
             while i < len(values):
                 otherAtomIndex = int(values[i])
    #format changed to no longer include position of other atom

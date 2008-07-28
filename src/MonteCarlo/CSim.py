@@ -53,15 +53,21 @@ def simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath):
         s1[1] = c_float(0)
         s1[2] = c_float(0)
         
+        anisotropyClass = c_float * 3
+        anisotropy = anisotropyClass()
+        anisotropy[0] = c_float(atom.anisotropy[0])
+        anisotropy[1] = c_float(atom.anisotropy[1])
+        anisotropy[2] = c_float(atom.anisotropy[2])
+        
         #to keep pointers
         matListList.append(matList)
         nbr_ListList.append(neighbors)
 #        print "atom" + str(i) + ") numInteractions:", numInteractions, len(neighbors), len(matList)
         
-        print str(i) + ")", atom.pos
-        for interaction in atom.interactions:
-            print atoms[interaction[0]].pos, " : ", interaction[1]
-        monteCarloDll.set_atom(atomListPointer, c_int(i), matList, neighbors, c_int(numInteractions), s1)
+ #       print str(i) + ")", atom.pos
+ #       for interaction in atom.interactions:
+ #           print atoms[interaction[0]].pos, " : ", interaction[1]
+        monteCarloDll.set_atom(atomListPointer, c_int(i), anisotropy, matList, neighbors, c_int(numInteractions), s1)
     
     print "atoms added"
 #    time.sleep(10)
@@ -330,7 +336,7 @@ class App(wx.App):
 
 
 if __name__ == '__main__':       
-    app = App(False)
+    app = App(True)
     app.MainLoop()
     
     #simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath)
