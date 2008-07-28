@@ -10,6 +10,7 @@ float randf()
 }
 */
 typedef float Spin[3];
+typedef float Anisotropy[3];
 typedef float InteractionMatrix[3][3];
 
 static dsfmt_t dsfmt_state;
@@ -88,6 +89,7 @@ typedef struct
         int *nbr_list;
 //        float *spin;
         Spin spin;
+        Anisotropy anisotropy;
 } Atom;
         
 void del_jMat(InteractionMatrix *m)
@@ -166,16 +168,17 @@ Atom* new_atom_list(int n, int *success)
 }
 
 
-void set_atom(Atom *p, int k, int *mat, int* neighbors, int numInteractions, Spin spin)
+void set_atom(Atom *p, int k, Anisotropy anisotropy, int *mat, int* neighbors, int numInteractions, Spin spin)
 {
 //     printf("spin: (%f, %f, %f) ", spin[0],spin[1], spin[2]);
 //     printf("%d) %x  %x  %x\n", k, p, p + k, p + k + 1);
        int i;
-       printf("(%d)\n", k);
+/*       printf("(%d)\n", k);
        for(i =0; i < numInteractions;  i++)
        {
              printf("%d)(%d, %d)\n",i, neighbors[i], mat[i]);
        }
+*/
 //       system("PAUSE");
      p[k].interaction_matrix = mat;
      p[k].nbr_list = neighbors;
@@ -185,6 +188,11 @@ void set_atom(Atom *p, int k, int *mat, int* neighbors, int numInteractions, Spi
      p[k].spin[1] = spin[1];
 //     printf("here3\n");
      p[k].spin[2] = spin[2];
+     p[k].anisotropy[0] = anisotropy[0];
+     p[k].anisotropy[1] = anisotropy[1];
+     p[k].anisotropy[2] = anisotropy[2];
+//     printf("anisotropy: (%f, %f, %f)\n", anisotropy[0], anisotropy[1], anisotropy[2]);
+//     system("PAUSE");
 //     printf("here4\n");
      p[k].numInteractions = numInteractions;
      
@@ -309,7 +317,13 @@ float Energy(Atom *atoms, Atom *a, float s1[3], InteractionMatrix* jMatrices)
 //              printf("s2: %x (%f, %f, %f)", s2, s2[0], s2[1], s2[2]);
               index = a->interaction_matrix[j];
 //              printf("here2");
-              E -= matCalc(s1, jMatrices[index], s2);
+                //E = -s1*Jij*s2 - Dx*Sx^2 - Dy*Sy^2 - DzSz^2
+              E -= matCalc(s1, jMatrices[index], s2) + a->anisotropy[0]*pow(s1[0],2) + a->anisotropy[1]*pow(s1[1],2) + a->anisotropy[2]*pow(s1[2],2);
+//              anisotropyE = a->anisotropy[0]*pow(s1[0],2) + a->anisotropy[1]*pow(s1[1],2) + a->anisotropy[2]*pow(s1[2],2);
+//              printf("E = %f\n", E);
+//              E -= anisotropyE;
+//              printf("anisotropy: (%f, %f, %f)  s: (%f, %f, %f) E = %f\n", a->anisotropy[0], a->anisotropy[1], a->anisotropy[2],s1[0],s1[1],s1[2],E);
+//              system("PAUSE");
 //              printf("here3\n");
       }
 //      printf("ok E = %f\n", E);
@@ -327,11 +341,12 @@ void flipSpins(Atom *atoms, int numAtoms, InteractionMatrix *jMatrices, float T,
      {
 //             printf("atom %d) s = (%f,%f,%f) \n", index, atoms[index].spin[0], atoms[index].spin[1], atoms[index].spin[2]);
              randSpin(newS);
-//             printf("oldE ");
              oldE = Energy(atoms, atoms+index, atoms[index].spin, jMatrices);
-//             printf("newE ");
+//             printf("oldE : %f\n", oldE);
+
 //             printf("news = (%f, %f, %f)\n", newS[0], newS[1], newS[2]);
              newE = Energy(atoms, atoms+index, newS, jMatrices);
+//             printf("newE : %f\n", newE);
              if(newE < oldE)
              {
                      //atoms[index].spin = newS;
@@ -344,7 +359,9 @@ void flipSpins(Atom *atoms, int numAtoms, InteractionMatrix *jMatrices, float T,
              else
              {
                  float deltE = newE - oldE;
+//                 printf("deltE : %f  ", deltE);
                  float probChange = exp(-deltE/T);
+//                 printf("probChange : %f\n", probChange);
                  if(randf() < probChange)
                  {
                             //atoms[index].spin = newS;
@@ -373,6 +390,12 @@ void simulate(Atom *atoms, int numAtoms, InteractionMatrix *jMatrices, int k, fl
 {
      float fracFlipped;
      int i,j, flipped;
+     
+     for(i = 0; i < numAtoms; i++)
+     {
+           printf("Anisotropy: (%f, %f, %f)\n", atoms[i].anisotropy[0], atoms[i].anisotropy[1], atoms[i].anisotropy[2]);
+     }
+     
 /*     printf("C side interaction matrix list %d\n", jMatrices);
      for (i=0; i<3; i++)
      for (j=0; j<3; j++){
