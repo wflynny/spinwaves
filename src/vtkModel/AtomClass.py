@@ -1,12 +1,12 @@
 class Atom():
-    def __init__(self, unit_Cell, x,y,z, description = "", radius=.05,r = 1,g=0,b = 0, spin = (1,1,1), anisotropy = (0,0,0)):
+    def __init__(self, unit_Cell, x,y,z, description = "", radius=.05,r = 1,g=0,b = 0, spin = (0,1,0), anisotropy = (0,0,0)):
         """
         x,y,z are fractional coordinates in the unit cell
         unit_Cell is the unit cell containing the atom (instance of Cell class)
         radius is the radius of the sphere actor
         r,g,b are the red, green, blue values of the actor
         """
-        print "atom init anisotropy = ", anisotropy
+#        print "atom init anisotropy = ", anisotropy
         self.anisotropy = anisotropy
         self.description = description
         self.radius = radius
@@ -53,7 +53,7 @@ class Atom():
         return self.unit_Cell
     
     def __str__(self):
-        return self.getDescription().rstrip() + " at " + str(self.getPosition()) + " in " + self.unit_Cell.__str__()
+        return self.getDescription().rstrip() + " at " + str(self.getPosition()) + " in " + self.unit_Cell.__str__() + "  Spin = " + str(self.spin)
     
     def getIndexNumber(self):
         """Returns the Atom's Index Number in the Unit Cell"""

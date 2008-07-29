@@ -895,7 +895,17 @@ class vtkPanel(wx.Panel):
 #        connect(self.OnBondChange, signal = "Bond Change")
         connect(self.OnPick, signal = "Pick Event")
         connect(self.OnModelChange, signal = "Model Change")
+        connect(self.OnSaveImage, signal = "Save Image")
     
+    
+    def OnSaveImage(self, path):
+        w2i = vtkWindowToImageFilter()
+        w2i.SetInput(self.window.GetRenderWindow())
+        tiffWriter = vtkTIFFWriter()
+        tiffWriter.SetInput(w2i.GetOutput())
+        tiffWriter.SetFileName(path)
+        tiffWriter.Write()
+        
     def OnModelChange(self):
         self.draw()
     
@@ -1078,7 +1088,7 @@ class vtkPanel(wx.Panel):
 #        self.draw()
 
     def OnPick(self, obj):
-        print "OnPick"
+#        print "OnPick"
         if self.mode:
             self.mode.OnPick(obj)
 #        self.mode = None
@@ -1146,6 +1156,7 @@ class Frame(wx.Frame):
         newMenuItem = fileMenu.Append(wx.NewId(), "&New Magnetic Cell")
         openMenuItem = fileMenu.Append(wx.NewId(), "&Open")
         saveMenuItem = fileMenu.Append(wx.NewId(), "&Save")
+        saveImageMenuItem = fileMenu.Append(wx.NewId(), "Save Image")
         exportMenuItem = fileMenu.Append(wx.NewId(), "Export for Monte Carlo")
         loadSpinsMenuItem = fileMenu.Append(wx.NewId(), "Load Spins from file")
         quitMenuItem = fileMenu.Append(wx.NewId(), "&Quit")
@@ -1175,11 +1186,18 @@ class Frame(wx.Frame):
 #        self.Bind(wx.EVT_MENU, self.OnNew, newMenuItem)
         self.Bind(wx.EVT_MENU, self.OnExport, exportMenuItem)
         self.Bind(wx.EVT_MENU, self.OnLoadSpins, loadSpinsMenuItem)
+        self.Bind(wx.EVT_MENU, self.OnSaveImage, saveImageMenuItem)
     
  #   def OnNew(self, event):
         #Add drawing panel
 #        self.vtkPanel.draw()
 #        self.GetEventHandler().ProcessEvent(wx.SizeEvent())
+    
+    def OnSaveImage(self, evt):
+        saveDialog = wx.FileDialog(self, "Save Image", style = wx.SAVE, wildcard = "*.tiff")
+        if saveDialog.ShowModal() == wx.ID_OK:
+            send("Save Image", sender = "Main Frame", path = saveDialog.GetPath())
+        saveDialog.Destroy()
     
     def OnExport(self, evt):
         saveDialog = wx.FileDialog(self, "Save File", style = wx.SAVE, wildcard = "*.txt")
