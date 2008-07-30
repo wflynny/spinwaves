@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 """This is a test of wxVTKRenderWindow"""
-
 import wx
 import wx.grid
 from picker import Picker
@@ -15,7 +14,11 @@ from wx.py.dispatcher import connect, send
 import vtkModel.SpaceGroups
 import time
 from Session import Session
-import MonteCarlo.CSim
+
+#It could not find MonteCarlo package
+import sys
+sys.path.append("C:\\spinwaves\\src\\MonteCarlo")
+import CSim
 
 
 
@@ -983,6 +986,11 @@ class vtkPanel(wx.Panel):
         #Create vtkDrawer
         self.drawer = vtkDrawer(ren1)
            
+        #Set up trackball mode
+        interactor = vtk.vtkInteractorStyleSwitch()
+        interactor.SetCurrentStyleToTrackballCamera()
+        self.window._Iren.SetInteractorStyle(interactor)
+        
         #Add my picker
         if self.picker:
             self.picker.removeObserver()
@@ -1170,8 +1178,8 @@ class Frame(wx.Frame):
         openMenuItem = fileMenu.Append(wx.NewId(), "&Open")
         saveMenuItem = fileMenu.Append(wx.NewId(), "&Save")
         saveImageMenuItem = fileMenu.Append(wx.NewId(), "Save Image")
-        exportMenuItem = fileMenu.Append(wx.NewId(), "Export for Monte Carlo")
-        loadSpinsMenuItem = fileMenu.Append(wx.NewId(), "Load Spins from file")
+#        exportMenuItem = fileMenu.Append(wx.NewId(), "Export for Monte Carlo")
+#        loadSpinsMenuItem = fileMenu.Append(wx.NewId(), "Load Spins from file")
         quitMenuItem = fileMenu.Append(wx.NewId(), "&Quit")
         menuBar.Append(fileMenu, "&File")
         
@@ -1180,7 +1188,7 @@ class Frame(wx.Frame):
         exportMenuItem = monteCarloMenu.Append(wx.NewId(), "Export for Monte Carlo")
         runSimulationMenuItem = monteCarloMenu.Append(wx.NewId(), "Launch Simulation")
         loadSpinsMenuItem = monteCarloMenu.Append(wx.NewId(), "Load Spins from file")
-        menuBar.Append(monteCarloMenu)
+        menuBar.Append(monteCarloMenu, "Monte Carlo")
         
         
         #Add Model Menu
@@ -1208,7 +1216,7 @@ class Frame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnExport, exportMenuItem)
         self.Bind(wx.EVT_MENU, self.OnLoadSpins, loadSpinsMenuItem)
         self.Bind(wx.EVT_MENU, self.OnSaveImage, saveImageMenuItem)
-        self.Bind(wx.EVT_MENU, self.OnlaunchSim, runSimulationMenuItem)
+        self.Bind(wx.EVT_MENU, self.OnLaunchSim, runSimulationMenuItem)
         
     
  #   def OnNew(self, event):
@@ -1277,7 +1285,7 @@ class App(wx.App):
         self.frame = Frame(None, -1, session = session)
         self.frame.Show()
         self.SetTopWindow(self.frame)
-        frame1 = wx.Frame(self.frame, -1, size = (500,245))
+        frame1 = wx.Frame(self.frame, -1, "Atoms", size = (500,245))
         atomPanel(frame1, -1, session = session)
         frame1.Show()
         frame2 = wx.Frame(self.frame, -1, 'Bonds', size = (655,200))

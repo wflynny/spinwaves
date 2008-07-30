@@ -2,15 +2,22 @@ import vtk
 from wx.py.dispatcher import send
 
 class Picker():
+    
+    """This class is in charge of listening to pick events in the render window in
+    the and handling them.  The actor is highlighted by turning the ambient lighting
+    on.  Then the object (Atom or Bond; others are not supported) is found using
+    the vtkDrawer.  The object's __str__ is printed"""
 
     def __init__(self, vtkDrawer, iren, renderer):
         self.iren = iren
         self.ren1 = renderer
         self.drawer = vtkDrawer
+        
+        #moved this to draw method of main panel
         #Set up trackball mode (not really picking)
-        interactor = vtk.vtkInteractorStyleSwitch()
-        interactor.SetCurrentStyleToTrackballCamera()
-        iren.SetInteractorStyle(interactor)
+#        interactor = vtk.vtkInteractorStyleSwitch()
+#        interactor.SetCurrentStyleToTrackballCamera()
+#        iren.SetInteractorStyle(interactor)
         
         #set the picker so props can be picked
         self.picker = vtk.vtkPropPicker()
@@ -19,7 +26,8 @@ class Picker():
         #Add my own pick function
         self.observerNum = iren.AddObserver("LeftButtonPressEvent", self.pick)
         
-        self.SelectedActor = None  #used by the pick()
+        self.SelectedActor = None   #used by the pick() so that only one item is
+                                    #picked at a time and it is not repicked
     
     def pick(self, obj, event):
         Mouse_Position = self.iren.GetEventPosition()

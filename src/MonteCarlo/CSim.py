@@ -322,7 +322,7 @@ def ShowSimulationFrame():
     outFilePath = "C:\Spins.txt"
         
     
-    frame = wx.Frame(None, -1, size = (300,250))
+    frame = wx.Frame(None, -1, title = "Monte Carlo Simulation", size = (300,250))
     MonteCarloPanel(frame, -1, k, tMax, tMin, tFactor, inFilePath, outFilePath)
     frame.Show()
     return frame
