@@ -583,8 +583,8 @@ class Session():
     #This one orgnizes it by atom, not bond
     
     
-    def exportForMonteCarlo(self, filename):
-        size = 2
+    def exportForMonteCarlo(self, filename, size):
+#        size = 2
         
         timer = Timer()
         
@@ -1021,6 +1021,9 @@ class bondTable(wx.grid.PyGridTableBase):
         self.data = [
                      ['','','','','','','','','','']#Row 1
                      ]
+        
+        #Set defualt Jij to 0's
+        self.SetValue(0, 8, numpy.array([[0.,0.,0.],[0.,0.,0.],[0.,0.,0.]]))
     
     def GetNumberRows(self):
         return len(self.data)
@@ -1065,17 +1068,22 @@ class bondTable(wx.grid.PyGridTableBase):
  #       return True
     
     def AppendRow(self):
-            row = [''] * (self.GetNumberCols())
-            self.data.append(row)
-            self.rowLabels.append('Bond ' + str(self.GetNumberRows()))
+        row = [''] * (self.GetNumberCols())
+        self.data.append(row)
+        self.rowLabels.append('Bond ' + str(self.GetNumberRows()))
+        
+        #Set defualt Jij to 0's
+        #SetValue does not work for some reason:
+        #self.SetValue(self.GetNumberRows()-1, 8, numpy.array([[0.,0.,0.],[0.,0.,0.],[0.,0.,0.]]))
+        self.data[self.GetNumberRows()-1][8] = numpy.array([[0.,0.,0.],[0.,0.,0.],[0.,0.,0.]])
 
-            # tell the grid we've added a row
-            msg = wx.grid.GridTableMessage(self,            # The table
-                    wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED, # what we did to it
-                    1                                       # how many
-                    )
-            self.GetView().ProcessTableMessage(msg)
-            return True
+        # tell the grid we've added a row
+        msg = wx.grid.GridTableMessage(self,            # The table
+                wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED, # what we did to it
+                1                                       # how many
+                )
+        self.GetView().ProcessTableMessage(msg)
+        return True
     
     def DeleteRows(self,pos=0,numRows=1):
         if numRows>=0 and numRows<=self.GetNumberRows():

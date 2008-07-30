@@ -15,7 +15,8 @@ from wx.py.dispatcher import connect, send
 import vtkModel.SpaceGroups
 import time
 from Session import Session
-import numpy
+import MonteCarlo.CSim
+
 
 
 
@@ -533,10 +534,10 @@ class bondListGrid(wx.grid.Grid):
             else:
                 self.table.SetValue(row,9,'')
         elif col==8 and row >=0:  #Jij matrix
-            dialog = jijDialog()
+            dialog = jijDialog(self.table.GetValue(row,8))#Pass current Jij value
             result = dialog.ShowModal()
             if result == wx.ID_OK:
-                print dialog.getMatrix()
+#                print dialog.getMatrix()
                 self.table.SetValue(row, 8, numpy.array(dialog.getMatrix()))
 #                self.SetCellValue(row, 8, numpy.array(dialog.getMatrix())) must be a string
 
@@ -614,6 +615,7 @@ class bondPanel(wx.Panel):
         
         self.bondSpinner.SetValue(self.bondList.GetNumberRows())
 #        self.OnGenerate(None)
+        self.bondList.AutoSize()
     
     def OnGenerate(self, event):
         failed, bondData = self.validate()
@@ -789,13 +791,14 @@ class bondPanel(wx.Panel):
     def OnGridResize(self, event):
         rows = self.bondSpinner.GetValue()
         self.bondList.SetNumberRows(rows)
+        self.bondList.AutoSize()
 #        self.atomList.GetTable().SetNumberRows(rows)
         event.Skip()
  
 
 
 class jijDialog(wx.Dialog):
-    def __init__(self):
+    def __init__(self, currentVal):
         wx.Dialog.__init__(self, None, -1, 'Jij Matrix', size = (300,300))
         okButton = wx.Button(self, wx.ID_OK, "OK", pos = (25, 225), size = (100, 25))
         okButton.SetDefault()
@@ -813,6 +816,16 @@ class jijDialog(wx.Dialog):
         self.grid.SetRowLabelValue(0,"a")
         self.grid.SetRowLabelValue(1,"b")
         self.grid.SetRowLabelValue(2,"c")
+        #Fill the table in with the current Jmatrix value
+        self.grid.SetCellValue(0,0,str(currentVal[0][0]))
+        self.grid.SetCellValue(0,1,str(currentVal[0][1]))
+        self.grid.SetCellValue(0,2,str(currentVal[0][2]))
+        self.grid.SetCellValue(1,0,str(currentVal[1][0]))
+        self.grid.SetCellValue(1,1,str(currentVal[1][1]))
+        self.grid.SetCellValue(1,2,str(currentVal[1][2]))
+        self.grid.SetCellValue(2,0,str(currentVal[2][0]))
+        self.grid.SetCellValue(2,1,str(currentVal[2][1]))
+        self.grid.SetCellValue(2,2,str(currentVal[2][2]))
         self.grid.AutoSize()
         
         #For validating when 'ok' button is pressed
@@ -1162,6 +1175,14 @@ class Frame(wx.Frame):
         quitMenuItem = fileMenu.Append(wx.NewId(), "&Quit")
         menuBar.Append(fileMenu, "&File")
         
+        #Add Monte Carlo Menu
+        monteCarloMenu = wx.Menu()
+        exportMenuItem = monteCarloMenu.Append(wx.NewId(), "Export for Monte Carlo")
+        runSimulationMenuItem = monteCarloMenu.Append(wx.NewId(), "Launch Simulation")
+        loadSpinsMenuItem = monteCarloMenu.Append(wx.NewId(), "Load Spins from file")
+        menuBar.Append(monteCarloMenu)
+        
+        
         #Add Model Menu
         modelMenu = wx.Menu()
 #        addCellMenuItem = modelMenu.Append(wx.NewId(), "Add Atom")
@@ -1187,11 +1208,17 @@ class Frame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnExport, exportMenuItem)
         self.Bind(wx.EVT_MENU, self.OnLoadSpins, loadSpinsMenuItem)
         self.Bind(wx.EVT_MENU, self.OnSaveImage, saveImageMenuItem)
+        self.Bind(wx.EVT_MENU, self.OnlaunchSim, runSimulationMenuItem)
+        
     
  #   def OnNew(self, event):
         #Add drawing panel
 #        self.vtkPanel.draw()
 #        self.GetEventHandler().ProcessEvent(wx.SizeEvent())
+    
+    
+    def OnLaunchSim(self, evt):
+        CSim.ShowSimulationFrame()
     
     def OnSaveImage(self, evt):
         saveDialog = wx.FileDialog(self, "Save Image", style = wx.SAVE, wildcard = "*.tiff")
@@ -1200,10 +1227,17 @@ class Frame(wx.Frame):
         saveDialog.Destroy()
     
     def OnExport(self, evt):
-        saveDialog = wx.FileDialog(self, "Save File", style = wx.SAVE, wildcard = "*.txt")
-        if saveDialog.ShowModal() == wx.ID_OK:
-            self.session.exportForMonteCarlo(saveDialog.GetPath())
-        saveDialog.Destroy()
+        #Maximum size is set to 25 right now, becuase that is the largest size that this computer seems to be able to reasonably handle with the current algorithm
+        size = wx.GetNumberFromUser("How many times would you like to translate the cutoff cell in the a,b, and c directions?", prompt = "size:", caption = "Monte Carlo Simulation Size", value = 2, min = 1, max=25, parent = self)
+        if size != None:
+            saveDialog = wx.FileDialog(self, "Save File", style = wx.SAVE, wildcard = "*.txt")
+            if saveDialog.ShowModal() == wx.ID_OK:
+                self.session.exportForMonteCarlo(saveDialog.GetPath(), size)
+            saveDialog.Destroy()
+        else:
+            print None
+            
+        
 
     
     def OnCloseMe(self, event):
@@ -1243,7 +1277,7 @@ class App(wx.App):
         self.frame = Frame(None, -1, session = session)
         self.frame.Show()
         self.SetTopWindow(self.frame)
-        frame1 = wx.Frame(self.frame, -1, size = (460,245))
+        frame1 = wx.Frame(self.frame, -1, size = (500,245))
         atomPanel(frame1, -1, session = session)
         frame1.Show()
         frame2 = wx.Frame(self.frame, -1, 'Bonds', size = (655,200))
