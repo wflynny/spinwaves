@@ -212,7 +212,7 @@ class MagneticCell():
         for eachBond in self.getBonds():
             if eachBond.getAtom1() == atom1 or eachBond.getAtom2() == atom1:
                 if eachBond.getAtom1() == atom2 or eachBond.getAtom2() == atom2:
-                    if jMatrix and eachBond.getJMatrix():
+                    if jMatrix != None and eachBond.getJMatrix() != None:
                         if eachBond.getJMatrix().all() == jMatrix.all():
                             print "True"
                             return True
