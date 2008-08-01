@@ -7,6 +7,140 @@ import sys
 import time
 import wx
 
+def createVideo(spinsToImageFunction, outFilePath, inFilePath):
+    """This is almost the same as simulate, but the outer loops
+    are controlled in python so that snapshots can be taken"""
+    
+    timer = Timer()
+    
+    if sys.platform=='win32':
+        print 'win32'
+        monteCarloDll = N.ctypeslib.load_library('monteCarlo', 'C:/Dev-Cpp/workspace')
+#    elif sys.platform=='mac':
+#        monteCarloDll = N.ctypeslib.load_library('libpolarization2.so', '.')
+#    else:
+#        monteCarloDll = N.ctypeslib.load_library('libpolarization2.so', '.') #linux
+        
+    atoms, jMatrices = readFile(inFilePath)
+    
+#    print atoms
+#    print jMatrices
+    
+
+    successCode = c_int(0)
+    atomListPointer = monteCarloDll.new_atom_list(c_int(len(atoms)), ctypes.byref(successCode))
+#    print "Success Code: ", successCode
+    if successCode.value != 1:
+        raise Exception("Problem Allocating memory, simulation size may be too large")
+
+    #to keep pointers
+    matListList = []
+    nbr_ListList = []
+
+    #Create atom list in C
+    s1Class = c_float * 3
+    for i in range(len(atoms)):
+#    for i in range(5):
+        atom = atoms[i]
+        numInteractions = len(atom.interactions)
+        matListClass = c_int * numInteractions
+        nbrListClass = c_int * numInteractions
+        
+        matList = matListClass()
+        neighbors = nbrListClass()
+        for j in range(numInteractions):
+            neighbors[j] = c_int(atom.interactions[j][0])
+            matList[j] = c_int(atom.interactions[j][1])
+#            print "interaction: " , atom.interactions[j][0], atom.interactions[j][1],  " = " , neighbors[j], matList[j]
+        
+        s1 = s1Class()
+        s1[0] = c_float(1)
+        s1[1] = c_float(0)
+        s1[2] = c_float(0)
+        
+        anisotropyClass = c_float * 3
+        anisotropy = anisotropyClass()
+        anisotropy[0] = c_float(atom.anisotropy[0])
+        anisotropy[1] = c_float(atom.anisotropy[1])
+        anisotropy[2] = c_float(atom.anisotropy[2])
+        
+        #to keep pointers
+        matListList.append(matList)
+        nbr_ListList.append(neighbors)
+
+        monteCarloDll.set_atom(atomListPointer, c_int(i), anisotropy, matList, neighbors, c_int(numInteractions), s1)
+    
+    print "atoms added"
+    timer.printTime()
+
+    #Create JMatrix List in C
+    matPointer = monteCarloDll.new_jMatrix_list(c_int(len(jMatrices)), ctypes.byref(successCode))
+    if successCode.value != 1:
+        raise Exception("Problem Allocating memory, simulation size may be too large")
+
+
+    for i in range(len(jMatrices)):
+        j = jMatrices[i]
+        j11 = c_float(j[0][0])
+        j12 = c_float(j[0][1])
+        j13 = c_float(j[0][2])
+        j21 = c_float(j[1][0])
+        j22 = c_float(j[1][1])
+        j23 = c_float(j[1][2])
+        j31 = c_float(j[2][0])
+        j32 = c_float(j[2][1])
+        j33 = c_float(j[2][2])
+        monteCarloDll.add_matrix(matPointer, c_int(i),j11, j12, j13, j21, j22, j23, j31, j32, j33)
+
+    
+    #Until this point, code is almost the same as simulate(), now flipspins() must be called directly from python
+    T = 10#tMax
+    imageNum = 0
+    spins = []
+    while T > .01:#tMin
+        for i in range(10):
+            for j in range(10):
+                monteCarloDll.flipSpins(atomListPointer, c_int(len(atoms)), matPointer, c_float(T), ctypes.byref(c_int(0)))#last parameter not used\
+            #output spins to file
+            spins = []
+            for i in range(len(atoms)):
+                spin = s1Class()
+                monteCarloDll.getSpin(atomListPointer, c_int(i), ctypes.byref(spin))
+                spins.append(spin)
+
+            print "writing spins to file..."
+            timer.printTime()
+            
+            #output the spins to a file
+            outFile = open(outFilePath, 'w')
+            outFile.write("#Atom_Number Position_X Position_Y Position_Z Spin_X Spin_Y Spin_Z\n")
+            for i in range(len(atoms)):
+                atom = atoms[i]
+                Posx = str(atom.pos[0])
+                Posy = str(atom.pos[1])
+                Posz = str(atom.pos[2])
+                spin = spins[i]
+                Spinx = str(spin[0])
+                Spiny = str(spin[1])
+                Spinz = str(spin[2])
+                atomStr = str(i) + " " + Posx + " " + Posy + " " + Posz + " " + Spinx + " " + Spiny + " " + Spinz + "\n"
+                outFile.write(atomStr)
+            
+            outFile.close()
+            #draw the spins
+            spinsToImageFunction(outFilePath, imageNum)
+            imageNum += 1
+        
+        T = T*.9#tFactor
+                                
+
+
+    monteCarloDll.del_jMat(matPointer)
+    monteCarloDll.del_atom(atomListPointer)
+    timer.printTime()
+    print "done"
+
+
 def simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath): 
     timer = Timer()
     

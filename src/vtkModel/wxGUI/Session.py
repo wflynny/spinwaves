@@ -901,12 +901,11 @@ class Session():
                 atom.setSpin(newSpin)
                 
         #for test purposes
-        print "test:"
-        for atom in self.getCutoffCell().getAllAtoms():
-            print atom.getSpin()
+#        print "test:"
+#        for atom in self.getCutoffCell().getAllAtoms():
+#            print atom.getSpin()
         
         send(signal = "Model Change", sender = "Session")
-        
         
                 
             

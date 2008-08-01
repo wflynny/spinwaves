@@ -1188,6 +1188,7 @@ class Frame(wx.Frame):
         exportMenuItem = monteCarloMenu.Append(wx.NewId(), "Export for Monte Carlo")
         runSimulationMenuItem = monteCarloMenu.Append(wx.NewId(), "Launch Simulation")
         loadSpinsMenuItem = monteCarloMenu.Append(wx.NewId(), "Load Spins from file")
+        outputSnapshotsMenuItem = monteCarloMenu.Append(wx.NewId(), "Output snapshots")
         menuBar.Append(monteCarloMenu, "Monte Carlo")
         
         
@@ -1217,6 +1218,7 @@ class Frame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnLoadSpins, loadSpinsMenuItem)
         self.Bind(wx.EVT_MENU, self.OnSaveImage, saveImageMenuItem)
         self.Bind(wx.EVT_MENU, self.OnLaunchSim, runSimulationMenuItem)
+        self.Bind(wx.EVT_MENU, self.createMonteCarloVideo, outputSnapshotsMenuItem)
         
     
  #   def OnNew(self, event):
@@ -1224,6 +1226,17 @@ class Frame(wx.Frame):
 #        self.vtkPanel.draw()
 #        self.GetEventHandler().ProcessEvent(wx.SizeEvent())
     
+    
+    def createMonteCarloVideo(self, evt):
+        def imageOutputFunction(spinsFile, imageNum):
+            imagePath = "C:\\monteCarloSnapshots\image" + str(imageNum) + ".tiff"
+            #Load the spins and render
+            self.session.loadSpinFile(spinsFile)
+            #Output to image
+            send("Save Image", sender = "Main Frame", path = imagePath)
+        
+        CSim.createVideo(imageOutputFunction, "C:\\Spins.txt", "C:\\Export.txt")
+            
     
     def OnLaunchSim(self, evt):
         CSim.ShowSimulationFrame()
@@ -1245,8 +1258,6 @@ class Frame(wx.Frame):
         else:
             print None
             
-        
-
     
     def OnCloseMe(self, event):
         self.Close(True)
