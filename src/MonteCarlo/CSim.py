@@ -6,6 +6,7 @@ import numpy as N
 import sys
 import time
 import wx
+import pylab
 
 def createVideo(spinsToImageFunction, outFilePath, inFilePath):
     """This is almost the same as simulate, but the outer loops
@@ -94,12 +95,17 @@ def createVideo(spinsToImageFunction, outFilePath, inFilePath):
 
     
     #Until this point, code is almost the same as simulate(), now flipspins() must be called directly from python
+    totalMagX = 0
+    totalMagY = 0
+    totalMagZ = 0
+    magnetizations = []#to make graph after
+    temperatures = []
     T = 10#tMax
     imageNum = 0
-    spins = []
-    while T > .01:#tMin
-        for i in range(10):
-            for j in range(10):
+    spins = None
+    while T > .005:#tMin
+        for i in range(2):#so that only every tenth configuration is saved
+            for j in range(30):
                 monteCarloDll.flipSpins(atomListPointer, c_int(len(atoms)), matPointer, c_float(T), ctypes.byref(c_int(0)))#last parameter not used\
             #output spins to file
             spins = []
@@ -131,12 +137,47 @@ def createVideo(spinsToImageFunction, outFilePath, inFilePath):
             spinsToImageFunction(outFilePath, imageNum)
             imageNum += 1
         
+        for spin in spins:
+            totalMagX += spin[0]
+            totalMagY += spin[1]
+            totalMagZ += spin[2]
+            
+        magnetizations.append( (totalMagX**2 + totalMagY**2 + totalMagZ**2)**(.5) )
+        print "magnetization:", magnetizations[len(magnetizations)-1]  
+        temperatures.append(T)
+        totalMagX = 0
+        totalMagY = 0
+        totalMagZ = 0
         T = T*.9#tFactor
                                 
 
 
     monteCarloDll.del_jMat(matPointer)
     monteCarloDll.del_atom(atomListPointer)
+    
+    
+    #drawing magnetization graphs
+    #find max value
+    max = 0
+    min = 0
+    for num in magnetizations:
+        if num > max:
+            max = num
+        elif num < min:
+            min = num
+    
+    #draw magnetization vs. temp
+    pylab.plot(temperatures, magnetizations, 'ro')
+    pylab.axis([temperatures[len(temperatures)-1], temperatures[0], min, max])
+    pylab.show()
+    
+    #draw magnetization vs. iteration number
+    pylab.plot(range(len(magnetizations)), magnetizations, 'ro')
+    pylab.axis([len(temperatures)-1, 0, min, max])
+    #    savefig('secondfig.png')
+    pylab.show()
+    
+    
     timer.printTime()
     print "done"
 

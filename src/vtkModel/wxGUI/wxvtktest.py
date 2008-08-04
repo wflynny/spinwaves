@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
 """This is a test of wxVTKRenderWindow"""
+import sys
+#So it can be run outside of eclipse
+sys.path.append("C:\\spinwaves\\src")
 import wx
 import wx.grid
 from picker import Picker
@@ -16,9 +19,9 @@ import time
 from Session import Session
 
 #It could not find MonteCarlo package
-import sys
 sys.path.append("C:\\spinwaves\\src\\MonteCarlo")
 import CSim
+
 
 
 
@@ -1228,8 +1231,25 @@ class Frame(wx.Frame):
     
     
     def createMonteCarloVideo(self, evt):
+        def imageName(imageNum):
+            """I want the images to automatically arrange in alphabetical order
+            to make the video creation easier.
+            
+            Just using the number does not work becuase image2 comes after image10"""
+            imageStr = str(imageNum)
+            
+            val = imageNum
+            totalDigits = 5 #max of 99999 pics
+            for i in range(totalDigits):
+                val = val / 10
+                if val == 0:
+                    imageStr = "0" + imageStr
+            imageStr = "image" + imageStr + ".tiff"
+            return imageStr
+        
+        
         def imageOutputFunction(spinsFile, imageNum):
-            imagePath = "C:\\monteCarloSnapshots\image" + str(imageNum) + ".tiff"
+            imagePath = "C:\\monteCarloSnapshots\\" + imageName(imageNum)
             #Load the spins and render
             self.session.loadSpinFile(spinsFile)
             #Output to image
