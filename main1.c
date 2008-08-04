@@ -228,7 +228,25 @@ void getSpin(Atom *p, int index, Spin spin)
        spin[2] = p[index].spin[2];
        return;
 }
-
+/* implemented in python instead
+float getMagnetization(Atom *atoms, int numAtoms)
+{
+      //Returns the length of the sum of all the spins
+      float avgMag = 0;
+      float Xsum = 0;
+      float Ysum = 0;
+      float Zsum = 0;
+      int i;
+      for(i = 0; i < numAtoms; i++)
+      {
+            Xsum += atoms[i].spin[0];
+            Ysum += atoms[i].spin[1];
+            Zsum += atoms[i].spin[2];
+      }
+      avgMag = sqrt(pow(Xsum,2) + pow(Ysum,2) + pow(Zsum,2));
+      return avgMag;
+}
+*/
 void atomTest(Atom *p, int num)
 {
      int i;
