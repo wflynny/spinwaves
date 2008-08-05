@@ -1,9 +1,20 @@
 #!/usr/bin/env python
 
 """This is a test of wxVTKRenderWindow"""
-import sys
 #So it can be run outside of eclipse
-sys.path.append("C:\\spinwaves\\src")
+#sys.path.append("C:\\spinwaves\\src")
+
+#Add the vtkModel path
+import sys
+import os
+cwdList = os.getcwd().split('\\')
+cwdList.pop()#vtkModel
+cwdList.pop()#src
+mainPath = "\\".join(cwdList)
+sys.path.append(mainPath)
+
+
+
 import wx
 import wx.grid
 from picker import Picker
@@ -18,9 +29,10 @@ import vtkModel.SpaceGroups
 import time
 from Session import Session
 
-#It could not find MonteCarlo package
-sys.path.append("C:\\spinwaves\\src\\MonteCarlo")
+#It could not find MonteCarlo package (import MonteCarlo.CSim)
+sys.path.append(mainPath +"\\MonteCarlo")
 import CSim
+
 
 
 

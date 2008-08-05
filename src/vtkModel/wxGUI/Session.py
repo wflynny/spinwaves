@@ -2,7 +2,7 @@ import xml.dom.minidom
 import xml.dom.ext
 import wx.grid
 from wx.py.dispatcher import send
-import CifFile
+import vtkModel.CifFile
 from vtkModel import SpaceGroups
 from vtkModel.CellClass import Cell
 from vtkModel.MagneticCellClass import MagneticCell

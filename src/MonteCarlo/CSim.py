@@ -7,6 +7,7 @@ import sys
 import time
 import wx
 import pylab
+import os
 
 def createVideo(spinsToImageFunction, outFilePath, inFilePath):
     """This is almost the same as simulate, but the outer loops
@@ -14,6 +15,8 @@ def createVideo(spinsToImageFunction, outFilePath, inFilePath):
     
     timer = Timer()
     
+    #C code and dll should be put into a folder in close to this code
+
     if sys.platform=='win32':
         print 'win32'
         monteCarloDll = N.ctypeslib.load_library('monteCarlo', 'C:/Dev-Cpp/workspace')
@@ -104,7 +107,7 @@ def createVideo(spinsToImageFunction, outFilePath, inFilePath):
     imageNum = 0
     spins = None
     while T > .005:#tMin
-        for i in range(2):#so that only every tenth configuration is saved
+        for i in range(10):#so that only every tenth configuration is saved
             for j in range(30):
                 monteCarloDll.flipSpins(atomListPointer, c_int(len(atoms)), matPointer, c_float(T), ctypes.byref(c_int(0)))#last parameter not used\
             #output spins to file
