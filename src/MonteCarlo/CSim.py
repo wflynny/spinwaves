@@ -107,8 +107,8 @@ def createVideo(spinsToImageFunction, outFilePath, inFilePath):
     imageNum = 0
     spins = None
     while T > .005:#tMin
-        for i in range(10):#so that only every tenth configuration is saved
-            for j in range(30):
+        for i in range(20):
+            for j in range(20):
                 monteCarloDll.flipSpins(atomListPointer, c_int(len(atoms)), matPointer, c_float(T), ctypes.byref(c_int(0)))#last parameter not used\
             #output spins to file
             spins = []
