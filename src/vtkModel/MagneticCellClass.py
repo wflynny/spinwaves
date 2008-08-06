@@ -41,7 +41,7 @@ class MagneticCell():
     def addBond(self, Atom1, Atom2, jMatrix = None):     
         """Adds a bond and all symmettry equivalent bonds within the magnetic Cell
         
-        Performs every symmetry operaation and every possible translation for each 
+        Performs every symmetry operation and every possible translation for each 
         symmetry operation to find all possible bonds"""
         
         #Create Symmetry Bonds

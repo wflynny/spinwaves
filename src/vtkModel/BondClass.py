@@ -1,15 +1,21 @@
 import AtomClass
-from vtk import *
+#from vtk import *
 import numpy
 
 
-
 class Bond():
+    """This class represents interactions, or "bonds" between atoms."""
+    
     def __init__(self, Atom1, Atom2, jMatrix = None, r = 0,g = 0,b = 1):
         """Cell is the Unit Cell if this bond is in a unit Cell or None Otherwise.
         Atom1 and Atom2 are the atoms that this bond connects.
-        r,g,b are the color of the actor. jMatrix is a numpy 2D array"""
-        self.r = r#color
+        r,g,b are the color of the actor. jMatrix is a numpy 2D array, such as
+        [[1, 0, 0],
+         [0, 1, 0],
+         [0, 0, 1]]   for a ferromagnetic interaction"""
+
+        #Color
+        self.r = r
         self.g = g
         self.b = b
         
@@ -32,7 +38,7 @@ class Bond():
         self.Atom2 = atom
 
     def sameBond(self, otherBond):
-        """returns true if otherBond connects the same atoms"""
+        """returns true if otherBond connects the same 2 atoms and false otherwise"""
         if self.getAtom1() == otherBond.getAtom1() or self.getAtom1() == otherBond.getAtom2():
             if self.getAtom2() == otherBond.getAtom1() or self.getAtom2() == otherBond.getAtom2():
                 return True

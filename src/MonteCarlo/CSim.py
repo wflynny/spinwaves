@@ -12,6 +12,9 @@ import os
 def createVideo(spinsToImageFunction, outFilePath, inFilePath):
     """This is almost the same as simulate, but the outer loops
     are controlled in python so that snapshots can be taken"""
+    print os.getcwd()
+    print os.path.abspath('')
+    time.sleep(10)
     
     timer = Timer()
     
@@ -107,8 +110,8 @@ def createVideo(spinsToImageFunction, outFilePath, inFilePath):
     imageNum = 0
     spins = None
     while T > .005:#tMin
-        for i in range(20):
-            for j in range(20):
+        for i in range(10):
+            for j in range(10):
                 monteCarloDll.flipSpins(atomListPointer, c_int(len(atoms)), matPointer, c_float(T), ctypes.byref(c_int(0)))#last parameter not used\
             #output spins to file
             spins = []

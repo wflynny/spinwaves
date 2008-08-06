@@ -1,3 +1,7 @@
+"""This was an early prototype to test vtk.  It's not used anymore."""
+
+
+
 from vtk import *
 from AtomClass import *
 from BondClass import *

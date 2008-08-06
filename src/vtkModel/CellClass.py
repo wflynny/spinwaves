@@ -1,10 +1,13 @@
 import SymmetryUtilities
 import numpy
-from AtomClass import *
-from BondClass import *
+from AtomClass import Atom
+from BondClass import Bond
 import random
 
 class Cell():
+    """This class models a single crystallographic unit cell. (The entire lattice could
+    consist of many of these.)"""
+    
     def  __init__(self, Space_Group, PosX = 0, PosY = 0, PosZ = 0, a=1, b=1, c=1, alpha=90, gamma=90, beta=90):
         """PosX, PosY, PosZ are the fractional coordinates of the cell - they should all be integers"""
         self.Space_Group = Space_Group
