@@ -3,21 +3,17 @@ from wx.py.dispatcher import send
 
 class Picker():
     
-    """This class is in charge of listening to pick events in the render window in
-    the and handling them.  The actor is highlighted by turning the ambient lighting
+    """This class is in charge of listening to pick events in the render window
+    and handling them.  The actor is highlighted by turning the ambient lighting
     on.  Then the object (Atom or Bond; others are not supported) is found using
     the vtkDrawer.  The object's __str__ is printed"""
 
     def __init__(self, vtkDrawer, iren, renderer):
+        """ vtkDrawer is an instance of VTKDrawer
+        iren is a render window interactor."""
         self.iren = iren
         self.ren1 = renderer
         self.drawer = vtkDrawer
-        
-        #moved this to draw method of main panel
-        #Set up trackball mode (not really picking)
-#        interactor = vtk.vtkInteractorStyleSwitch()
-#        interactor.SetCurrentStyleToTrackballCamera()
-#        iren.SetInteractorStyle(interactor)
         
         #set the picker so props can be picked
         self.picker = vtk.vtkPropPicker()

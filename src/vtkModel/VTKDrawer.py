@@ -280,7 +280,8 @@ class vtkDrawer():
                 self.drawBond(bond)
             
     def addAxes(self):
-        """needs to be run after the window is rendered"""
+        """Draws the axdes, which each have length 1;  Then puts a label on each
+        (x, y, and z)"""
         
         #Add Axes
         axes = vtkAxes()
@@ -327,3 +328,6 @@ class vtkDrawer():
         xLabelActor.SetCamera(self.ren1.GetActiveCamera())
         yLabelActor.SetCamera(self.ren1.GetActiveCamera())
         zLabelActor.SetCamera(self.ren1.GetActiveCamera())
+
+        #This should fix the camera if this method is called before rendering.
+        self.ren1.ResetCamera()

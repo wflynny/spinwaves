@@ -7,18 +7,24 @@ from vtkModel import SpaceGroups
 from vtkModel.CellClass import Cell
 from vtkModel.MagneticCellClass import MagneticCell
 import numpy
-import time
+#import time
 import datetime
 
 class Session():
-    """Stores information about a user session"""
+    """Stores information about a user session
+
+    This class stores and manipulates the model (magnetic or Cuttof Cell).The
+    GUI stores the instance of Session that is in use, but to comunicate with
+    the GUI, Session sends messages.(The GUI is aware of Session, but Session
+    is not aware of the GUI.)"""
     def __init__(self):
+        #Stores bond information
         self.bondTable = bondTable()
+        #Stores atom information
         self.atomTable = atomTable()
         self.MagCell = None
         #For now the magnetic cell class will be used for the cutoff cell since
         #they are exactly the same
-#        self.cutoffCell = self.MagCell
         
     def getAtomTable(self):
         return self.atomTable
@@ -29,14 +35,14 @@ class Session():
     def getMagneticCell(self):
         return self.MagCell
     
-    #For now magnetic cell and cuttoff cell are exaclty the same so magnetic cell will
+    #For now magnetic cell and cuttoff cell are exactly the same so magnetic cell will
     #be treated as cutoff cell
     def getCutoffCell(self):
         return self.MagCell
     
 #    def setMagneticCell(self, magCell):
-        #I am lettin ghe vtkPanel create magnetic cells right now
-        #so that it can keep track of progress fo rthe progress bar.
+        #I am letting the vtkPanel create magnetic cells right now
+        #so that it can keep track of progress for the progress bar.
 #        self.MagCell = magCell
     
     def openXMLSession(self, filename):
