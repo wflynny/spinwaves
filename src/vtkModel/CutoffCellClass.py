@@ -1,5 +1,10 @@
-
-class CutoffCell():   
+class CutoffCell():
+    """This class isn't currently really used, becuase it is pretty
+    much identical to the magnetic cell class.  Eventually I plan on switching
+    the magnetic cell class for this one, but haven't yet becuase its just an
+    issue of names since this would have the same functionality that the
+    magnetic cell class has now.  Right now the magnetic cell is treated as
+    the cutoff cell, but it should really be the other way around."""
     def __init__(self, Unit_Cell, Na, Nb, Nc, spaceGroup):
         self.unit_cell = Unit_Cell
         

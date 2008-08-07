@@ -5,26 +5,33 @@ import numpy
 
 
 class vtkDrawer():
+    """This class is used to draw the crystal lattice in vtk. (Creating actors
+    and adding them to a renderer"""
     def __init__(self, renderer):
         self.ren1 = renderer
-        self.actors = {}# asscociate actors with their model objects for picking
+        self.actors = {}# associate actors with their model objects for picking
     
     
     #Default Sphere resolution
-    defualt_Sphere_Res = 20
-    defualtBondRadius = .025
+    default_Sphere_Res = 20
+    defaultBondRadius = .025
     
     
     def getObjFromActor(self, actor):
+        """Given actor, this method returns the object that that actor was
+        createdto represent."""
         return self.actors[actor]
     
     
-    def drawAtom(self, atom):   
+    def drawAtom(self, atom):
+        """Adds a sphere actor to the renderer with the color and radius of the
+        atom object.  Also if the atom has a spin, an arow is created to represent
+        the spin."""
         #sphere geometry
         sphere_Source = vtkSphereSource()
         sphere_Source.SetRadius(atom.getRadius())
-        sphere_Source.SetThetaResolution(self.defualt_Sphere_Res)
-        sphere_Source.SetPhiResolution(self.defualt_Sphere_Res)
+        sphere_Source.SetThetaResolution(self.default_Sphere_Res)
+        sphere_Source.SetPhiResolution(self.default_Sphere_Res)
             
         #map to graphics objects
         sphereMap = vtkPolyDataMapper()
@@ -39,6 +46,7 @@ class vtkDrawer():
         
         self.ren1.AddActor(sphere_Actor)
         
+        #Add reference for picking
         self.actors[sphere_Actor] = atom
         
         
@@ -49,6 +57,7 @@ class vtkDrawer():
     #        arrowSource.SetTipLength(arrowSource.GetTipLength()/5)
     #        arrowSource.SetTipRadius(arrowSource.GetTipRadius()/5)
     
+            #Arrows have a set length, so a transform is used to change their size
             aTransform = vtkTransform()
             aTransform.Scale(.2,.2,.2)
             transform = vtkTransformPolyDataFilter()
@@ -57,7 +66,8 @@ class vtkDrawer():
             
             arrowMap = vtkPolyDataMapper()
             arrowMap.SetInput(transform.GetOutput())
-            
+
+            #Create the arrow actor
             arrowActor = vtkLODActor()
             arrowActor.SetMapper(arrowMap)
             arrowActor.SetPosition(atom.getPosition())
@@ -75,6 +85,16 @@ class vtkDrawer():
             unitY = y/vectLength
             unitZ = z/vectLength
             
+
+            #In vtk, we start with an arrow actor pointed along the x axis.
+            #We need to then rotate it about a given vector by a given angle
+            #to get the desired orientation.  We use the cross product of the
+            #desired orientation vector and the defualt vtk orientation(1,0,0)
+            #to find the vector to rotate about.  The magnitude of this vector
+            #is equal to sin(theta) if the two vectors we crossed are unit
+            #vectors.
+
+
             #Angle
             #cross product of Unit vectors arrow direction and desired orientation
             i, j, k = self.crossProduct(1, 0, 0, unitX, unitY, unitZ)  #default orientation for the arrow is along x axis
@@ -83,21 +103,17 @@ class vtkDrawer():
             
             #if the angle is obtuse, theta must be corrected
             if self.dotProduct(1, 0, 0, unitX, unitY, unitZ) >= 0:
-#                print "acute", atom.getSpin(), theta
                 arrowActor.RotateWXYZ(theta, i, j, k)
-            else:
-#                print "obtuse", atom.getSpin(), theta
+            else:#Angle is obtuse
                 arrowActor.RotateWXYZ(180 - theta, i, j, k)
             
             self.ren1.AddActor(arrowActor)
         
-        
-        
-    
     
     
     
     def drawBond(self, bond):
+        """Creates a cylinder actor connecting the surfaces of the two atoms."""
         cylinder = self.makeCylinder(bond.getAtom1().getPosition(), bond.getAtom2().getPosition(), bond.getAtom1().getRadius(), bond.getAtom2().getRadius())
         self.actors[cylinder] = bond
         self.ren1.AddActor(cylinder)
@@ -106,17 +122,14 @@ class vtkDrawer():
         """returns a cylindrical Actor to represent a bond
         
         PosOne and PosTwo are the positions of the two spherical actors
-        rad_One and rad_Two are the radii of the spheres"""
+        rad_One and rad_Two are the radii of the spheres
 
-        #coordinates of vector pointing from SphereTwo to SphereOne
-        x = posTwo[0] - posOne[0]
-        y = posTwo[1] - posOne[1]
-        z = posTwo[2] - posOne[2]
-        distance = ((x**2 + y**2 + z**2)**.5 -rad_One - rad_Two)
+        The cylinder will connect the surfaces of the two spheres.
+        The default color for a bond is currently blue."""
         
         #create cylinder
         cylinder = vtkCylinderSource()
-        cylinder.SetRadius(self.defualtBondRadius)
+        cylinder.SetRadius(self.defaultBondRadius)
         cylinder.SetResolution(100)
         
         #map to another map
@@ -128,6 +141,11 @@ class vtkDrawer():
         aCylinder.SetMapper(cylinderMap)
         aCylinder.GetProperty().SetColor(0, .1, .6)
         aCylinder.SetScale(.2, distance, .2)
+
+        #coordinates of vector pointing from SphereTwo to SphereOne
+        x = posTwo[0] - posOne[0]
+        y = posTwo[1] - posOne[1]
+        z = posTwo[2] - posOne[2]
         
         #to get the center point between the surfaces of the two spheres
         #create a unit vector and multiply it by the distance/2
@@ -137,6 +155,9 @@ class vtkDrawer():
         unitX = x/vectLength
         unitY = y/vectLength
         unitZ = z/vectLength
+
+        #The distance form the surface of one sphere to the surface of the other
+        distance = ((x**2 + y**2 + z**2)**.5 -rad_One - rad_Two)
     
         #get center coordinates (center point between two sphere surfaces)
         centerX = (unitX * (rad_One + distance/2)) + posOne[0]
@@ -145,6 +166,15 @@ class vtkDrawer():
         aCylinder.SetPosition(centerX, centerY, centerZ)
         
         
+        #In vtk, we start with a cylinder actor pointed along the y axis.
+        #We need to then rotate it about a given vector by a given angle
+        #to get the desired orientation.  We use the cross product of the
+        #desired orientation vector and the defualt vtk orientation(0,1,0)
+        #to find the vector to rotate about.  The magnitude of this vector
+        #is equal to sin(theta) if the two vectors we crossed are unit
+        #vectors.
+
+
         #Angle
         #cross product of Unit vectors cylinder direction and desired orientation
         i, j, k = self.crossProduct(0, 1, 0, unitX, unitY, unitZ)  #default orientation for the cylinder is along y axis
@@ -159,11 +189,11 @@ class vtkDrawer():
         return aCylinder
     
     def dotProduct(self, x1, y1, z1, x2, y2, z2):
-        """x,y,z represent vector coordinates - used by makeCylinder"""
+        """x,y,z represent vector coordinates - used by makeCylinder; and drawing spin"""
         return (x1*x2 + y1*y2 + z1*z2)
     
     def crossProduct(self, x1, y1, z1, x2, y2, z2):
-        """x,y,z represent vector coordinates - used by makeCylinder"""
+        """x,y,z represent vector coordinates - used by makeCylinder; and drawing spin"""
         i = (y1*z2) - (z1*y2)
         j = -(x1*z2) + (z1*x2)
         k = (x1*y2) - (y1*x2)
@@ -172,7 +202,11 @@ class vtkDrawer():
     
    
     def drawUnitCell(self, cell):
-        #draw very Light Box 
+        """Draws the unit cell by creating a light bluish box(Cells are currently
+        only represented as cubes.)  All the atoms in the cell are also drawn."""
+
+        #draw very light box to show boundaries of the unit cell
+
         #Create "Cube" Source
         box = vtkCubeSource()
         box.SetXLength(1)
@@ -201,7 +235,8 @@ class vtkDrawer():
             
     
     def labelAtoms(self, magneticCell):
-        """This should only be called after the image has been renderered, otherwise strange camera effects have been cuased"""
+        """Creates number labels on the +x side of the sphere.
+        The labels are the atom indeces within the crystallographic unit cell."""
         for cell in magneticCell.getAllUnitCells():
             AtomList = cell.getAtoms()
             for index in range(0, len(AtomList)):
@@ -219,10 +254,18 @@ class vtkDrawer():
                 labelActor.GetProperty().SetColor(0, 0, 0)
     
                 self.ren1.AddActor(labelActor)
+
+                #Getting the camera before the image has been rendered will make
+                #it focus on the origin, so we want to recenter it after this.
                 labelActor.SetCamera(self.ren1.GetActiveCamera())
+
+                self.ren1.ResetCamera()
+                
         
     
     def drawMagneticCell(self, MagCell):
+        """Draws each crystallographic unit cell in the magnetic cell as well as
+        each bond."""
         for cell in MagCell.getAllUnitCells():
             self.drawUnitCell(cell)
             #Draw intercellular bonds
