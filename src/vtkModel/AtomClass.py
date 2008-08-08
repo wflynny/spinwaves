@@ -1,7 +1,7 @@
 class Atom():
-    def __init__(self, unit_Cell, a,b,c, description = "", radius=.05,r = 1,g=0,b = 0, spin = None, anisotropy = (0,0,0)):
+    def __init__(self, unit_Cell, x,y,z, description = "", radius=.05,r = 1,g=0,b = 0, spin = None, anisotropy = (0,0,0)):
         """
-        a,b,c are fractional coordinates in the unit cell
+        x,y,z are fractional coordinates in the unit cell
         unit_Cell is the unit cell containing the atom (instance of Cell class)
         radius is the radius of the sphere actor (for drawing purposes later)
         r,g,b are the red, green, blue values of the actor
@@ -15,11 +15,11 @@ class Atom():
         self.color = (r,g,b)
         self.spin = spin
         
-        if a<1 and b<1 and c<1: 
+        if x<1 and y<1 and z<1: 
             #coordinates  (within cell) - Actor will contain world coordinates in vtk renderer
-            self.a = a
-            self.b = b
-            self.c = c
+            self.a = x
+            self.b = y
+            self.c = z
         else:
             raise Exception("a,b,c are fractional coordinates within the unit cell.  They should be less than 1.")
         
