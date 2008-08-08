@@ -6,7 +6,7 @@ import numpy as N
 import sys
 import time
 import wx
-import pylab
+#import pylab
 import os
 
 def createVideo(spinsToImageFunction, outFilePath, inFilePath):
@@ -22,7 +22,7 @@ def createVideo(spinsToImageFunction, outFilePath, inFilePath):
 
     if sys.platform=='win32':
         print 'win32'
-        monteCarloDll = N.ctypeslib.load_library('monteCarlo', 'C:/Dev-Cpp/workspace')
+        monteCarloDll = N.ctypeslib.load_library('monteCarlo', 'C:/spinwaves')
 #    elif sys.platform=='mac':
 #        monteCarloDll = N.ctypeslib.load_library('libpolarization2.so', '.')
 #    else:
@@ -173,15 +173,15 @@ def createVideo(spinsToImageFunction, outFilePath, inFilePath):
             min = num
     
     #draw magnetization vs. temp
-    pylab.plot(temperatures, magnetizations, 'ro')
-    pylab.axis([temperatures[len(temperatures)-1], temperatures[0], min, max])
-    pylab.show()
+#    pylab.plot(temperatures, magnetizations, 'ro')
+#    pylab.axis([temperatures[len(temperatures)-1], temperatures[0], min, max])
+#    pylab.show()
     
     #draw magnetization vs. iteration number
-    pylab.plot(range(len(magnetizations)), magnetizations, 'ro')
-    pylab.axis([len(temperatures)-1, 0, min, max])
+#    pylab.plot(range(len(magnetizations)), magnetizations, 'ro')
+#    pylab.axis([len(temperatures)-1, 0, min, max])
     #    savefig('secondfig.png')
-    pylab.show()
+#    pylab.show()
     
     
     timer.printTime()
@@ -193,7 +193,7 @@ def simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath):
     
     if sys.platform=='win32':
         print 'win32'
-        monteCarloDll = N.ctypeslib.load_library('monteCarlo', 'C:/Dev-Cpp/workspace')
+        monteCarloDll = N.ctypeslib.load_library('monteCarlo', 'C:/spinwaves')
 #    elif sys.platform=='mac':
 #        monteCarloDll = N.ctypeslib.load_library('libpolarization2.so', '.')
 #    else:

@@ -126,6 +126,13 @@ class vtkDrawer():
 
         The cylinder will connect the surfaces of the two spheres.
         The default color for a bond is currently blue."""
+        #coordinates of vector pointing from SphereTwo to SphereOne
+        x = posTwo[0] - posOne[0]
+        y = posTwo[1] - posOne[1]
+        z = posTwo[2] - posOne[2]
+        
+        #The distance form the surface of one sphere to the surface of the other
+        distance = ((x**2 + y**2 + z**2)**.5 -rad_One - rad_Two)
         
         #create cylinder
         cylinder = vtkCylinderSource()
@@ -142,10 +149,6 @@ class vtkDrawer():
         aCylinder.GetProperty().SetColor(0, .1, .6)
         aCylinder.SetScale(.2, distance, .2)
 
-        #coordinates of vector pointing from SphereTwo to SphereOne
-        x = posTwo[0] - posOne[0]
-        y = posTwo[1] - posOne[1]
-        z = posTwo[2] - posOne[2]
         
         #to get the center point between the surfaces of the two spheres
         #create a unit vector and multiply it by the distance/2
@@ -155,9 +158,6 @@ class vtkDrawer():
         unitX = x/vectLength
         unitY = y/vectLength
         unitZ = z/vectLength
-
-        #The distance form the surface of one sphere to the surface of the other
-        distance = ((x**2 + y**2 + z**2)**.5 -rad_One - rad_Two)
     
         #get center coordinates (center point between two sphere surfaces)
         centerX = (unitX * (rad_One + distance/2)) + posOne[0]

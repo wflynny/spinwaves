@@ -2,7 +2,7 @@ import numpy
 import time
 import random
 import math
-import pylab
+#import pylab
 
 
 
@@ -179,10 +179,10 @@ if __name__ == '__main__':
 
 #    pylab.plot(range(len(magnetizations)), magnetizations, 'ro')
 #    pylab.axis([0, len(magnetizations), min, max])
-    pylab.plot(temperatures, magnetizations, 'ro')
-    pylab.axis([temperatures[len(temperatures)-1], temperatures[0], min, max])
+#    pylab.plot(temperatures, magnetizations, 'ro')
+#    pylab.axis([temperatures[len(temperatures)-1], temperatures[0], min, max])
     #    savefig('secondfig.png')
-    pylab.show()
+#    pylab.show()
         
     
     

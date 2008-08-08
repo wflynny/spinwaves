@@ -7,11 +7,12 @@
 #Add the vtkModel path
 import sys
 import os
-cwdList = os.getcwd().split('\\')
-cwdList.pop()#vtkModel
-cwdList.pop()#src
-mainPath = "\\".join(cwdList)
-sys.path.append(mainPath)
+#cwdList = os.getcwd().split('\\')
+#cwdList.pop()#vtkModel
+#cwdList.pop()#src
+#mainPath = "\\".join(cwdList)
+#sys.path.append(mainPath)
+sys.path.append("C:\\spinwaves\\src\\MonteCarlo")
 
 
 
@@ -30,7 +31,7 @@ import time
 from Session import Session
 
 #It could not find MonteCarlo package (import MonteCarlo.CSim)
-sys.path.append(mainPath +"\\MonteCarlo")
+#sys.path.append(mainPath +"\\MonteCarlo")
 import CSim
 
 
@@ -1189,7 +1190,7 @@ class Frame(wx.Frame):
         
         #Add File Menu
         fileMenu = wx.Menu()
-        newMenuItem = fileMenu.Append(wx.NewId(), "&New Magnetic Cell")
+#        newMenuItem = fileMenu.Append(wx.NewId(), "&New Magnetic Cell")
         openMenuItem = fileMenu.Append(wx.NewId(), "&Open")
         saveMenuItem = fileMenu.Append(wx.NewId(), "&Save")
         saveImageMenuItem = fileMenu.Append(wx.NewId(), "Save Image")
@@ -1203,7 +1204,7 @@ class Frame(wx.Frame):
         exportMenuItem = monteCarloMenu.Append(wx.NewId(), "Export for Monte Carlo")
         runSimulationMenuItem = monteCarloMenu.Append(wx.NewId(), "Launch Simulation")
         loadSpinsMenuItem = monteCarloMenu.Append(wx.NewId(), "Load Spins from file")
-        outputSnapshotsMenuItem = monteCarloMenu.Append(wx.NewId(), "Output snapshots")
+#        outputSnapshotsMenuItem = monteCarloMenu.Append(wx.NewId(), "Output snapshots")
         menuBar.Append(monteCarloMenu, "Monte Carlo")
         
         
@@ -1233,7 +1234,7 @@ class Frame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnLoadSpins, loadSpinsMenuItem)
         self.Bind(wx.EVT_MENU, self.OnSaveImage, saveImageMenuItem)
         self.Bind(wx.EVT_MENU, self.OnLaunchSim, runSimulationMenuItem)
-        self.Bind(wx.EVT_MENU, self.createMonteCarloVideo, outputSnapshotsMenuItem)
+#        self.Bind(wx.EVT_MENU, self.createMonteCarloVideo, outputSnapshotsMenuItem)
         
     
  #   def OnNew(self, event):

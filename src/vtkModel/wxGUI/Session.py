@@ -2,12 +2,13 @@ import xml.dom.minidom
 import xml.dom.ext
 import wx.grid
 from wx.py.dispatcher import send
-import vtkModel.CifFile
+import CifFile
+#import vtkModel.CifFile as CifFile
 from vtkModel import SpaceGroups
 from vtkModel.CellClass import Cell
 from vtkModel.MagneticCellClass import MagneticCell
 import numpy
-#import time
+import time
 import datetime
 
 class Session():
@@ -213,7 +214,9 @@ class Session():
             unitcell.generateAtoms((float(atomData[i][2]), float(atomData[i][3]), float(atomData[i][4])), atomData[i][0], anisotropy = anisotropy)
         
         #Create a Magnetic Cell
-        self.MagCell = MagneticCell(unitcell, magNa, magNb, magNc, spaceGroup)
+        #self.MagCell = MagneticCell(unitcell, magNa, magNb, magNc, spaceGroup)
+        #Using Cutoff Cell as MagCell
+        self.MagCell = MagneticCell(unitcell, cutNa, cutNb, cutNc, spaceGroup)
         
         #Regenerate Bonds as well
         self.changeBonds(self.bondTable.data)
