@@ -41,11 +41,6 @@ class Session():
     def getCutoffCell(self):
         return self.MagCell
     
-#    def setMagneticCell(self, magCell):
-        #I am letting the vtkPanel create magnetic cells right now
-        #so that it can keep track of progress for the progress bar.
-#        self.MagCell = magCell
-    
     def openXMLSession(self, filename):
         doc = xml.dom.minidom.parse(filename)
         
@@ -176,6 +171,8 @@ class Session():
              
                 
     def changeBonds(self, bondData):
+        """This method is called when the bonds need to be changed in the model,
+        such as when info is entered in the GUI or when a file is loaded."""
         self.MagCell.clearAllBonds()
         for i in range(len(bondData)):
             if len(bondData[i]) < 10 or bondData[i][9] == 'X': #When this method is called by the load file method, it includes the rows that are off
@@ -196,7 +193,10 @@ class Session():
         send(signal = "Model Change", sender = "Session")
                     
         
-    def cellChange(self,spaceGroupInt,a,b,c,alpha, beta, gamma, magNa, magNb, magNc, cutNa, cutNb, cutNc, atomData):    
+    def cellChange(self,spaceGroupInt,a,b,c,alpha, beta, gamma, magNa, magNb, magNc, cutNa, cutNb, cutNc, atomData):
+        """This method is called when a change needs to be made to the
+        crystallographic or cutoff(or magnetic) cells or the atoms in them, such
+        as when the user enters info in the GUI or when a file is loaded."""
         spaceGroup = SpaceGroups.GetSpaceGroup(spaceGroupInt)
         
         unitcell = Cell(spaceGroup, 0,0,0, a, b, c, alpha, gamma, beta)
@@ -223,6 +223,7 @@ class Session():
     
     
     def openCif(self, filename):
+        """Reads in a .cif file."""
         cf = CifFile.ReadCif(filename)
         
         #Assuming all data is in one outter block like NIST examples:
@@ -280,6 +281,7 @@ class Session():
 
     #Need to add anisotropy to this
     def saveSessionToXML(self, filename):
+        """Saves all the information needed to reconstruct the model in an xml file."""
         #Create the document
         doc = xml.dom.minidom.Document()
         
@@ -368,6 +370,7 @@ class Session():
        
     #Not used by me, but may be useful for other people, should add this to GUi  
     def export(self, filename):
+        """Exports the bond information to a file."""
         size = 10
         
         initialTime = time.clock()
@@ -593,6 +596,10 @@ class Session():
     
     
     def exportForMonteCarlo(self, filename, size):
+        """Exports the bond information to a file in a format more usefull for
+        the Simulated Anealing.
+
+        #AtomNumber AtomPosition(X Y Z) Anisotropy(X Y Z) OtherIndex Jmatrix OtherIndex Jmatrix..."""
 #        size = 2
         
         timer = Timer()
@@ -883,7 +890,13 @@ class Session():
             
         
     def loadSpinFile(self, fileName):
+        """Loads the file output from the simulated annealing that lists the spin
+        for each atom."""
+
         def getSpin(position, lines):
+            """Searches lines(a list of the lines found in the spin file) for
+            a certain atom and returns the spin associated with it, or None if
+            the atom is not in the list of lines."""
             x = str(position[0])
             y = str(position[1])
             z = str(position[2])
@@ -900,6 +913,7 @@ class Session():
             return spin
         
         
+        #open the file and creat a list of lines
         file = open(fileName, 'r')
         lines = file.readlines()
         file.close()
@@ -924,7 +938,7 @@ class Session():
 
 
 class Timer():
-    """for diagnostics"""
+    """Used to measure the time it takes for various things to compute."""
     def __init__(self):
         self.initialTime = time.clock()
     
@@ -939,6 +953,8 @@ class Timer():
  
     
 class atomTable(wx.grid.PyGridTableBase):
+    """Contains the information the user enters about atoms. The GUI displays
+    what is in this table."""
     def __init__(self):
         wx.grid.PyGridTableBase.__init__(self)
         self.colLabels = ['   Name   ', 'Atomic Number','    x    ', '    y    ','    z    ', '  Dx  ', '  Dy  ', '  Dz  ']
@@ -1021,6 +1037,8 @@ class atomTable(wx.grid.PyGridTableBase):
 
 
 class bondTable(wx.grid.PyGridTableBase):
+    """Contains the information the user enters about interactions. The GUI displays
+    what is in this table."""
     def __init__(self):
         wx.grid.PyGridTableBase.__init__(self)
         self.colLabels = ['Atom1 Number', '   Na   ','   Nb   ', '   Nc   ', 'Atom2 Number', '   Na   ','   Nb   ', '   Nc   ', ' Jij Matrix ', 'On']

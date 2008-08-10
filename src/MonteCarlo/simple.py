@@ -31,6 +31,8 @@ class simpleAtom():
 
 
 def readFile(filename):
+    """This reads an export file from the main program and creates a list of
+    simpleAtoms and jMatrices."""
     #read in the interactions file
     file = open(filename, 'r')
     
@@ -87,6 +89,9 @@ def readFile(filename):
             
     return atoms, jMatrices
   
+
+
+#This has been moved to a Dll written in C (for speed)
 def Energy(atom, S):
     E = 0
     for interaction in atom.interactions:
@@ -96,7 +101,6 @@ def Energy(atom, S):
         E -= numpy.dot(numpy.dot(s1,Jij),s2) #E = -sum(S1*Jij*S2)
     return E
         
-
 def flipSpins():
     randGen = random.Random()
     for atom in atoms:
