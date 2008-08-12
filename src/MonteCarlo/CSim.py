@@ -1,7 +1,6 @@
 from simple import readFile, Timer, simpleAtom
 import ctypes
 from ctypes import c_float, c_int, c_long
-import cstruct
 import numpy as N
 import sys
 import time

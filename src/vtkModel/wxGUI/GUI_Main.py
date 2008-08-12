@@ -7,12 +7,12 @@
 #Add the vtkModel path
 import sys
 import os
-#cwdList = os.getcwd().split('\\')
-#cwdList.pop()#vtkModel
-#cwdList.pop()#src
-#mainPath = "\\".join(cwdList)
-#sys.path.append(mainPath)
-sys.path.append("C:\\spinwaves\\src\\MonteCarlo")
+cwdList = os.getcwd().split('\\')
+cwdList.pop()#vtkModel
+cwdList.pop()#src
+mainPath = "\\".join(cwdList)
+sys.path.append(mainPath)
+#sys.path.append("C:\\spinwaves\\src\\MonteCarlo")
 
 
 
@@ -31,7 +31,7 @@ import time
 from Session import Session
 
 #It could not find MonteCarlo package (import MonteCarlo.CSim)
-#sys.path.append(mainPath +"\\MonteCarlo")
+sys.path.append(mainPath +"\\MonteCarlo")
 import CSim
 
 

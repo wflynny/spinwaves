@@ -6,4 +6,4 @@ import py2exe
 #In DOS prompt:
 #python setup.py py2exe
 
-setup(windows=["wxvtktest.py"])
+setup(windows=["GUI_Main.py"])

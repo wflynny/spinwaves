@@ -1,3 +1,4 @@
+#used by scons to compile the monte carlo dll from C code
 import sys
 if sys.platform=='win32':
 	print 'building on windows'
