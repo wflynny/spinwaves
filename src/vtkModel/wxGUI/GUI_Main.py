@@ -4,7 +4,7 @@
 #So it can be run outside of eclipse
 #sys.path.append("C:\\spinwaves\\src")
 
-#Add the vtkModel path
+#Add the vtkModel path ( so this can be run from any directory)
 import sys
 import os
 cwdList = os.getcwd().split('\\')
@@ -187,13 +187,15 @@ class atomPanel(wx.Panel):
         
         self.SetSizer(sizer)
         
-        #For now, the generate button will create a new magnetic cell
-        #which will then be drawn by the vtkPanel
+        #execute the function OnGenerate when the generate button is pressed
         self.Bind(wx.EVT_BUTTON, self.OnGenerate, self.genButton)
         connect(self.OnFileLoad, signal = "File Load")
 
     
     def OnFileLoad(self, spaceGroup, a, b, c, alpha, beta, gamma, magNa, magNb, magNc, cutNa, cutNb, cutNc):
+        """This is run when a message is received from the session that a file
+        was loaded.  All the values in the panel are changed to reflect the
+        values that were read in."""
         self.spaceGroupSpinner.SetValue(spaceGroup)
         self.aText.SetValue(a)
         self.bText.SetValue(b)
@@ -219,6 +221,9 @@ class atomPanel(wx.Panel):
         
     
     def OnGenerate(self, event):
+        """This is executed when the generate button is pressed.  First the data
+        entered by the used is validated to make sure it is all the correct
+        type.  Then session.cellChange is called to change the model."""
         failed, a, b, c, alpha, beta, gamma, magNa, magNb, magNc, cutNa, cutNb, cutNc, atomData = self.validate()
         if failed:
             return
@@ -239,7 +244,12 @@ class atomPanel(wx.Panel):
 
     
     def validate(self):
-        """Currently checks that all values are the right type"""
+        """Checks that all values are the right type
+
+        Any field that is not of the right type will be turned pink.  The
+        textCtrl will turn the backcolor of the writting pink, while whole cells
+        in the grid will turn pink.  Therefore, if there is no writting in a
+        textCtrl field, there will be no color either unitl the user types."""
         a = self.aText.GetValue() #str - float
         b = self.bText.GetValue() #str - float
         c = self.cText.GetValue() #str - float
@@ -311,7 +321,7 @@ class atomPanel(wx.Panel):
             failed = True
         
         
-        #Validate Magnetic Cell Na(must be a int)
+        #Validate Magnetic Cell Na(must be an int)
         numMagNa = None
         try:
             numMagNa = int(magNa)
@@ -320,7 +330,7 @@ class atomPanel(wx.Panel):
             self.naText.SetStyle(0, len(magNa), wx.TextAttr(colBack = bgColor))
             failed = True
             
-        #Validate Magnetic Cell Nb(must be a int)
+        #Validate Magnetic Cell Nb(must be an int)
         numMagNb = None
         try:
             numMagNb = int(magNb)
@@ -329,7 +339,7 @@ class atomPanel(wx.Panel):
             self.nbText.SetStyle(0, len(magNb), wx.TextAttr(colBack = bgColor))
             failed = True
             
-        #Validate Magnetic Cell Nc(must be a int)
+        #Validate Magnetic Cell Nc(must be an int)
         numMagNc = None
         try:
             numMagNc = int(magNc)
@@ -474,6 +484,7 @@ class atomPanel(wx.Panel):
     
     
     def OnGridResize(self, event):
+        """Resizes the grid when the spinner value is changed."""
         rows = self.atomSpinner.GetValue()
         self.atomList.SetNumberRows(rows)
 #        self.atomList.GetTable().SetNumberRows(rows)
@@ -481,6 +492,8 @@ class atomPanel(wx.Panel):
 
 
 class atomListGrid(wx.grid.Grid):
+    """This is the table of atom values.  It displays values in hte atom table
+    stored by the session."""
     def __init__(self, parent, id, session):
         wx.grid.Grid.__init__(self, parent, id)
         self.session = session
@@ -500,6 +513,8 @@ class atomListGrid(wx.grid.Grid):
 
 #Bond information window
 class bondListGrid(wx.grid.Grid):
+    """This is the table of bonds displayed inthe bond panel.  It displays
+    values stored in the bond table stored by the session."""
     def __init__(self, parent, id, session):
         wx.grid.Grid.__init__(self, parent, id)
         self.table = session.getBondTable()
@@ -525,13 +540,16 @@ class bondListGrid(wx.grid.Grid):
         return diff
     
     def OnLeftClick(self, evt):
+        """If there is a left lick in the rightmost cell(the cell that turns the
+        bond on or off), an X is placed there to represent that is is on, or
+        removed to show that it is off.
+
+        If there is a click in column 8(Jij Matrix), then a dialog is opened to
+        allow the user to enter a Jij Matrix."""
         evt.Skip()
-#        print 'LeftClick'
         col=evt.GetCol()
         row=evt.GetRow()
-#        print row, col
-#        if col<=0 and row >=0:
-#            currval=self.table.GetValue(row,0)
+
         if col>=9 and row >=0: # ON/Off
             currval=self.table.GetValue(row,9)
             if currval=='':
@@ -542,9 +560,7 @@ class bondListGrid(wx.grid.Grid):
             dialog = jijDialog(self.table.GetValue(row,8))#Pass current Jij value
             result = dialog.ShowModal()
             if result == wx.ID_OK:
-#                print dialog.getMatrix()
                 self.table.SetValue(row, 8, numpy.array(dialog.getMatrix()))
-#                self.SetCellValue(row, 8, numpy.array(dialog.getMatrix())) must be a string
 
             dialog.Destroy()
 
@@ -554,19 +570,24 @@ class bondListGrid(wx.grid.Grid):
 #        wx.grid.Grid.ForceRefresh(self)
 
 class bondPanel(wx.Panel):
+    """This panel allows the user to create bonds."""
     def __init__(self, parent, id, session):
         wx.Panel.__init__(self, parent, id)
         
         self.session = session
         
+        #Create the table of bonds
         self.bondList = bondListGrid(self, -1, session)
         
+        #Create the spinner which controls the length of the bond list
         self.bondSpinner = wx.SpinCtrl(self, -1, "")
         self.bondSpinner.SetRange(1,100)
         self.bondSpinner.SetValue(1)
         self.bondSpinner.Bind(wx.EVT_TEXT, self.OnGridResize, self.bondSpinner)
         
+        #Create the generate button
         self.genButton = wx.Button(self, -1, "Generate")
+
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
         topSizer.Add(self.bondSpinner)
         topSizer.Add(self.genButton)
@@ -582,6 +603,7 @@ class bondPanel(wx.Panel):
 
 
     def OnFileLoad(self):
+        """Executed when the session sends a message that a file was loaded."""
         self.bondSpinner.SetValue(self.bondList.GetNumberRows())
         self.bondList.AutoSize()
 #    def OnFileLoad(self, bondData):
@@ -598,7 +620,8 @@ class bondPanel(wx.Panel):
 #            self.bondList.SetCellValue(i, 9, bondData[i][9])
     
     def OnBondAddition(self, atom1, atom2):
-        """This method is called when another window adds a bond and calls send(signal = "Bond Added"..."""
+        """This method is called when another window adds a bond and calls
+        send(signal = "Bond Added"..."""
         cell1 = atom1.getUnitCell()
         cell2 = atom2.getUnitCell()
         
@@ -740,24 +763,8 @@ class bondPanel(wx.Panel):
                     self.bondList.SetAttr(row, 7, attr)
                     failed = True
                     
-#                jij = self.bondList.GetCellValue(row, 8)
-#                if not jij == '':
-#                    attr = wx.grid.GridCellAttr()
-#                    attr.SetBackgroundColour("white")
-#                    self.bondList.SetAttr(row, 8, attr)
-#                else:
-#                    attr = wx.grid.GridCellAttr()
-#                    attr.SetBackgroundColour(bgColor)
-#                    self.bondList.SetAttr(row, 8, attr)
-#                    failed = True
-                Jcell = self.bondList.GetCellValue(row, 8)#string
-                #allow a bond to be made with no Jij Matrix
-                if Jcell == '':
-                    jij = None
-                else:
-                    jij = self.bondList.table.GetValue(row, 8)#numpy.array
-                print isinstance(jij, str)
-            
+
+                jij = self.bondList.table.GetValue(row, 8)#numpy.array
                 
                 bondData.append([atom1Num, Na1,Nb1,Nc1, atom2Num, Na2,Nb2,Nc2, jij])
             else: #If the row is not checked, all cells should be white
@@ -803,6 +810,8 @@ class bondPanel(wx.Panel):
 
 
 class jijDialog(wx.Dialog):
+    """This dialog is displayed when the user clicks on the Jij Cell in the bond
+    grid.  It allows them to enter a Jij Matrix."""
     def __init__(self, currentVal):
         wx.Dialog.__init__(self, None, -1, 'Jij Matrix', size = (300,300))
         okButton = wx.Button(self, wx.ID_OK, "OK", pos = (25, 225), size = (100, 25))
@@ -838,10 +847,14 @@ class jijDialog(wx.Dialog):
     
     
     def OnOk(self, event):
+        """If the OK button is pressed, and the data is all of the right type,
+        this event will be passed on, which will close the window."""
         if self.validate():
             event.Skip()
     
     def validate(self):
+        """Makes sure all the cell values are of type float, and turns the cell
+        pink if one is not."""
         bgColor = "pink"
         failed = False
         for i in range(3):
@@ -861,6 +874,7 @@ class jijDialog(wx.Dialog):
         return not failed
     
     def getMatrix(self):
+        """returns the 3x3 list of floats."""
         jMatrix = []
         for i in range(3):#rows
             row = []
@@ -875,6 +889,7 @@ class jijDialog(wx.Dialog):
        
 
 class vtkPanel(wx.Panel):
+    """This is a the main panel which displays the 3D vtk rendering."""
     def __init__(self, parent, id, session):
         wx.Panel.__init__(self, parent)
         self.session = session
@@ -917,6 +932,7 @@ class vtkPanel(wx.Panel):
     
     
     def OnSaveImage(self, path):
+        """Saves a tiff image of the current screen."""
         w2i = vtkWindowToImageFilter()
         w2i.SetInput(self.window.GetRenderWindow())
         tiffWriter = vtkTIFFWriter()
@@ -928,6 +944,8 @@ class vtkPanel(wx.Panel):
         self.draw()
     
     def OnKeyEvent(self, event):
+        """Handles the Del Key.  If a bond is selected and hte Del key is
+        pressed, the bond and all symmetry equivalent bonds are deleted."""
         event.Skip()
         
         #Delete if key pressed is Del key  Del = 127
@@ -935,6 +953,7 @@ class vtkPanel(wx.Panel):
             self.OnDelete(event)
          
     def OnDelete(self,event):
+        """Handles deleteion of a bond and all it's symmetry equivalent bonds."""
         event.Skip()
         selectedObj = self.drawer.getObjFromActor(self.picker.getPicked())
         if isinstance(selectedObj, Bond):
@@ -942,38 +961,21 @@ class vtkPanel(wx.Panel):
         
         self.draw()
     
-#    def initializeVTKData(self):
-                #My Code
-#        Space_Group = sg141
-#        unitcell = Cell(Space_Group)
-#        atomPos = [0, 0, 0]
-    
-        #Create the unit cell
-#        unitcell.generateAtoms(atomPos, "atom1")
-
-        
-        #Create the Magnetic Cell
-#        self.MagCell = MagneticCell(unitcell, 1,1,1, Space_Group)
-        
-#        AllAtoms = self.MagCell.getAllAtoms()
-#        for i in range(0, len(AllAtoms)):
-#            print i, AllAtoms[i]
-#        self.MagCell.addBond(AllAtoms[0], AllAtoms[1])
            
     def draw(self, progDialog = None):
+        """Re-renders the vtkRender window to reflect any changes."""
         #remove old renderer
 #        if self.ren1 != None:
  #           self.window.GetRenderWindow().RemoveRenderer(self.ren1)
         
 #        a = wx.ClientDC(self.window)
         
-        destroy = False
+        #Create a progress bar
+        destroy = False #So that a pre-existing progress bar could be used and Destroyed by the calling function
         if not progDialog:
             progDialog = wx.ProgressDialog("Progress", "Rendering Model...", parent = self, style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
             destroy = True
-        
-        #progDialog disables the render window, but we still want it to render
-#       self.window.SetRenderWhenDisabled(True)
+
         
         # a renderer for the data
         ren1 = vtkRenderer()
@@ -998,7 +1000,7 @@ class vtkPanel(wx.Panel):
             self.picker.removeObserver()
         self.picker = Picker(self.drawer, self.window._Iren, ren1)
 
-        progDialog.Update(10)
+        progDialog.Update(10) #This is a very rough estimation
 
         #Draw the Magnetic Cell
 #        self.drawer.drawMagneticCell(self.session.getMagneticCell())
@@ -1014,104 +1016,21 @@ class vtkPanel(wx.Panel):
         
         
         progDialog.Update(100)
-#        print "reset Cam"
+
         if destroy:
             progDialog.Destroy()
 
         #Rendering does not work when the window is disabled which it seems
         #to be when the progress dialog exits
 
-#        self.window.SetRenderWhenDisabled(False)
         ren1.ResetCamera()
 #        self.window.Render()
-        self.window.SetRenderWhenDisabled(True)
+#        self.window.SetRenderWhenDisabled(True)
         self.window.setUpRender()
-        self.window.SetRenderWhenDisabled(False)
-#        self.window._Iren.LeftButtonPressEvent() #This trigers a render, there may be better ways to do this
-#        self.window._Iren.LeftButtonReleaseEvent()
-        
-    
-    #def getStatusText(self):
-      #  return self.picker.getPicked()
-    
-#    def OnCellChange(self,spaceGroup,a,b,c,alpha, beta, gamma, magNa, magNb, magNc, cutNa, cutNb, cutNc, atomData):
-#        """For now this just creates a new Magnetic Cell and draws it
-#        This could be transfered to the Session class but a progress bar would be
-#        more difficult then"""
-#        print "Making Magentic Cell"
-#        
-#        
-#        #This shoudl eb moved to session class to get rid of repetative code in load file methods
-#        progDialog = wx.ProgressDialog("Progress", "Generating Magnetic Cell...", parent = self, style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
-#        
-#        spaceGroup = SpaceGroups.GetSpaceGroup(spaceGroup)
-#        
-#        unitcell = Cell(spaceGroup, 0,0,0, a, b, c, alpha, gamma, beta)
-#        
-#        for i in range(len(atomData)):
-#            unitcell.generateAtoms((float(atomData[i][2]), float(atomData[i][3]), float(atomData[i][4])), atomData[i][0])
+#        self.window.SetRenderWhenDisabled(False)
 
-#        progDialog.Update(40)
-#        
-#        print "Unit Cell Generated"
-#        
-#        #Create a Magnetic Cell
-#        self.session.setMagneticCell(MagneticCell(unitcell, magNa, magNb, magNc, spaceGroup))
-#        print "Magcell created"
-#        
-#        progDialog.Update(100)
-#        
-#        progDialog.Destroy()
-#        
-#        #Regenerate Bonds as well
-#        try:
-#            self.OnBondChange(self.bondData)
-#        except:#If there are not bonds yet
-#            print "No Bonds yet"
-#            self.draw()
-#        print "Drawn"
-#        
-#
-#    def OnBondChange(self, bondData):
-#        """Checks if each bond exists, if not, it generates them""" 
-#        print "Creating Bonds"
-#
-#        progDialog = wx.ProgressDialog("Progress", "Creating Bonds...", parent = self, style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE)
-# 
- #This should be moved to the session       
- #       self.bondData = bondData  #added this so that bonds can be regenerated later if there is a change in the cells
-#        self.session.getMagneticCell().clearAllBonds()
-#        
-#        progDialog.Update(5,"Creating Bonds...")
-#        progFrac = 99/(len(bondData) + .01)
-#        progress = 0
-#        for i in range(len(bondData)):
-#            cell1 = self.session.getMagneticCell().cellAtPosition((bondData[i][1], bondData[i][2], bondData[i][3]))
-#            cell2 = self.session.getMagneticCell().cellAtPosition((bondData[i][5], bondData[i][6], bondData[i][7]))
-#            
-#            atom1 = cell1.atomAtIndex(bondData[i][0] - 1)
-#            atom2 = cell2.atomAtIndex(bondData[i][4] - 1)
-#            
-#            progDialog.Update(progress)
-#
-#            if not self.session.getMagneticCell().hasBond(atom1, atom2, bondData[i][8]):
-#                self.session.getMagneticCell().addBond(atom1, atom2, bondData[i][8])
-#            
-#            
-#            progress += progFrac
-#            print progress
-#            progDialog.Update(progress)
-#        self.session.changeBonds(bondData)
-#
-#
-#        
-#        progDialog.Update(100)
-#        progDialog.Destroy()
-#        print "drawing"
-#        self.draw()
 
     def OnPick(self, obj):
-#        print "OnPick"
         if self.mode:
             self.mode.OnPick(obj)
 #        self.mode = None
@@ -1124,21 +1043,21 @@ class vtkPanel(wx.Panel):
         self.mode = None
 
 class BondMode():
+    """This class handles pick events in bond mode, by creating an interaction
+    when two atoms are clicked."""
     def __init__(self):
         self.atom1 = None
     
     def OnPick(self, obj):
-        print "Pick:", obj
         if isinstance(obj, Atom):
             if self.atom1==None:
                 self.atom1 = obj
-                print "atom 1 =", self.atom1 
             else:
                 send(signal = "Bond Added", sender = "VTK Window", atom1 = self.atom1, atom2 = obj)
-#                print "OK!!!!!!!!!!!!!"
                 self.atom1 = None
 
 class Frame(wx.Frame):
+    """This is the main frame containing the vtkPanel."""
     def __init__(self, parent, id, session):
         wx.Frame.__init__(self, parent, id, 'Magnetic Cell', size= (700,700))
 
@@ -1180,8 +1099,6 @@ class Frame(wx.Frame):
         openMenuItem = fileMenu.Append(wx.NewId(), "&Open")
         saveMenuItem = fileMenu.Append(wx.NewId(), "&Save")
         saveImageMenuItem = fileMenu.Append(wx.NewId(), "Save Image")
-#        exportMenuItem = fileMenu.Append(wx.NewId(), "Export for Monte Carlo")
-#        loadSpinsMenuItem = fileMenu.Append(wx.NewId(), "Load Spins from file")
         quitMenuItem = fileMenu.Append(wx.NewId(), "&Quit")
         menuBar.Append(fileMenu, "&File")
         
@@ -1231,10 +1148,20 @@ class Frame(wx.Frame):
     
     def createMonteCarloVideo(self, evt):
         def imageName(imageNum):
-            """I want the images to automatically arrange in alphabetical order
+            """Generates the name of hte image given the image number.
+            I want the images to automatically arrange in alphabetical order
             to make the video creation easier.
             
-            Just using the number does not work becuase image2 comes after image10"""
+            Just using the number does not work becuase image2 comes after image10
+
+            Therefore this will create numbers with precending 0's
+            For example:
+
+                image001
+                image002
+                ...
+                image010
+                image011"""
             imageStr = str(imageNum)
             
             val = imageNum
@@ -1248,6 +1175,8 @@ class Frame(wx.Frame):
         
         
         def imageOutputFunction(spinsFile, imageNum):
+            """This funstion is passed to CSim.createVideo to handle creation of
+            the images."""
             imagePath = "C:\\monteCarloSnapshots\\" + imageName(imageNum)
             #Load the spins and render
             self.session.loadSpinFile(spinsFile)
@@ -1258,15 +1187,22 @@ class Frame(wx.Frame):
             
     
     def OnLaunchSim(self, evt):
+        """Runs the simulation from this app."""
         CSim.ShowSimulationFrame()
     
     def OnSaveImage(self, evt):
+        """Saves an image of the current rendering.  Currently only .tiff
+        format is used."""
         saveDialog = wx.FileDialog(self, "Save Image", style = wx.SAVE, wildcard = "*.tiff")
+
+        #If the user clicked OK in the save dialog, use the filename they chose
         if saveDialog.ShowModal() == wx.ID_OK:
             send("Save Image", sender = "Main Frame", path = saveDialog.GetPath())
         saveDialog.Destroy()
     
     def OnExport(self, evt):
+        """Exports the interactions to a file for use in the monte carlo
+        simulation to find the ground state."""
         #Maximum size is set to 25 right now, becuase that is the largest size that this computer seems to be able to reasonably handle with the current algorithm
         size = wx.GetNumberFromUser("How many times would you like to translate the cutoff cell in the a,b, and c directions?", prompt = "size:", caption = "Monte Carlo Simulation Size", value = 2, min = 1, max=25, parent = self)
         if size != None:
@@ -1291,13 +1227,15 @@ class Frame(wx.Frame):
         openDialog = wx.FileDialog(self, "Open File", style = wx.OPEN, wildcard = "XML Session (*.xml)|*.xml|Crystallographic Information File (*.cif)|*.cif")
         if openDialog.ShowModal() == wx.ID_OK:
             index = openDialog.GetFilterIndex()
-            if index == 0:
+            if index == 0: #If they chose .xml format
                 self.session.openXMLSession(openDialog.GetPath())
-            if index == 1:
+            if index == 1: #If they chose .cif format
                 self.session.openCif(openDialog.GetPath())
         openDialog.Destroy()
     
     def OnLoadSpins(self, event):
+        """Loads a text (.txt) file with a list of spins at atom positions.
+        The monte Carlo simulation outputs a spin file like this."""
         openDialog = wx.FileDialog(self, "Open Spin File", style = wx.OPEN, wildcard = "*.txt")
         if openDialog.ShowModal() == wx.ID_OK:
             self.session.loadSpinFile(openDialog.GetPath())
@@ -1311,30 +1249,21 @@ class App(wx.App):
         wx.App.__init__(self, redirect, filename)
     
     def OnInit(self):
+        #Start a new session
         session = Session()
+        #Create the main frame
         self.frame = Frame(None, -1, session = session)
         self.frame.Show()
         self.SetTopWindow(self.frame)
+        #Create the atom frame
         frame1 = wx.Frame(self.frame, -1, "Atoms", size = (500,245))
         atomPanel(frame1, -1, session = session)
         frame1.Show()
+        #Create the bond frame
         frame2 = wx.Frame(self.frame, -1, 'Bonds', size = (655,200))
         bondPanel(frame2, -1, session = session)
         frame2.Show()
 
-#        dialog = jijDialog()
-#        result = dialog.ShowModal()
-#        if result == wx.ID_OK:
-#            print "OK"
-#        else:
-#            print "CANCEL"
-#        dialog.Destroy()
-        
-        
-        #Williams
-#       frame2 = AtomFrame(self.frame, -1)
-#        frame2.Show()
-        
         return True
     
 
