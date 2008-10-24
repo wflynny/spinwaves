@@ -7,6 +7,8 @@ import time
 import wx
 #import pylab
 import os
+dllpath=r'C:\mytripleaxisproject\trunk\eclipse\src\spinwaves\C code'
+
 
 def createVideo(spinsToImageFunction, outFilePath, inFilePath):
     """This method is used to create snapshots of the monte carlo simulation.
@@ -196,7 +198,7 @@ def simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath):
     #Load the Dll
     if sys.platform=='win32':
         print 'win32'
-        monteCarloDll = N.ctypeslib.load_library('monteCarlo', 'C:/spinwaves')
+        monteCarloDll = N.ctypeslib.load_library('monteCarlo', dllpath)
 #    elif sys.platform=='mac':
 #        monteCarloDll = N.ctypeslib.load_library('libpolarization2.so', '.')
 #    else:
@@ -468,7 +470,7 @@ def ShowSimulationFrame():
     tMax = 10
     tMin = .01
     tFactor = .90
-    inFilePath = "C:\Export.txt"
+    inFilePath = "C:\montecarlo.txt"
     outFilePath = "C:\Spins.txt"
         
     
