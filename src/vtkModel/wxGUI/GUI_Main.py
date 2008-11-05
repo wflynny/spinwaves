@@ -1195,9 +1195,10 @@ class Frame(wx.Frame):
         
     def OnLaunchSpinWave(self,evt):
         dlg=spinwavepanel.FormDialog(parent=self,id=-1)
+        self.SetExtraStyle(wx.WS_EX_VALIDATE_RECURSIVELY)
         result=dlg.ShowModal()
         if result==wx.ID_OK:
-            dlg.Validate()
+            #self.Validate()
             print "OK"
         else:
             print "Cancel"
