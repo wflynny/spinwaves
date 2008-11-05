@@ -33,7 +33,7 @@ from Session import Session
 #It could not find MonteCarlo package (import MonteCarlo.CSim)
 sys.path.append(mainPath +"\\MonteCarlo")
 import CSim
-
+import spinwavepanel
 
 #Atom and cell info window
 
@@ -1108,6 +1108,7 @@ class Frame(wx.Frame):
         runSimulationMenuItem = monteCarloMenu.Append(wx.NewId(), "Launch Simulation")
         loadSpinsMenuItem = monteCarloMenu.Append(wx.NewId(), "Load Spins from file")
 #        outputSnapshotsMenuItem = monteCarloMenu.Append(wx.NewId(), "Output snapshots")
+        calculateSpinwavesMenuItem=monteCarloMenu.Append(wx.NewId(), "Perform Spinwave Calculation")
         menuBar.Append(monteCarloMenu, "Monte Carlo")
         
         
@@ -1137,6 +1138,8 @@ class Frame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnLoadSpins, loadSpinsMenuItem)
         self.Bind(wx.EVT_MENU, self.OnSaveImage, saveImageMenuItem)
         self.Bind(wx.EVT_MENU, self.OnLaunchSim, runSimulationMenuItem)
+        self.Bind(wx.EVT_MENU, self.OnLaunchSpinWave, calculateSpinwavesMenuItem)
+          
 #        self.Bind(wx.EVT_MENU, self.createMonteCarloVideo, outputSnapshotsMenuItem)
         
     
@@ -1189,6 +1192,16 @@ class Frame(wx.Frame):
     def OnLaunchSim(self, evt):
         """Runs the simulation from this app."""
         CSim.ShowSimulationFrame()
+        
+    def OnLaunchSpinWave(self,evt):
+        dlg=spinwavepanel.FormDialog(parent=self,id=-1)
+        result=dlg.ShowModal()
+        if result==wx.ID_OK:
+            dlg.Validate()
+            print "OK"
+        else:
+            print "Cancel"
+        dlg.Destroy()
     
     def OnSaveImage(self, evt):
         """Saves an image of the current rendering.  Currently only .tiff
