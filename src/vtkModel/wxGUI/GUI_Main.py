@@ -1205,10 +1205,10 @@ class Frame(wx.Frame):
             print "OK"
             dlg.TransferDataFromWindow()
             print 'data',dlg.data
-            print dlg.data['steps']
+            print dlg.data['step']
             print dlg.interactionfile
             print dlg.spinfile
-            spinwave_calc_file.driver(dlg.spinfile,dlg.interactionfile,dlg.data,dlg.data['steps'])
+            spinwave_calc_file.driver(dlg.spinfile,dlg.interactionfile,dlg.data,dlg.data['step'])
         else:
             print "Cancel"
         dlg.Destroy()
