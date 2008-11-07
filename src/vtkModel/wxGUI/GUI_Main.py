@@ -34,6 +34,7 @@ from Session import Session
 sys.path.append(mainPath +"\\MonteCarlo")
 import CSim
 import spinwavepanel
+import spinwave_calc_file
 
 #Atom and cell info window
 
@@ -1194,12 +1195,20 @@ class Frame(wx.Frame):
         CSim.ShowSimulationFrame()
         
     def OnLaunchSpinWave(self,evt):
-        dlg=spinwavepanel.FormDialog(parent=self,id=-1)
+        dlg=spinwavepanel.FormDialog(parent=None,id=-1)
         self.SetExtraStyle(wx.WS_EX_VALIDATE_RECURSIVELY)
         result=dlg.ShowModal()
+        print 'result', result
         if result==wx.ID_OK:
             #self.Validate()
+            dlg.Validate()
             print "OK"
+            dlg.TransferDataFromWindow()
+            print 'data',dlg.data
+            print dlg.data['steps']
+            print dlg.interactionfile
+            print dlg.spinfile
+            spinwave_calc_file.driver(dlg.spinfile,dlg.interactionfile,dlg.data,dlg.data['steps'])
         else:
             print "Cancel"
         dlg.Destroy()
