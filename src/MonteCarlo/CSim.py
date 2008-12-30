@@ -7,7 +7,8 @@ import time
 import wx
 #import pylab
 import os
-dllpath=r'C:\mytripleaxisproject\trunk\eclipse\src\spinwaves\C code'
+#dllpath=r'C:\mytripleaxisproject\trunk\eclipse\src\spinwaves\C code'
+dllpath=r'C:\tom winter\code\C code'
 
 
 def createVideo(spinsToImageFunction, outFilePath, inFilePath):

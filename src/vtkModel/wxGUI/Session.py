@@ -100,12 +100,20 @@ class Session():
             x = atomNodes[i].getAttribute('x')
             y = atomNodes[i].getAttribute('y')
             z = atomNodes[i].getAttribute('z')
-            atomData.append([name, atomicNum, x,y,z])
+            Dx = atomNodes[i].getAttribute('SIA_Dx')
+            Dy = atomNodes[i].getAttribute('SIA_Dy')
+            Dz = atomNodes[i].getAttribute('SIA_Dz')
+            
+            atomData.append([name, atomicNum, x,y,z, Dx, Dy, Dz])
+            
             self.atomTable.SetValue(i, 0, name)
             self.atomTable.SetValue(i, 1, atomicNum)
             self.atomTable.SetValue(i, 2, x)
             self.atomTable.SetValue(i, 3, y)
             self.atomTable.SetValue(i, 4, z)
+            self.atomTable.SetValue(i, 5, Dx)
+            self.atomTable.SetValue(i, 6, Dy)
+            self.atomTable.SetValue(i, 7, Dz)
         
         bondNodes = bondsNode.getElementsByTagName('bond')
 #        bondData = []
@@ -324,6 +332,9 @@ class Session():
             atomElement.setAttribute('x', str(self.atomTable.GetValue(i, 2)))
             atomElement.setAttribute('y', str(self.atomTable.GetValue(i, 3)))
             atomElement.setAttribute('z', str(self.atomTable.GetValue(i, 4)))
+            atomElement.setAttribute('SIA_Dx', str(self.atomTable.GetValue(i, 5)))
+            atomElement.setAttribute('SIA_Dy', str(self.atomTable.GetValue(i, 6)))
+            atomElement.setAttribute('SIA_Dz', str(self.atomTable.GetValue(i, 7)))
             atomsElement.appendChild(atomElement)
             
           
@@ -686,7 +697,7 @@ class Session():
 
 
         
-        #Create list of matrices  
+        #Create list of matrices
         matrices = []
         for bond in self.getCutoffCell().getBonds():
 #           pos1 = bond.getAtom1().getPosition()

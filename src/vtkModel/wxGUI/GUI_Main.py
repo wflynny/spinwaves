@@ -33,8 +33,8 @@ from Session import Session
 #It could not find MonteCarlo package (import MonteCarlo.CSim)
 sys.path.append(mainPath +"\\MonteCarlo")
 import CSim
-import spinwavepanel
-import spinwave_calc_file
+import spinwavecalc.spinwavepanel as spinwavepanel
+import spinwavecalc.spinwave_calc_file as spinwave_calc_file
 
 #Atom and cell info window
 
@@ -631,6 +631,7 @@ class bondPanel(wx.Panel):
         pos1 = cell1.getPosition()
         pos2 = cell2.getPosition()
 
+        self.clearEmptyRows()
         row = self.bondList.GetNumberRows() #Append row and add bond to last row
         self.bondList.SetCellValue(row, 0, str(index1+1))
         self.bondList.SetCellValue(row, 1, str(pos1[0]))
@@ -645,6 +646,43 @@ class bondPanel(wx.Panel):
         self.bondSpinner.SetValue(self.bondList.GetNumberRows())
 #        self.OnGenerate(None)
         self.bondList.AutoSize()
+        
+    def clearEmptyRows(self):
+        numRows = self.bondList.GetNumberRows()
+        for r in range(0,numRows):
+            row = numRows - 1 - r #start from end
+            print "row = ", row
+            if self.RowIsEmpty(row):
+                for i in range(row, self.bondList.GetNumberRows()-1):
+                    #Copy info up one row for all rows after the empty one
+                    self.bondList.SetCellValue(i,0, self.bondList.GetCellValue(i+1,0))
+                    self.bondList.SetCellValue(i,1, self.bondList.GetCellValue(i+1,1))
+                    self.bondList.SetCellValue(i,2, self.bondList.GetCellValue(i+1,2))
+                    self.bondList.SetCellValue(i,3, self.bondList.GetCellValue(i+1,3))
+                    self.bondList.SetCellValue(i,4, self.bondList.GetCellValue(i+1,4))
+                    self.bondList.SetCellValue(i,5, self.bondList.GetCellValue(i+1,5))
+                    self.bondList.SetCellValue(i,6, self.bondList.GetCellValue(i+1,6))
+                    self.bondList.SetCellValue(i,7, self.bondList.GetCellValue(i+1,7))
+                    #Jij matrix must be taken directly from table, so that it is a numpy.array, and not just a string
+                    self.bondList.table.SetValue(i,8, self.bondList.table.GetValue(i+1,8))
+                    #The others can be strings
+                    self.bondList.SetCellValue(i,9, self.bondList.GetCellValue(i+1,9))
+                    
+                #Delete last row
+                self.bondSpinner.SetValue(self.bondSpinner.GetValue()-1)
+        
+    def RowIsEmpty(self, row):
+        """Returns true if no column of the row has been filled in, other than On/Off,
+        which does not matter.  Used to clear empty rows in OnBondAddition."""
+        for i in range(8):
+            if self.bondList.GetCellValue(row, i) != '':
+                return False
+        
+        if self.bondList.GetCellValue(row, 8) == numpy.array([[0.,0.,0.],[0.,0.,0.],[0.,0.,0.]]):
+            return False
+        
+        return True #(regardless if it's on or not)
+            
     
     def OnGenerate(self, event):
         failed, bondData = self.validate()
