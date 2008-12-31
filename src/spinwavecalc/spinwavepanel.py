@@ -5,6 +5,7 @@ import  wx.grid as  gridlib
 import numpy as N
 import sys,os
 import spinwave_calc_file
+import wx.richtext
 
 class MyApp(wx.App):
     def __init__(self, redirect=False, filename=None, useBestVisual=False, clearSigInt=True):
@@ -80,24 +81,48 @@ class FormDialog(sc.SizedDialog):
         self.SetExtraStyle(wx.WS_EX_VALIDATE_RECURSIVELY)
         pane = self.GetContentsPane()
         pane.SetSizerType("vertical")
+        
+        #Text editor
+        interactionsEditorPanel = wx.Panel(pane, -1)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        interactionsEditorPanel.SetSizer(sizer)
+        title = wx.StaticText(interactionsEditorPanel, -1, "Interaction File")
+        self.interactionsRtc = wx.richtext.RichTextCtrl(interactionsEditorPanel, style=wx.VSCROLL | wx.TE_PROCESS_ENTER, size = (620,120));
+        
+        sizer.Add(title)
+        sizer.Add(self.interactionsRtc, wx.EXPAND)
+        
+        spinsEditorPanel = wx.Panel(pane, -1)
+        spinSizer = wx.BoxSizer(wx.VERTICAL)
+        spinsEditorPanel.SetSizer(spinSizer)
+        spinsTitle = wx.StaticText(spinsEditorPanel, -1, "Spins File")
+        self.spinsRtc = wx.richtext.RichTextCtrl(spinsEditorPanel, style=wx.VSCROLL, size = (620,120));
+        
+        spinSizer.Add(spinsTitle)
+        spinSizer.Add(self.spinsRtc, wx.EXPAND)
+        
+        
+        
         FilePane = sc.SizedPanel(pane, -1)
         FilePane.SetSizerType("vertical")
         FilePane.SetSizerProps(expand=True)
-        self.spinfile=''
-        self.spinfilectrl=wx.StaticText(FilePane, -1, "Spin File:%s"%(self.spinfile,))
-        b = wx.Button(FilePane, -1, "Browse", (50,50))
-        self.Bind(wx.EVT_BUTTON, self.OnOpen, b)
 
+#Never used?
+#        InteractionFilePane = sc.SizedPanel(pane, -1)
+#        InteractionFilePane.SetSizerType("vertical")
+#        InteractionFilePane.SetSizerProps(expand=True)
 
-        InteractionFilePane = sc.SizedPanel(pane, -1)
-        InteractionFilePane.SetSizerType("vertical")
-        InteractionFilePane.SetSizerProps(expand=True)
+        
         self.interactionfile=''
         self.interactionfilectrl=wx.StaticText(FilePane, -1, "Interaction File:%s"%(self.interactionfile,))
         b = wx.Button(FilePane, -1, "Browse", (50,50))
         self.Bind(wx.EVT_BUTTON, self.OnOpenInt, b)
-
-
+        
+        self.spinfile=''
+        self.spinfilectrl=wx.StaticText(FilePane, -1, "Spin File:%s"%(self.spinfile,))
+        b = wx.Button(FilePane, -1, "Browse", (50,50))
+        self.Bind(wx.EVT_BUTTON, self.OnOpen, b)
+        
 
 
 
@@ -147,12 +172,10 @@ class FormDialog(sc.SizedDialog):
         btnsizer = wx.StdDialogButtonSizer()
         
         self.btnOk = wx.Button(self, wx.ID_OK)
-        self.btnOk.SetHelpText("The OK button completes the dialog")
         self.btnOk.SetDefault()
         btnsizer.AddButton(self.btnOk)
 
         btn = wx.Button(self, wx.ID_CANCEL)
-        btn.SetHelpText("The Cancel button cancels the dialog. (Cool, huh?)")
         btnsizer.AddButton(btn)
         btnsizer.Realize()
         
@@ -221,9 +244,13 @@ class FormDialog(sc.SizedDialog):
             #self.log.WriteText('You selected %d files:' % len(paths))
             self.spinfile=paths[0].encode('ascii')
             self.spinfilectrl.SetLabel("Spin File:%s"%(self.spinfile,))
+            #display in richtextcontrol
+            self.spinsRtc.LoadFile(paths[0])
+            
             #wx.StaticText(FilePane, -1, "CellFile:%s"%(self.groupdata['cellfile'],))
         # Destroy the dialog. Don't do this until you are done with it!
         # BAD things can happen otherwise!
+        
         dlg.Destroy()
 
 
@@ -257,6 +284,10 @@ class FormDialog(sc.SizedDialog):
             self.interactionfile=paths[0].encode('ascii')
             self.interactionfilectrl.SetLabel("Interaction File:%s"%(self.interactionfile,))
             #wx.StaticText(FilePane, -1, "CellFile:%s"%(self.groupdata['cellfile'],))
+            
+            #display in richtextcontrol
+            self.interactionsRtc.LoadFile(paths[0])
+            
         # Destroy the dialog. Don't do this until you are done with it!
         # BAD things can happen otherwise!
         dlg.Destroy()
