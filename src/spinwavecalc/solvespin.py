@@ -5,7 +5,7 @@ import scipy.optimize
 from utilities.anneal import anneal
 #from scikits.openopt import NLSP
 #from scikits.openopt import NLP
-from openopt.Kernel import NLSP
+from openopt.Kernel.NLSP import NLSP
 from openopt.Kernel import NLP
 
 

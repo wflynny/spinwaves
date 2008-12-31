@@ -4,6 +4,7 @@ import  wx.lib.intctrl
 import  wx.grid as  gridlib
 import numpy as N
 import sys,os
+import spinwave_calc_file
 
 class MyApp(wx.App):
     def __init__(self, redirect=False, filename=None, useBestVisual=False, clearSigInt=True):
@@ -139,13 +140,46 @@ class FormDialog(sc.SizedDialog):
         self.Bind(wx.EVT_SPINCTRL,self.EvtSpinCtrl)
         self.spinctrl=spinctrl
         # add dialog buttons
-        self.SetButtonSizer(self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL))
+        
+        #Getting rid of standard button function
+        #self.SetButtonSizer(self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL))
+        
+        btnsizer = wx.StdDialogButtonSizer()
+        
+        self.btnOk = wx.Button(self, wx.ID_OK)
+        self.btnOk.SetHelpText("The OK button completes the dialog")
+        self.btnOk.SetDefault()
+        btnsizer.AddButton(self.btnOk)
+
+        btn = wx.Button(self, wx.ID_CANCEL)
+        btn.SetHelpText("The Cancel button cancels the dialog. (Cool, huh?)")
+        btnsizer.AddButton(btn)
+        btnsizer.Realize()
+        
+        self.SetButtonSizer(btnsizer)
+        
+        #intercept OK button click event
+        self.Bind(wx.EVT_BUTTON, self.OnOk, self.btnOk)
+        
+        
         #self.TransferDataToWindow()
         # a little trick to make sure that you can't resize the dialog to
         # less screen space than the controls need
         self.Fit()
         self.SetMinSize(self.GetSize())
 
+        
+    def OnOk(self, event):
+        #Formerly, when this was modal, this would be done in calling function
+        self.Validate()
+        print "OK"
+        self.TransferDataFromWindow()
+        print 'data',self.data
+        print self.data['step']
+        print self.interactionfile
+        print self.spinfile
+        spinwave_calc_file.driver(self.spinfile,self.interactionfile,self.data,self.data['step'])
+        #button click event is not passed on, so the window does not close when OK is clicked
 
     def EvtSpinCtrl(self,evt):
         print self.__dict__

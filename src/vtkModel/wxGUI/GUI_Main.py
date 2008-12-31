@@ -1235,21 +1235,24 @@ class Frame(wx.Frame):
     def OnLaunchSpinWave(self,evt):
         dlg=spinwavepanel.FormDialog(parent=None,id=-1)
         self.SetExtraStyle(wx.WS_EX_VALIDATE_RECURSIVELY)
-        result=dlg.ShowModal()
-        print 'result', result
-        if result==wx.ID_OK:
-            #self.Validate()
-            dlg.Validate()
-            print "OK"
-            dlg.TransferDataFromWindow()
-            print 'data',dlg.data
-            print dlg.data['step']
-            print dlg.interactionfile
-            print dlg.spinfile
-            spinwave_calc_file.driver(dlg.spinfile,dlg.interactionfile,dlg.data,dlg.data['step'])
-        else:
-            print "Cancel"
-        dlg.Destroy()
+#No longer modal
+#        result=dlg.ShowModal()
+#        print 'result', result
+#        if result==wx.ID_OK:
+#            #self.Validate()
+#            dlg.Validate()
+#            print "OK"
+#            dlg.TransferDataFromWindow()
+#            print 'data',dlg.data
+#            print dlg.data['step']
+#            print dlg.interactionfile
+#            print dlg.spinfile
+#            spinwave_calc_file.driver(dlg.spinfile,dlg.interactionfile,dlg.data,dlg.data['step'])
+#        else:
+#            print "Cancel"
+#        dlg.Destroy()
+        
+        dlg.Show()
     
     def OnSaveImage(self, evt):
         """Saves an image of the current rendering.  Currently only .tiff
