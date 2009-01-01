@@ -73,6 +73,60 @@ def WalkTree(parent):
                 WalkTree(child)
 
     
+class RichTextFrame(wx.Frame):
+    def __init__(self, *args, **kw):
+        wx.Frame.__init__(self, *args, **kw)
+
+     #   self.MakeMenuBar()
+     #   self.MakeToolBar()
+     #   self.CreateStatusBar()
+     #   self.SetStatusText("Welcome to wx.richtext.RichTextCtrl!")
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        self.SetSizer(sizer)
+        self.spinsRtc = wx.richtext.RichTextCtrl(self, style=wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER, size = (620,120));
+        self.interactionsRtc = wx.richtext.RichTextCtrl(self, style=wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER, size = (620,120));
+     #   wx.CallAfter(self.rtc.SetFocus)
+        interactionsTitle = wx.StaticText(self, -1, " Interaction File ")
+        spinsTitle = wx.StaticText(self, -1, " Spins File ")
+        
+        
+        self.interactionSave = wx.Button(self, -1, "Save", size = (50,20))
+        interactionSizer = wx.BoxSizer(wx.HORIZONTAL)
+        interactionSizer.Add(interactionsTitle)
+        interactionSizer.Add(self.interactionSave)
+        
+        self.spinSave = wx.Button(self, -1, "Save", size = (50,20))
+        spinSizer = wx.BoxSizer(wx.HORIZONTAL)
+        spinSizer.Add(spinsTitle)
+        spinSizer.Add(self.spinSave)
+        
+        
+        sizer.Add(interactionSizer)
+        sizer.Add(self.interactionsRtc)
+        sizer.Add(spinSizer)
+        sizer.Add(self.spinsRtc)
+        
+        self.Bind(wx.EVT_BUTTON, self.OnSaveInteractions, self.interactionSave)
+        self.Bind(wx.EVT_BUTTON, self.OnSaveSpins, self.spinSave)
+        
+        self.Fit()
+        self.SetMinSize(self.GetSize())
+        
+    
+    def OnSaveInteractions(self, evt):
+        self.interactionsRtc.SaveFile()
+    
+    def OnSaveSpins(self, evt):
+        self.spinsRtc.SaveFile()
+    
+    def loadSpins(self, file):
+        self.spinsRtc.LoadFile(file)
+    
+    def loadInteractions(self, file):
+        self.interactionsRtc.LoadFile(file)
+
+
+
 class FormDialog(sc.SizedDialog):
     def __init__(self, parent, id):
         valstyle=wx.WS_EX_VALIDATE_RECURSIVELY
@@ -82,24 +136,38 @@ class FormDialog(sc.SizedDialog):
         pane = self.GetContentsPane()
         pane.SetSizerType("vertical")
         
+
+        
         #Text editor
-        interactionsEditorPanel = wx.Panel(pane, -1)
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        interactionsEditorPanel.SetSizer(sizer)
-        title = wx.StaticText(interactionsEditorPanel, -1, "Interaction File")
-        self.interactionsRtc = wx.richtext.RichTextCtrl(interactionsEditorPanel, style=wx.VSCROLL | wx.TE_PROCESS_ENTER, size = (620,120));
+#        editorFrame = wx.Frame(None, -1)
+#        editorPanel = wx.Panel(editorFrame, -1)
+#        interactionsEditorPanel = wx.Panel(pane, -1)
+#        sizer = wx.BoxSizer(wx.VERTICAL)
+#        interactionsEditorPanel.SetSizer(sizer)
+#        editorPanel.SetSizer(sizer)
+#        title = wx.StaticText(interactionsEditorPanel, -1, "Interaction File")
+#        title = wx.StaticText(editorPanel, -1, "Interaction File")
+#        self.interactionsRtc = wx.richtext.RichTextCtrl(editorPanel, style=wx.VSCROLL | wx.TE_PROCESS_ENTER, size = (620,120));
         
-        sizer.Add(title)
-        sizer.Add(self.interactionsRtc, wx.EXPAND)
+#        sizer.Add(title)
+#        sizer.Add(self.interactionsRtc, wx.EXPAND)
         
-        spinsEditorPanel = wx.Panel(pane, -1)
-        spinSizer = wx.BoxSizer(wx.VERTICAL)
-        spinsEditorPanel.SetSizer(spinSizer)
-        spinsTitle = wx.StaticText(spinsEditorPanel, -1, "Spins File")
-        self.spinsRtc = wx.richtext.RichTextCtrl(spinsEditorPanel, style=wx.VSCROLL, size = (620,120));
+#        spinsEditorPanel = wx.Panel(pane, -1)
+#        spinSizer = wx.BoxSizer(wx.VERTICAL)
+#        spinsEditorPanel.SetSizer(spinSizer)
+#        spinsTitle = wx.StaticText(spinsEditorPanel, -1, "Spins File")
+#        self.spinsRtc = wx.richtext.RichTextCtrl(spinsEditorPanel, style=wx.VSCROLL, size = (620,120));
+
+#        spinsTitle = wx.StaticText(editorPanel, -1, "Spins File")
+#        self.spinsRtc = wx.richtext.RichTextCtrl(editorPanel, style=wx.VSCROLL, size = (620,120));
         
-        spinSizer.Add(spinsTitle)
-        spinSizer.Add(self.spinsRtc, wx.EXPAND)
+        
+#        spinSizer.Add(spinsTitle)
+#        spinSizer.Add(self.spinsRtc, wx.EXPAND)
+        
+#        sizer.Add(spinsTitle)
+#        sizer.Add(self.spinsRtc, wx.EXPAND)
+#        editorFrame.Show(True)
         
         
         
@@ -190,6 +258,13 @@ class FormDialog(sc.SizedDialog):
         # less screen space than the controls need
         self.Fit()
         self.SetMinSize(self.GetSize())
+           
+                
+        #Text editor
+        self.editorWin = RichTextFrame(self, -1, "wx.richtext.RichTextCtrl",
+                            size=(620, 250),
+                            style = wx.DEFAULT_FRAME_STYLE)
+        self.editorWin.Show(True)
 
         
     def OnOk(self, event):
@@ -245,7 +320,8 @@ class FormDialog(sc.SizedDialog):
             self.spinfile=paths[0].encode('ascii')
             self.spinfilectrl.SetLabel("Spin File:%s"%(self.spinfile,))
             #display in richtextcontrol
-            self.spinsRtc.LoadFile(paths[0])
+            #self.spinsRtc.LoadFile(paths[0])
+            self.editorWin.loadSpins(paths[0])
             
             #wx.StaticText(FilePane, -1, "CellFile:%s"%(self.groupdata['cellfile'],))
         # Destroy the dialog. Don't do this until you are done with it!
@@ -286,7 +362,8 @@ class FormDialog(sc.SizedDialog):
             #wx.StaticText(FilePane, -1, "CellFile:%s"%(self.groupdata['cellfile'],))
             
             #display in richtextcontrol
-            self.interactionsRtc.LoadFile(paths[0])
+            #self.interactionsRtc.LoadFile(paths[0])
+            self.editorWin.loadInteractions(paths[0])
             
         # Destroy the dialog. Don't do this until you are done with it!
         # BAD things can happen otherwise!
