@@ -1,13 +1,13 @@
 import numpy as N
 import scipy
 import math
+from math import sqrt
 import scipy.optimize
 from utilities.anneal import anneal
 #from scikits.openopt import NLSP
 #from scikits.openopt import NLP
 from openopt.Kernel.NLSP import NLSP
 from openopt.Kernel import NLP
-
 
 
 
@@ -141,9 +141,86 @@ def chisq_an(p,sx,sy,sz):
     return chisq
 
 
+#def getmatrix(sx,sy,sz,mytol=1e-45,maxiter=2):
+#    print "(sx, sy, sz) = ", (sx, sy, sz)
+#    
+#    p0=N.array([0,1,0,1],'d')
+#    p0=N.array([0,0,0,1],'d')
+#    #p0=N.array([0,1,0,1],'d')
+#    lowerm=[-2,-2,-2,-2]
+#    upperm=[2,2,2,2]
+#    lowerm=[-1,-1,-1,-1]
+#    upperm=[1,1,1,1]
+#    flag=True
+#    smat=N.empty((3,1),'float64')
+#    smat=N.matrix(smat)
+#    smat[0]=0
+#    smat[1]=0
+#    smat[2]=1
+#    iter=0
+#    pbest=p0
+#    currbest=chisq_an(p0,sx,sy,sz)
+#    while flag:
+#        print 'iter',iter
+#        p0,jmin=anneal(chisq_an,p0,args=(sx,sy,sz),\
+#                      schedule='simple',lower=lowerm,upper=upperm,\
+#                      maxeval=None, maxaccept=None,dwell=10,maxiter=600,T0=10000)
+#        
+#    
+#        
+#        print 'p0',p0
+#        p = NLSP(chisq, p0,xtol=1e-37)
+#        #p = NLP(chisq_an, p0,xtol=1e-17)
+#        p.args.f=(sx,sy,sz)
+#        p.iprint = 10
+#        p.ftol=1e-30
+#        p.maxFunEvals = 1e10
+#        #p.checkdf()
+#        r = p.solve('nssolve')
+#        #r = p.solve('scipy_fsolve')
+#        #r = p.solve('nlp:ralg')
+#        #r = p.solve('ralg')
+#        #r = p.solve('scipy_cobyla')
+#        print 'solution:', r.xf
+#        a,b,c,s=r.xf 
+#        if 1:
+#            p0=[a,b,c,s]
+#            p=scipy.optimize.minpack.fsolve(chisq_f,p0,args=(sx,sy,sz),xtol=1e-37)
+#            a,b,c,s=p
+#            print '2nd soln',p
+# 
+#        amat=genmat(a,b,c,s)
+#        if 1:
+#            array_err=1e-2
+#            for i in range(3):
+#                for j in range(3):
+#                    if N.absolute(amat[i,j])<array_err:
+#                        amat[i,j]=0 
+#        sout=amat*smat
+#        curr_score=chisq_an(p0,sx,sy,sz)
+#        if curr_score<currbest:
+#            currbest=curr_score
+#            pbest=p
+#        if (N.abs(sout[0]-sx)<mytol and N.abs(sout[1]-sy)<mytol and N.abs(sout[2]-sz)<mytol) or iter>maxiter:
+#            flag=False
+#        iter=iter+1
+#
+#
+#    a,b,c,s=pbest    
+#    amat=genmat(a,b,c,s)
+#    
+#    if 1:
+#            array_err=1e-5
+#            for i in range(3):
+#                for j in range(3):
+#                    if N.absolute(amat[i,j])<array_err:
+#                        amat[i,j]=0 
+#    #print 'amat',amat
+#    print "AMAT\n\n\nAMAT: \n", amat, "\nSMAT\n" , smat, "\nAMAT * SMAT\n\n", amat*smat, "\nsx, sy, sz\n", (sx,sy,sz)
+#    return amat  
 
 
-def getmatrix(sx,sy,sz):
+def getmatrix2(sx,sy,sz):
     """sx,sy,sz are components of a unit spin vector
     returns rotation matrix mat, such that mat*(0,0,1) = (sx,sy,sz), (both column matrices)"""
 
@@ -160,7 +237,7 @@ def getmatrix(sx,sy,sz):
     print "\n\ndot = \n", N.dot(N.array([0,0,1]), N.array([sx,sy,sz]))
     
     #sin(angle between them) becuase they are both unit vectors:
-    s = math.sqrt(x**2 + y**2)
+    s = sqrt(x**2 + y**2)
     
     #a11 = i**2 + (1-i**2)*c
     #a12 = i*j*(1-c)
@@ -187,47 +264,109 @@ def getmatrix(sx,sy,sz):
                     [a31, a32, a33]])
     
     return mat
+    
+    
 
 
 
 
 
-
-if __name__=="__main__":
-    p0=N.array([0,1,0,1],'d')  #rotation about x-axis
+def getmatrix(sx,sy,sz,mytol=1e-45,maxiter=2):
+    print "(sx, sy, sz) = ", (sx, sy, sz)
+    
+    p0=N.array([0,1,0,1],'d')
     p0=N.array([0,0,0,1],'d')
-    lowerm=[-1,-1,-1,-1]
+    #p0=N.array([0,1,0,1],'d')
+    lowerm=[-2,-2,-2,-2]
     upperm=[2,2,2,2]
-    sx,sy,sz=[0,0,-1]
-#use a simple nonlinear solver for finding A solution to our system of equations 
-#    p=scipy.optimize.minpack.fsolve(chisq_quaternion,p0,args=(a,b,c,a2,b2,c2,x0,y0,z0,x0p,y0p,z0p))
-    amat=getmatrix(sx,sy,sz)
-    if 0:
-        #p,jmin=anneal(chisq_an,p0,args=(sx,sy,sz),\
-        #              schedule='simple',lower=lowerm,upper=upperm,\
-        #              maxeval=None, maxaccept=None,dwell=500,maxiter=2000)
+    lowerm=[-1,-1,-1,-1]
+    upperm=[1,1,1,1]
+    flag=True
+    smat=N.empty((3,1),'float64')
+    smat=N.matrix(smat)
+    smat[0]=0
+    smat[1]=0
+    smat[2]=1
+    iter=0
+    pbest=p0
+    currbest=chisq_an(p0,sx,sy,sz)
+    while flag:
+        print 'iter',iter
+        p0,jmin=anneal(chisq_an,p0,args=(sx,sy,sz),\
+                      schedule='simple',lower=lowerm,upper=upperm,\
+                      maxeval=None, maxaccept=None,dwell=10,maxiter=600,T0=10000)
         
-        p=scipy.optimize.minpack.fsolve(chisq,p0,args=(sx,sy,sz))
-        print p
-        a,b,c,s=p
+    
         
-        a11=1-2*b**2-2*c**2
-        a12=2*a*b-2*s*c
-        a13=2*a*c+2*s*b
-        a21=2*a*b+2*s*c
-        a22=1-2*a**2-2*c**2
-        a23=2*b*c-2*s*a
-        a31=2*a*c-2*s*b
-        a32=2*b*c+2*s*a
-        a33=1-2*a**2-2*b**2
-        amat=N.matrix([[a11,a12,a13],[a21,a22,a23],[a31,a32,a33]],'float64')
-    if 1:
-        print amat
-        smat=N.empty((3,1),'float32')
-        smat=N.matrix(smat)
-        smat[0]=0
-        smat[1]=0
-        smat[2]=1
+        print 'p0',p0
+        p = NLSP(chisq, p0,xtol=1e-37)
+        #p = NLP(chisq_an, p0,xtol=1e-17)
+        p.args.f=(sx,sy,sz)
+        p.iprint = 10
+        p.ftol=1e-30
+        p.maxFunEvals = 1e10
+        #p.checkdf()
+        r = p.solve('nssolve')
+        #r = p.solve('scipy_fsolve')
+        #r = p.solve('nlp:ralg')
+        #r = p.solve('ralg')
+        #r = p.solve('scipy_cobyla')
+        print 'solution:', r.xf
+        a,b,c,s=r.xf 
+        if 1:
+            p0=[a,b,c,s]
+            p=scipy.optimize.minpack.fsolve(chisq_f,p0,args=(sx,sy,sz),xtol=1e-37)
+            a,b,c,s=p
+            print '2nd soln',p
+ 
+        amat=genmat(a,b,c,s)
+        if 1:
+            array_err=1e-2
+            for i in range(3):
+                for j in range(3):
+                    if N.absolute(amat[i,j])<array_err:
+                        amat[i,j]=0 
         sout=amat*smat
-        print sout
-        
+        curr_score=chisq_an(p0,sx,sy,sz)
+        if curr_score<currbest:
+            currbest=curr_score
+            pbest=p
+        if (N.abs(sout[0]-sx)<mytol and N.abs(sout[1]-sy)<mytol and N.abs(sout[2]-sz)<mytol) or iter>maxiter:
+            flag=False
+        iter=iter+1
+
+
+    a,b,c,s=pbest    
+    amat=genmat(a,b,c,s)
+    
+    if 1:
+            array_err=1e-5
+            for i in range(3):
+                for j in range(3):
+                    if N.absolute(amat[i,j])<array_err:
+                        amat[i,j]=0 
+    #print 'amat',amat
+    print "AMAT\n\n\nAMAT: \n", amat, "\nSMAT\n" , smat, "\nAMAT * SMAT\n\n", amat*smat, "\nsx, sy, sz\n", (sx,sy,sz)
+    return amat
+
+
+
+
+
+mat1 = getmatrix(-1,0,0)
+mat2 = getmatrix2(-1,0,0)
+
+print "\n\nmat1\n", mat1, "\n\nmat2:\n", mat2
+col = N.matrix([[0],
+                [0],
+                [1]])
+print mat1*col, "\n\n"
+print mat2 * col
+print "\n\ndet:\n", N.linalg.det(mat1), "\n\n", N.linalg.det(mat2)
+print "\n\n A*At= \n", mat1 * mat1.transpose()
+print "\n\n A*At= \n", mat2 * mat2.transpose()
+
+print "\nAt, A^-1\n\n", mat1.T, "\n", mat1.I
+print "\nAt, A^-1\n\n", mat2.T, "\n", mat2.I
+
+

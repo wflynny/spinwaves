@@ -261,7 +261,7 @@ class FormDialog(sc.SizedDialog):
            
                 
         #Text editor
-        self.editorWin = RichTextFrame(self, -1, "wx.richtext.RichTextCtrl",
+        self.editorWin = RichTextFrame(self, -1, "Editor",
                             size=(620, 250),
                             style = wx.DEFAULT_FRAME_STYLE)
         self.editorWin.Show(True)
@@ -301,6 +301,7 @@ class FormDialog(sc.SizedDialog):
 
         #defaultDir=os.getcwd()
         #defaultDir=r'C:\polcorrecter\data'
+        wx.Configbase.SetStyle(wx.CONFIG_USE_LOCAL_FILE)
         defaultDir=wx.ConfigBase.Get().GetPath()
         wildcard="files (*.txt)|*.txt|All files (*.*)|*.*"
         dlg = wx.FileDialog(

@@ -4,10 +4,13 @@ import numpy as N
 #I=1.0j
 #pi=sympy.pi
 from sympy import exp,I,pi,sin,cos
+import matplotlib
+matplotlib.use('WXAgg')
 import pylab
 import readfiles
 from sympy import pngview,latex
 import scipy.linalg
+from matplotlib._pylab_helpers import Gcf
 
 #translations=[[0,0,0],
 #              [0,0,1],[0,0,-1]
@@ -744,7 +747,8 @@ def driver(spinfile,interactionfile,direction,steps):
     #calc_eigs(Hsave,direction,steps)
     
     pylab.show()
-    
+    #for figwin in Gcf.get_all_fig_managers():
+    #    figwin.frame.Show()
     print jmats
     print direction
     print steps

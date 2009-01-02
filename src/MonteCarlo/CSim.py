@@ -8,8 +8,8 @@ import wx
 #import pylab
 import os
 #dllpath=r'C:\mytripleaxisproject\trunk\eclipse\src\spinwaves\C code'
-#dllpath=r'C:\tom winter\code\C code'
-dllpath=r'C:\Users\Tom\Documents\spinwaves\C code\monteCarlo.dll'
+dllpath=r'C:\tom winter\code\C code'
+#dllpath=r'C:\Users\Tom\Documents\spinwaves\C code\monteCarlo.dll'
 
 
 def createVideo(spinsToImageFunction, outFilePath, inFilePath):
