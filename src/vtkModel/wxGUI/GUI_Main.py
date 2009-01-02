@@ -631,7 +631,6 @@ class bondPanel(wx.Panel):
         pos1 = cell1.getPosition()
         pos2 = cell2.getPosition()
 
-        self.clearEmptyRows()
         row = self.bondList.GetNumberRows() #Append row and add bond to last row
         self.bondList.SetCellValue(row, 0, str(index1+1))
         self.bondList.SetCellValue(row, 1, str(pos1[0]))
@@ -644,6 +643,9 @@ class bondPanel(wx.Panel):
         self.bondList.SetCellValue(row, 9, 'X') #Turn the bond on
         
         self.bondSpinner.SetValue(self.bondList.GetNumberRows())
+        
+        
+        self.clearEmptyRows()
 #        self.OnGenerate(None)
         self.bondList.AutoSize()
         
@@ -653,8 +655,11 @@ class bondPanel(wx.Panel):
             row = numRows - 1 - r #start from end
             print "row = ", row
             if self.RowIsEmpty(row):
+                print "row is empty"
                 for i in range(row, self.bondList.GetNumberRows()-1):
                     #Copy info up one row for all rows after the empty one
+                    #if i < self.bondList.GetNumberRows()-1:
+                    print "i = " , i
                     self.bondList.SetCellValue(i,0, self.bondList.GetCellValue(i+1,0))
                     self.bondList.SetCellValue(i,1, self.bondList.GetCellValue(i+1,1))
                     self.bondList.SetCellValue(i,2, self.bondList.GetCellValue(i+1,2))

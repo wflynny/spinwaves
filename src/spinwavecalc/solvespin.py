@@ -143,6 +143,8 @@ def chisq_an(p,sx,sy,sz):
 
 
 def getmatrix(sx,sy,sz,mytol=1e-45,maxiter=2):
+    print "(sx, sy, sz) = ", (sx, sy, sz)
+    
     p0=N.array([0,1,0,1],'d')
     p0=N.array([0,0,0,1],'d')
     #p0=N.array([0,1,0,1],'d')
@@ -206,6 +208,7 @@ def getmatrix(sx,sy,sz,mytol=1e-45,maxiter=2):
 
     a,b,c,s=pbest    
     amat=genmat(a,b,c,s)
+    
     if 1:
             array_err=1e-5
             for i in range(3):
@@ -213,6 +216,7 @@ def getmatrix(sx,sy,sz,mytol=1e-45,maxiter=2):
                     if N.absolute(amat[i,j])<array_err:
                         amat[i,j]=0 
     #print 'amat',amat
+    print "AMAT\n\n\nAMAT: \n", amat, "\nSMAT\n" , smat, "\nAMAT * SMAT\n\n", amat*smat, "\nsx, sy, sz\n", (sx,sy,sz)
     return amat  
 
 
