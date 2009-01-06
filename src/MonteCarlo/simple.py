@@ -39,11 +39,13 @@ def readFile(filename):
     
     #This will use a huge amount of memory
     atoms = []
-    lines = file.readlines()
+    lines = file.readlines()#memory problem with huge files?
     #Read in J matrices
-    index = 2
+    index = 2  #relies on 2 commented lines (probably should change this)
     line = lines[index]
     jMatrices = []
+    #This would stop reading if it hits a comment, rather than continuing past it
+    #Should maybe include more after # as identifier, so comments can be added
     while not line.startswith('#'):
         values = line.split()
     #    print values
@@ -52,7 +54,7 @@ def readFile(filename):
                             [float(values[7]), float(values[8]), float(values[9])]])
         jMatrices.append(jMat)
         if not (jMatrices[int(values[0])] == jMat).all():
-            print "The Indeces are messed up!!!" #For now
+            print "The Indices are messed up!!!" #For now
         index +=1
         line = lines[index]
     
@@ -60,12 +62,11 @@ def readFile(filename):
         line = lines[i]
         if not line.startswith('#'):
             values = line.split()
-#            print values
-#            time.sleep(2)
-            newAtom = simpleAtom((float(values[1]), float(values[2]), float(values[3])), (float(values[4]), float(values[5]), float(values[6])) )
+            #skip the atom index and Whether it is n the first interaction cell or not
+            newAtom = simpleAtom((float(values[2]), float(values[3]), float(values[4])), (float(values[5]), float(values[6]), float(values[7])) )
 #            print "atom pos:", newAtom.pos
 #            time.sleep(5)
-            i = 7
+            i = 8
             while i < len(values):
                 otherAtomIndex = int(values[i])
    #format changed to no longer include position of other atom

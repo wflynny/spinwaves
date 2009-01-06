@@ -106,29 +106,31 @@ def read_interactions(myfilestr,spins):
                         if not(tokenized):
                             break
                         atom_num=tokenized[0]
-                        x,y,z=float(tokenized[1]),float(tokenized[2]),float(tokenized[3])
-                        Dx,Dy,Dz=float(tokenized[4]),float(tokenized[5]),float(tokenized[6])
-                        #spin0=N.matrix([[1,0,0],[0,1,0],[0,0,1]],'float64')
-                        pos0=[x,y,z]
-                        if N.abs(x)<1.0 and N.abs(y)<1.0 and N.abs(z)<1.0:
-                            numcell=numcell+1
-                        atom0=atom(pos=pos0,Dx=Dx,Dy=Dy,Dz=Dz)
-                        neighbors=[]
-                        interactions=[]
-                        #print 'range',range(7,len(tokenized),1)
-                        for i in range(7,len(tokenized),2):
-                            interacting_spin=int(tokenized[i])
-                            #print interacting_spin
-                            interaction_matrix=int(tokenized[i+1])
-                            neighbors.append(interacting_spin)
-                            interactions.append(interaction_matrix)
-                        #print 'interactions', interactions
-                        #print 'neighbors', neighbors
-                        atom0.neighbors=neighbors
-                        atom0.interactions=interactions
-                        atom0.spin=spins[currnum]
-                        currnum=currnum+1
-                        atomlist.append(atom0)
+                        if tokenized[1] == "X":  #If it is in the first interaction cell
+                            x,y,z=float(tokenized[2]),float(tokenized[3]),float(tokenized[4])
+                            Dx,Dy,Dz=float(tokenized[5]),float(tokenized[6]),float(tokenized[7])
+                            #spin0=N.matrix([[1,0,0],[0,1,0],[0,0,1]],'float64')
+                            pos0=[x,y,z]
+                            #We already know it's in the first cutoff cell
+                            #if N.abs(x)<1.0 and N.abs(y)<1.0 and N.abs(z)<1.0:
+                             #   numcell=numcell+1
+                            atom0=atom(pos=pos0,Dx=Dx,Dy=Dy,Dz=Dz)
+                            neighbors=[]
+                            interactions=[]
+                            #print 'range',range(7,len(tokenized),1)
+                            for i in range(8,len(tokenized),2):
+                                interacting_spin=int(tokenized[i])
+                                #print interacting_spin
+                                interaction_matrix=int(tokenized[i+1])
+                                neighbors.append(interacting_spin)
+                                interactions.append(interaction_matrix)
+                            #print 'interactions', interactions
+                            #print 'neighbors', neighbors
+                            atom0.neighbors=neighbors
+                            atom0.interactions=interactions
+                            atom0.spin=spins[currnum]
+                            currnum=currnum+1
+                            atomlist.append(atom0)
     myfile.close()
     #for catom in atomlist:
     #    print 'pos', catom.pos

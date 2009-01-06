@@ -1055,13 +1055,37 @@ class Session():
         
         timer.printTime()
         print "number of atoms: ", len(allAtoms), "\n writing to disk..."
+        
+        
+        #Can add flag in here if the coordinates are <= Na, Nb, Nc
+        #(if it's in the cutoff cell) for the spinwave calculation
+        def inInteractionCellStr(atoms, atom):
+            """Used for output to create an "X" if the atom is in the first interaction
+            Cell or "O" if not.  This is the actual smallest interaction cell, not the
+            cutoff cell created by the user.  An atom is in the first cutoff cell if it
+            is either in crystollographic unit cell (0,0,0) or if it bonds with an atom
+            that is."""
+            #First check if the atom is in the first crystallographic cell
+            if atom.pos[0] < 1.0 and atom.pos[1] < 1.0 and atom.pos[2] < 1.0:
+                return "X"
+            #If not, check if it bonds to an atom that is
+            for i in range(len(atom.interactions)):
+                if atoms[atom.interactions[i][0]].pos[0]<1.0 and atoms[atom.interactions[i][0]].pos[1]<1.0 and atoms[atom.interactions[i][0]].pos[2]<1.0:
+                    return "X"
             
+            for interaction in atom.interCellInteractions:
+                interactingAtom = atoms[interaction[0]]
+                if interactingAtom.pos[0]<1.0 and interactingAtom.pos[1]<1.0 and interactingAtom.pos[2]<1.0:
+                    return "X"
+            
+            return "O"
+        
         
         #print out the simple atom list
-        file.write("#AtomNumber AtomPosition(X Y Z) Anisotropy(X Y Z) OtherIndex Jmatrix OtherIndex Jmatrix...\n")
+        file.write("#AtomNumber InFirstInteractionCell AtomPosition(X Y Z) Anisotropy(X Y Z) OtherIndex Jmatrix OtherIndex Jmatrix...\n")
         for atomIndex in range(len(allAtoms)):
             atom = allAtoms[atomIndex]
-            atomStr = str(atomIndex) + " " + str(atom.pos[0]) + " " + str(atom.pos[1]) + " " + str(atom.pos[2])
+            atomStr = str(atomIndex) + " " + inInteractionCellStr(allAtoms, atom) + " " + str(atom.pos[0]) + " " + str(atom.pos[1]) + " " + str(atom.pos[2])
             atomStr += " " + str(atom.anisotropy[0]) + " " + str(atom.anisotropy[1]) + " " + str(atom.anisotropy[2])
             for interaction in atom.interactions:
                 otherAtom = interaction[0]
