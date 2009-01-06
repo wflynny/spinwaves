@@ -653,9 +653,9 @@ class bondPanel(wx.Panel):
         numRows = self.bondList.GetNumberRows()
         for r in range(0,numRows):
             row = numRows - 1 - r #start from end
-            print "row = ", row
+            #print "row = ", row
             if self.RowIsEmpty(row):
-                print "row is empty"
+                #print "row is empty"
                 for i in range(row, self.bondList.GetNumberRows()-1):
                     #Copy info up one row for all rows after the empty one
                     #if i < self.bondList.GetNumberRows()-1:

@@ -644,12 +644,21 @@ class Session():
 #                self.cellPosY = int(pos[1])/Nb
 #                self.cellPosZ = int(pos[2])/Nc
                 self.interactions = []
+                self.interCellInteractions = []#these must be translated with different logic and therefore must be kept separate
                 #self.interactions[position of other atom] = j number
                 
             #might want to change this to position later when all atoms wont be created in same list
             def addInteraction(self, atom2, jMat):
 #                self.interactions[atom2] = jMat
-                self.interactions.append([atom2, jMat])
+                self.interactions.append((atom2, jMat))
+                
+            def addInterCellInteraction(self, atom2, jMat, direction):
+                """Direction is in form (bool, bool, bool) for (x,y,z)"""
+                #Check for repeats (necessary for method used to translate these bonds)
+                for interaction in self.interCellInteractions:
+                    if interaction[0] == atom2 and interaction[1] == jMat:
+                        return #contains this interaction already
+                self.interCellInteractions.append((atom2, jMat, direction))
             
             def __eq__(self, other):
                 if self.pos[0] == other.pos[0]:
@@ -694,6 +703,23 @@ class Session():
                 if (item == list[i]).all():
                     return i
             return -1
+        
+        def translateToFirstCutoffCell(pos):
+            """Translates a position back to the first Cutoff cell."""
+            x = pos[0]
+            y = pos[1]
+            z = pos[2]
+            
+            while x >= Na:
+                x = x - Na
+                
+            while y >= Nb:
+                y = y - Nb
+                
+            while z >= Nc:
+                z = z - Nc
+                
+            return (x,y,z)
 
 
         
@@ -729,6 +755,8 @@ class Session():
         
         cellAtoms = []
         cellBonds = SimpleBondList()
+        interCellBonds = SimpleBondList()#bonds between cells cannot be translated
+        #with the same index arithmetic because of edges
         for bond in simpleCellBonds:
             pos1 = bond.pos1
             anisotropy1 = bond.anisotropy1
@@ -750,22 +778,60 @@ class Session():
                                     z2 = pos2[2] + c + (Nc * k)  
                                     newPos1 = (x1,y1,z1)
                                     newPos2 = (x2,y2,z2)
-                                    if PosInFirstCutoff(newPos1):
-                                        newAtom = SimpleAtom(newPos1, anisotropy1)
-                                        bond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMatInt )
-                                        if not atomListContains(cellAtoms, newAtom):
-                                            cellAtoms.append(newAtom)
-                                        cellBonds.addBond(bond)
-                                    if PosInFirstCutoff(newPos2):
-                                        newAtom = SimpleAtom(newPos2, anisotropy2)
-                                        bond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMatInt )
-                                        if not atomListContains(cellAtoms, newAtom):
-                                            cellAtoms.append(newAtom)
-                                        cellBonds.addBond(bond)
-                
+                                    
+                                    #It is possible for an atom to be bonded to an atom which was
+                                    #translated from a non-bonded atom in the original unit cell.
+                                    #This non-bonded atom which translates into bonded atom(s) must
+                                    #be included in the cellAtoms list, or it will not be translated
+                                    #through the allAtoms list to create the other atoms which are
+                                    #bonded, and hence, must be included.
+                                    
+                                    if PosInFirstCutoff(newPos1) or PosInFirstCutoff(newPos2):  
+                                        if PosInFirstCutoff(newPos1) and PosInFirstCutoff(newPos2):
+                                            #Both are in first cutoff
+                                            #Add the atoms to the list of atoms within the first cell
+                                            newAtom1 = SimpleAtom(newPos1, anisotropy1)
+                                            if not atomListContains(cellAtoms, newAtom1):
+                                                cellAtoms.append(newAtom1)
+                                            newAtom2 = SimpleAtom(newPos2, anisotropy2)
+                                            if not atomListContains(cellAtoms, newAtom2):
+                                                cellAtoms.append(newAtom2)
+                                            #Add the bond to bonds within the cell
+                                            bond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMatInt )
+                                            cellBonds.addBond(bond)
+                                        else:#It is an inter-cellular bond
+                                            bond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMatInt )
+                                            interCellBonds.addBond(bond)
+                                            #If the atom is in the first cutoff cell then it must be added and
+                                            #translating the position will do nothing.  If it is not in the first cutoff
+                                            #cell, then the corresponding atom in the first cutoff cell must be added
+                                            #to create this one through translation
+                                            transPos1 = translateToFirstCutoffCell(newPos1)
+                                            transPos2 = translateToFirstCutoffCell(newPos2)
+                                            
+                                            newAtom1 = SimpleAtom(transPos1, anisotropy1)
+                                            newAtom2 = SimpleAtom(transPos2, anisotropy2)
+                                            if not atomListContains(cellAtoms, newAtom1):
+                                                cellAtoms.append(newAtom1)
+                                            if not atomListContains(cellAtoms, newAtom2):
+                                                cellAtoms.append(newAtom2)
+                                    
+                                 
+                                    
+
         
 
-         
+        #This much works...
+        #for i in cellAtoms:
+        #    print i.pos
+       # 
+       # for i in cellBonds.list:
+       #     print "Cell Bonds ", i.pos1, " ", i.pos2
+       #     
+       # for i in interCellBonds.list:
+       #     print "interCell Bonds ", i.pos1, " ", i.pos2
+            
+            
         #Write the matrix list to the file
         file.write("#J Matrices\n#Number J11 J12 J13 J21 J22 J23 J31 J32 J33\n")
         for i in range(len(matrices)):
@@ -793,6 +859,9 @@ class Session():
                         allAtoms.append(newAtom)
 
  
+        #for atom in allAtoms:
+        #    print atom.pos
+        
         #Add bonds cellBonds to allAtoms (currently not most efficient way, but its a short list)
         for bond in cellBonds.list:
             #Make sure each position is not yet represented the easy but inefficient way
@@ -803,34 +872,140 @@ class Session():
             pos2Index = -1
             for i in range(len(allAtoms)):
                 currentPos = allAtoms[i].pos
-                if currentPos == pos1:
+                #if currentPos == pos1:
+                if currentPos[0] == pos1[0] and currentPos[1] == pos1[1] and currentPos[2] == pos1[2]:
                     pos1Index = i
                     break
                 
             for i in range(len(allAtoms)):
                 currentPos = allAtoms[i].pos  
-                if currentPos == pos2:
+                #if currentPos == pos2:
+                if currentPos[0] == pos2[0] and currentPos[1] == pos2[1] and currentPos[2] == pos2[2]:
                     pos2Index = i
                     break
             
             if pos1Index < 0 or pos2Index < 0:
-                print "Atom list does not contain all atoms!" 
+                print "Atom list does not contain all atoms!"
+                if pos1Index < 0:
+                    print pos1, " missing"
+                if pos2Index < 0:
+                    print pos2, " missing"
+                raise Exception("Export Failed")
             else:
                 allAtoms[pos1Index].addInteraction(pos2Index, bond.jMatrix)
                 allAtoms[pos2Index].addInteraction(pos1Index, bond.jMatrix)
 
 
+        def bondDirection(pos1, pos2):
+            xCell1 = int(pos1[0]/Na)  #Find the cutoff cell
+            xCell2 = int(pos2[0]/Na)
+            yCell1 = int(pos1[1]/Nb)
+            yCell2 = int(pos2[1]/Nb)
+            zCell1 = int(pos1[2]/Nc)
+            zCell2 = int(pos2[2]/Nc)
+            xShiftBool = (xCell1 != xCell2)
+            yShiftBool = (yCell1 != yCell2)
+            zShiftBool = (zCell1 != zCell2)
+            return (xShiftBool, yShiftBool, zShiftBool)
+        
+        
+        #Now repeat process for inter-cellular bonds
+        for bond in interCellBonds.list:
+            pos1 = bond.pos1
+            pos2 = bond.pos2
+            pos1Index = -1
+            pos2Index = -1
+            for i in range(len(allAtoms)):
+                currentPos = allAtoms[i].pos
+                #if currentPos == pos1:
+                if currentPos[0] == pos1[0] and currentPos[1] == pos1[1] and currentPos[2] == pos1[2]:
+                    pos1Index = i
+                    break
+                
+            for i in range(len(allAtoms)):
+                currentPos = allAtoms[i].pos  
+                #if currentPos == pos2:
+                if currentPos[0] == pos2[0] and currentPos[1] == pos2[1] and currentPos[2] == pos2[2]:
+                    pos2Index = i
+                    break
+            
+            if pos1Index < 0 or pos2Index < 0:
+                print "Atom list does not contain all atoms!"
+                if pos1Index < 0:
+                    print pos1, " missing"
+                if pos2Index < 0:
+                    print pos2, " missing"
+                raise Exception("Export Failed")
+            else:
+                direction = bondDirection(pos1, pos2)
+                allAtoms[pos1Index].addInterCellInteraction(pos2Index, bond.jMatrix, direction)
+                allAtoms[pos2Index].addInterCellInteraction(pos1Index, bond.jMatrix, direction)
+        
+        
+        
         timer.printTime()
         print"translating..."
         
-        #translate bonds
+        def validBond(index1, index2, direction):
+            #print "valid bond: ", index1, " , ", index2, direction
+            cell1 = index1/numAtomsPerCell
+            cell2 = index2/numAtomsPerCell
+            zRow1 = cell1/size#this relies on the list being created in the nested for loop that was used, z within y within x
+            zRow2 = cell2/size
+            if(zRow1 != zRow2 and direction[2]):
+                return False
+            xLayer1 = cell1/(size*size)
+            xLayer2 = cell2/(size*size)
+            if(xLayer1 != xLayer2 and direction[1]):
+                return False
+            #shouldn't have to check z, because if it's not valid in z direction, it would be off the list (>len(allAtoms))
+            return True
+            
+        
+        #translate bonds contained within the CutoffCell
         for i in range(len(allAtoms)- numAtomsPerCell):
+            newIndex = i+numAtomsPerCell
             for interaction in allAtoms[i].interactions:
                 newInteraction = interaction[0] + numAtomsPerCell
-                if newInteraction < len(allAtoms):
-                    allAtoms[i+numAtomsPerCell].addInteraction(newInteraction, interaction[1])
+                if newInteraction < len(allAtoms):#Should always be the case now
+                    allAtoms[newIndex].addInteraction(newInteraction, interaction[1])
+                else:#for testing
+                    print "\n\ncellbonds contains inter-cutoff cell bond!\n\n"
+                    raise Exception("cellbonds contains inter-cutoff cell bond!")
         
+            
+            
         
+        #translate bonds between Cutoff cells
+        #size^3 * numAtomsPerCell = len(allAtoms)
+        
+        #This method iterates through the whole list of atoms.  Each time it encounters
+        #an interaction it translates it to all later corresponding indices.  This was
+        #a necessary change form the method above, because with the method above, a bond
+        #would stop propagating as soon as it encountered one invalid location (an edge).
+        #This new method, however, will re-copy interactions that were copied early on 
+        #in the main loop, but are encountered later again in the main loop.  This could
+        #become slow with large lists.  An alternate method would be to create a copy of
+        #the list and copy only from the original to the copy, which eliminates the need
+        #for checking repeats and ensures that each interaction is only propagated once.
+        cubeSize = size*size*size
+        for cell in range(cubeSize):
+            for i in range(numAtomsPerCell):
+                atomIndex = cell*numAtomsPerCell + i
+                for interaction in allAtoms[atomIndex].interCellInteractions:
+                    for n in range(1, cubeSize - cell):
+                        displacement =  numAtomsPerCell*n
+                        if validBond(atomIndex + displacement, interaction[0] + displacement, interaction[2]):
+                            if interaction[0] + displacement < len(allAtoms):
+                                #Checks for duplicates
+                                allAtoms[atomIndex + displacement].addInterCellInteraction(interaction[0] + displacement, interaction[1], interaction[2])
+                        
+                        
+#                    newInteraction = interaction[0] + numAtomsPerCell
+#                    if newInteraction < len(allAtoms):
+#                        allAtoms[i+numAtomsPerCell].addInterCellInteraction(newInteraction, interaction[1])
+    
+            
         
 #        print "done translating, checking list"
 #        timer.printTime()
@@ -889,6 +1064,11 @@ class Session():
             atomStr = str(atomIndex) + " " + str(atom.pos[0]) + " " + str(atom.pos[1]) + " " + str(atom.pos[2])
             atomStr += " " + str(atom.anisotropy[0]) + " " + str(atom.anisotropy[1]) + " " + str(atom.anisotropy[2])
             for interaction in atom.interactions:
+                otherAtom = interaction[0]
+                jMat = interaction[1]
+                atomStr += " " + str(otherAtom)
+                atomStr += " " + str(jMat)
+            for interaction in atom.interCellInteractions:#And again for inter-cell
                 otherAtom = interaction[0]
                 jMat = interaction[1]
                 atomStr += " " + str(otherAtom)
