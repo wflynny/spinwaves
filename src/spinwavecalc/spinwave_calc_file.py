@@ -8,6 +8,7 @@ import matplotlib
 matplotlib.use('WXAgg')
 import pylab
 import readfiles
+#from readfiles import atom
 from sympy import pngview,latex
 import scipy.linalg
 from matplotlib._pylab_helpers import Gcf
@@ -46,98 +47,6 @@ def coeff(expr, term):
    #added the next two lines
    elif m2:
        return m2[w]
-       
-   
-class atom:
-    def __init__(self,spin=[0,0,1],pos=[0,0,0],neighbors=None,interactions=None,label=0,Dx=0,Dy=0,Dz=0,cell=0,int_cell=[]):
-        self.spin=spin
-        if neighbors==None:
-            neighbors=[]
-        if interactions==None:
-            interactions=[]
-        self.pos=N.array(pos)
-        self.neighbors=neighbors
-        self.interactions=interactions
-        self.label=label
-        self.Dx=Dx
-        self.Dy=Dy
-        self.Dz=Dz
-        self.cell=cell
-        self.int_cell=[]
-
-
-def generate_atoms():
-
-
-
-    if 1:
-        D=sympy.Symbol('D',real=True)
-        spin0=N.matrix([[1,0,0],[0,1,0],[0,0,1]],'float64')
-        pos0=[0,0,0]
-        neighbors=[1]
-        interactions=[0]
-        cell=0
-        int_cell=[5,21]
-        atom0=atom(spin=spin0,pos=pos0,neighbors=neighbors,interactions=interactions,label=0,cell=cell,int_cell=int_cell,Dz=0)
-        
-        pos0=[1,0,0]
-        spin0=N.matrix([[-1,0,0],[0,1,0],[0,0,1]],'float64')
-        spin0=N.matrix([[1,0,0],[0,1,0],[0,0,1]],'float64')
-        neighbors=[0]
-        interactions=[0]
-        cell=5
-        int_cell=[0]
-        atom1=atom(spin=spin0,pos=pos0,neighbors=neighbors,interactions=interactions,label=1,cell=cell,int_cell=int_cell,Dz=D)
-        
-        atomlist=[atom0,atom1]
-
-
- 
-       
-    return atomlist
-
-
-def generate_atoms_rot():
-
-
-
-    if 1:
-        D=sympy.Symbol('D',real=True)
-        spin0=sympy.matrices.Matrix([[1,0,0],[0,1,0],[0,0,1]])
-        #spin0=sympy.matrices.Matrix(spin0)
-        pos0=[0,0,0]
-        neighbors=[1]
-        interactions=[0]
-        cell=0
-        int_cell=[5,21]
-        atom0=atom(spin=spin0,pos=pos0,neighbors=neighbors,interactions=interactions,label=0,cell=cell,int_cell=int_cell,Dz=0)
-        
-        pos0=[1,0,0]
-        #spin0=N.matrix([[-1,0,0],[0,1,0],[0,0,1]],'float64')
-        #spin0=N.matrix([[-1,0,0],[0,1,0],[0,0,1]],'float64')
-        P=sympy.Symbol('P',real=True,commutative=True)
-        W=sympy.Symbol('W',real=True,commutative=True)
-        X=sympy.Symbol('X',real=True,commutative=True)
-        #spin0=sympy.matrices.Matrix([[W,-X,0],[W,X,0],[0,0,1]])
-        #P=0
-        spin0=sympy.matrices.Matrix([[cos(P),-sin(P),0],[sin(P),cos(P),0],[0,0,1]])
-        spin0=sympy.matrices.Matrix([[1,0,0],[0,1,0],[0,0,1]])
-        print 'spin0 analaytic', spin0
-        #spin0=sympy.matrices.Matrix([[1,0,0],[0,1,0],[0,0,1]])
-        #spin0=spin0.subs(P,sympy.pi)
-        print 'spin0 converted',spin0
-        neighbors=[0]
-        interactions=[0]
-        cell=5
-        int_cell=[0]
-        atom1=atom(spin=spin0,pos=pos0,neighbors=neighbors,interactions=interactions,label=1,cell=cell,int_cell=int_cell,Dz=0)
-        
-        atomlist=[atom0,atom1]
-
-
- 
-       
-    return atomlist
 
 
 
@@ -159,7 +68,9 @@ def generate_sxyz(Sabn,atomlist):
     Sxyz=[]
     i=0
     for currS in Sabn:
-        tempS=atomlist[i].spin*currS
+        #This was actually a matrix
+        #tempS=atomlist[i].spin*currS
+        tempS = atomlist[i].spinRmatrix*currS
         tempS=tempS.reshape(1,3)
         Sxyz.append(tempS)
         i=i+1
@@ -221,6 +132,7 @@ def generate_hdef(atom_list,Jij,Sxyz,N_atoms_uc,N_atoms):
                 print 'Sxyz i', N.matrix(Sxyz[i]),N.matrix(Sxyz[i]).shape
                 Hij=Sxyz[i]*Jij[atom_list[i].interactions[j]]
                 print 'S*Jij', Hij,Hij.shape
+            print "index: ", atom_list[i].neighbors[j], "  length = ", len(Sxyz)
             Sxyz_transpose=Sxyz[atom_list[i].neighbors[j]].reshape(3,1)
             #Sxyz_transpose=Sxyz_transpose.(3,1))
             print 'Sxyz.T',Sxyz_transpose.shape
@@ -726,12 +638,20 @@ def Sapplycommutation(atom_list,Sfou,k):
     return Sfou
 
 def driver(spinfile,interactionfile,direction,steps):
-    myfilestr=spinfile#r'c:\spins.txt'
-    myspins=readfiles.read_spins(myfilestr)
-    spins=readfiles.find_collinear(myspins)
-    print 'driver spins',spins
-    myfilestr=interactionfile#r'c:\montecarlo.txt'
-    atom_list, jnums, jmats,N_atoms_uc=readfiles.read_interactions(myfilestr,spins)
+#    myfilestr=spinfile#r'c:\spins.txt'
+#    myspins=readfiles.read_spins(myfilestr)#Returns all spins from file in array form
+#    spins=readfiles.find_collinear(myspins)#This is actually a list of Rotation matrices
+#    print 'driver spins',spins
+
+    #Now that rotation matrices are calculated algebraically, there si no need for
+    #find_collinear.  The functionality of read_spins has been put into readFiles
+    
+    #myfilestr=interactionfile#r'c:\montecarlo.txt'
+    
+    
+    #any atom.spin opbjects past here would have actually been rotation matrices
+    #so they can be replaced with the new spinRmatrix
+    atom_list, jnums, jmats,N_atoms_uc=readfiles.readFiles(interactionfile,spinfile)
     N_atoms=len(atom_list)
     #N_atoms_uc=1
     print 'N_atoms',N_atoms,'Natoms_uc',N_atoms_uc

@@ -301,8 +301,9 @@ class FormDialog(sc.SizedDialog):
 
         #defaultDir=os.getcwd()
         #defaultDir=r'C:\polcorrecter\data'
-        wx.Configbase.SetStyle(wx.CONFIG_USE_LOCAL_FILE)
-        defaultDir=wx.ConfigBase.Get().GetPath()
+        confBase = wx.ConfigBase.Create()
+        confBase.SetStyle(wx.CONFIG_USE_LOCAL_FILE)
+        defaultDir=confBase.Get().GetPath()
         wildcard="files (*.txt)|*.txt|All files (*.*)|*.*"
         dlg = wx.FileDialog(
             self, message="Choose a spin configuration file",
@@ -342,7 +343,10 @@ class FormDialog(sc.SizedDialog):
 
         #defaultDir=os.getcwd()
         #defaultDir=r'C:\polcorrecter\data'
-        defaultDir=wx.ConfigBase.Get().GetPath()
+        confBase = wx.ConfigBase.Create()
+        confBase.SetStyle(wx.CONFIG_USE_LOCAL_FILE)
+        defaultDir=confBase.Get().GetPath()
+        #defaultDir=wx.ConfigBase.Get().GetPath()
         wildcard="files (*.txt)|*.txt|All files (*.*)|*.*"
         dlg = wx.FileDialog(
             self, message="Choose an Interaction file",

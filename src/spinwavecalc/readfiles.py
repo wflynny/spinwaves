@@ -4,52 +4,28 @@ import sympy
 import copy
 
 class atom:
-    def __init__(self,spin=[0,0,1],pos=[0,0,0],neighbors=None,interactions=None,label=0,Dx=0,Dy=0,Dz=0,cell=0,int_cell=[]):
-        self.spin=spin
+    def __init__(self,spinRmatrix=N.matrix([[1, 0, 0],
+                                            [0, 1, 0],
+                                            [0, 0, 1]]),
+                    pos=[0,0,0],neighbors=None,interactions=None,label=0,Dx=0,Dy=0,Dz=0,cell=0,int_cell=[], orig_Index = None):
+        self.spinRmatrix=spinRmatrix#found with findmat
         if neighbors==None:
             neighbors=[]
         if interactions==None:
             interactions=[]
         self.pos=N.array(pos)
-        self.neighbors=neighbors
-        self.interactions=interactions
+        self.neighbors=neighbors#Interacting atoms
+        self.interactions=interactions#the matrices describing the interactions^
         self.label=label
         self.Dx=Dx
         self.Dy=Dy
         self.Dz=Dz
         self.cell=cell
         self.int_cell=[]
+        #Indices change when reading in only specific atoms from the file
+        self.origIndex = orig_Index
 
 
-
-def generate_atoms():
-
-
-
-    if 1:
-        D=sympy.Symbol('D',real=True)
-        spin0=N.matrix([[1,0,0],[0,1,0],[0,0,1]],'float64')
-        pos0=[0,0,0]
-        neighbors=[1]
-        interactions=[0]
-        cell=0
-        int_cell=[5,21]
-        atom0=atom(spin=spin0,pos=pos0,neighbors=neighbors,interactions=interactions,label=0,cell=cell,int_cell=int_cell,Dz=D)
-        
-        pos0=[1,0,0]
-        spin0=N.matrix([[-1,0,0],[0,1,0],[0,0,-1]],'float64')
-        neighbors=[0]
-        interactions=[0]
-        cell=5
-        int_cell=[0]
-        atom1=atom(spin=spin0,pos=pos0,neighbors=neighbors,interactions=interactions,label=1,cell=cell,int_cell=int_cell,Dz=D)
-        
-        atomlist=[atom0,atom1]
-
-
- 
-       
-    return atomlist
 
 def get_tokenized_line(myfile,returnline=['']):
         lineStr=myfile.readline()
@@ -60,8 +36,13 @@ def get_tokenized_line(myfile,returnline=['']):
         return tokenized
 
 
-def read_interactions(myfilestr,spins):
-    myfile = open(myfilestr, 'r')
+def readFiles(interactionFileStr,spinFileStr):
+    """modified from read_interactions.  Originally this(read_interactions) read in the
+    atoms from the interaction file and matched the spin rotation matrices with the
+    appropriate atoms based on indices.  Now it takes the interaction and spin file strings,
+    reads in the atom information and matches it with spin rotation matrices based on coordinates"""
+    #print interactionFileStr
+    interactionFile = open(interactionFileStr, 'r')
     myFlag=True
         #self.metadata={}
     returnline=['']
@@ -69,8 +50,9 @@ def read_interactions(myfilestr,spins):
     jnums=[]
     atomlist=[]
     numcell=0
+    #print "here"
     while myFlag:
-        tokenized=get_tokenized_line(myfile,returnline=returnline)
+        tokenized=get_tokenized_line(interactionFile,returnline=returnline)
         #print tokenized
         if not(tokenized):
             break
@@ -79,7 +61,7 @@ def read_interactions(myfilestr,spins):
             break
         if tokenized[0]=='#number':
             while 1:
-                tokenized=get_tokenized_line(myfile,returnline=returnline)
+                tokenized=get_tokenized_line(interactionFile,returnline=returnline)
                 #print 'intoken ',tokenized
                 if tokenized==[]:
                     break
@@ -102,47 +84,113 @@ def read_interactions(myfilestr,spins):
                 else:
                     currnum=0
                     while 1:
-                        tokenized=get_tokenized_line(myfile,returnline=returnline)
+                        tokenized=get_tokenized_line(interactionFile,returnline=returnline)
                         if not(tokenized):
                             break
-                        atom_num=tokenized[0]
-                        if tokenized[1] == "X":  #If it is in the first interaction cell
+                        #print tokenized
+                        atom_num=int(tokenized[0])
+                        if tokenized[1] == 'x':  #If it is in the first interaction cell
+                            print "atom in first interaction cell"
                             x,y,z=float(tokenized[2]),float(tokenized[3]),float(tokenized[4])
                             Dx,Dy,Dz=float(tokenized[5]),float(tokenized[6]),float(tokenized[7])
                             #spin0=N.matrix([[1,0,0],[0,1,0],[0,0,1]],'float64')
                             pos0=[x,y,z]
-                            #We already know it's in the first cutoff cell
-                            #if N.abs(x)<1.0 and N.abs(y)<1.0 and N.abs(z)<1.0:
-                             #   numcell=numcell+1
-                            atom0=atom(pos=pos0,Dx=Dx,Dy=Dy,Dz=Dz)
+                            atom0=atom(pos=pos0,Dx=Dx,Dy=Dy,Dz=Dz, orig_Index = atom_num)
                             neighbors=[]
                             interactions=[]
-                            #print 'range',range(7,len(tokenized),1)
                             for i in range(8,len(tokenized),2):
                                 interacting_spin=int(tokenized[i])
-                                #print interacting_spin
+                                #index number in export list not necessarily the same as index
+                                #in list of atoms in first interacting 'cell'
                                 interaction_matrix=int(tokenized[i+1])
                                 neighbors.append(interacting_spin)
                                 interactions.append(interaction_matrix)
-                            #print 'interactions', interactions
-                            #print 'neighbors', neighbors
+
                             atom0.neighbors=neighbors
                             atom0.interactions=interactions
-                            atom0.spin=spins[currnum]
                             currnum=currnum+1
                             atomlist.append(atom0)
-    myfile.close()
-    #for catom in atomlist:
-    #    print 'pos', catom.pos
-    #    print 'Dx,Dy,Dz',catom.Dx, catom.Dy,catom.Dz
-    #    print 'interactions', catom.interactions
-    #    print 'neighbors', catom.neighbors
-    #print 'jnums', jnums
-    #print 'jmats',jmats
+    interactionFile.close()
+    
+    #interactions should contain the indices of interaction atoms in atomlist, but
+    #the index they currently contain is the index from the file, which may have
+    #changed.  Switch to new indices:
+    #print "here2"
+    for atom1 in atomlist:
+        print atom1.neighbors
+        print atom1.origIndex
+    
+    
+    for atom1 in atomlist:
+        invalidIndices = []
+        for neighborIndex in atom1.neighbors:
+            #Find the atom that has this original index
+            if neighborIndex < len(atomlist):
+                for i in range(len(atomlist)):
+                    if neighborIndex == atomlist[i].origIndex:
+                        neighborIndex = i
+                        break
+                else:
+                    raise Exception("atom not found")
+            else:#This interaction is with an atom outside of the first interaction cell
+                invalidIndices.append(neighborIndex)
+        for invalidIndex in invalidIndices:
+            atom1.neighbors.remove(invalidIndex)
+            
+    for atom1 in atomlist:
+        print atom1.neighbors
+        print atom1.origIndex
+
+    #Match spin rotation matrices to atoms
+    #print "here3"
+   
+    spinFile = open(spinFileStr, 'r')
+    lines = spinFile.readlines()
+    spinFile.close()
+    for atom1 in atomlist:
+        print "here4 ", atom1.pos
+        #search for the spin entry that matches this atoms coordinates
+        for line in lines:
+            tokenized_line = line.split()
+            if not tokenized_line[0][0] == '#': #skip commented line
+                xPos = float(tokenized_line[1])
+                yPos = float(tokenized_line[2])
+                zPos = float(tokenized_line[3])
+                if (atom1.pos[0] == xPos and atom1.pos[1] == yPos and atom1.pos[2] == zPos):
+                    spin=N.array([float(tokenized_line[4]),float(tokenized_line[5]),float(tokenized_line[6])],'Float64')
+                    #spin=[float(tokenized_line[4]),float(tokenized_line[5]),float(tokenized_line[6])]
+                    rmat = findmat(spin)
+                    atom1.spinRmatrix = rmat
+                    break
+        else:
+            raise Exception()
+            
+            
+
+#This method would use less memory, but it would be a little slower
+#    while True:
+#        line = get_tokenized_line(spinFile)
+#        if line == []:
+#            break
+#        if line[0] == '#': #The line is commented out
+#            pass
+#        pos = (float(line[1]), float(line[2]), float(line[3]))
+        #find the
+    
+    
+    #print "here5"
+    #atomlist now only contains atoms which are used(in the first interaction 'cell')
+    numcell = len(atomlist)
+    
+    #for test purposes
+    #for spin in spins:
+    #    print spin
+    #print "numSpins: ", len(spins)
     return atomlist, jnums, jmats,numcell
     
 
 def read_spins(myfilestr):
+    """read spins from file and return as a list of numpy.array([sx,sy,sz])"""
     myfile = open(myfilestr, 'r')
     returnline=['']
     myFlag=True
@@ -236,10 +284,10 @@ def find_collinear(spins):
     collinear_groups=[]
     rmatrices=[]
     flag=True
-    spins=copy.deepcopy(spins)
+    spins=copy.deepcopy(spins)#What's the point of this?
     spins.reverse()
     #print 'spins',spins
-    spin=N.array(spins.pop(),'float64')
+    spin=N.array(spins.pop(),'float64')#I believe it's already an array
     #print '1st spin',spin
     rmat=findmat(spin)
     myg=Collinear_group()

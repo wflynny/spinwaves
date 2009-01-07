@@ -149,7 +149,7 @@ def getmatrix(sx,sy,sz):
 
     #sx, sy, sz dot product with (0,0,1)=
     c = sz
-    #also equal to cos(angle between vectors) becuase they are both unit vectors
+    #also equal to cos(angle between vectors) because they are both unit vectors
     
     #cross product
     x = -sy
@@ -159,7 +159,7 @@ def getmatrix(sx,sy,sz):
     print "\ncross = \n\n", N.cross(N.array([0,0,1]), N.array([sx,sy,sz]))
     print "\n\ndot = \n", N.dot(N.array([0,0,1]), N.array([sx,sy,sz]))
     
-    #sin(angle between them) becuase they are both unit vectors:
+    #sin(angle between them) because they are both unit vectors:
     s = math.sqrt(x**2 + y**2)
     
     #a11 = i**2 + (1-i**2)*c
