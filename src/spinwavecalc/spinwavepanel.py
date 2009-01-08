@@ -68,7 +68,7 @@ def WalkTree(parent):
         parent.SetExtraStyle(wx.WS_EX_VALIDATE_RECURSIVELY)
         for child in parent.GetChildren():
             if child==None:
-                print 'child',child
+                print 'child',child.size
             else:
                 WalkTree(child)
 
@@ -127,77 +127,38 @@ class RichTextFrame(wx.Frame):
 
 
 
-class FormDialog(sc.SizedDialog):
+class FormDialog(sc.SizedPanel):
     def __init__(self, parent, id):
+        self.parent = parent
         valstyle=wx.WS_EX_VALIDATE_RECURSIVELY
-        sc.SizedDialog.__init__(self, None, -1, "Calculate Dispersion",
+        sc.SizedPanel.__init__(self, parent, -1,
                         style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)#| wx.WS_EX_VALIDATE_RECURSIVELY)
         self.SetExtraStyle(wx.WS_EX_VALIDATE_RECURSIVELY)
-        pane = self.GetContentsPane()
+        pane = self
         pane.SetSizerType("vertical")
-        
-
-        
-        #Text editor
-#        editorFrame = wx.Frame(None, -1)
-#        editorPanel = wx.Panel(editorFrame, -1)
-#        interactionsEditorPanel = wx.Panel(pane, -1)
-#        sizer = wx.BoxSizer(wx.VERTICAL)
-#        interactionsEditorPanel.SetSizer(sizer)
-#        editorPanel.SetSizer(sizer)
-#        title = wx.StaticText(interactionsEditorPanel, -1, "Interaction File")
-#        title = wx.StaticText(editorPanel, -1, "Interaction File")
-#        self.interactionsRtc = wx.richtext.RichTextCtrl(editorPanel, style=wx.VSCROLL | wx.TE_PROCESS_ENTER, size = (620,120));
-        
-#        sizer.Add(title)
-#        sizer.Add(self.interactionsRtc, wx.EXPAND)
-        
-#        spinsEditorPanel = wx.Panel(pane, -1)
-#        spinSizer = wx.BoxSizer(wx.VERTICAL)
-#        spinsEditorPanel.SetSizer(spinSizer)
-#        spinsTitle = wx.StaticText(spinsEditorPanel, -1, "Spins File")
-#        self.spinsRtc = wx.richtext.RichTextCtrl(spinsEditorPanel, style=wx.VSCROLL, size = (620,120));
-
-#        spinsTitle = wx.StaticText(editorPanel, -1, "Spins File")
-#        self.spinsRtc = wx.richtext.RichTextCtrl(editorPanel, style=wx.VSCROLL, size = (620,120));
-        
-        
-#        spinSizer.Add(spinsTitle)
-#        spinSizer.Add(self.spinsRtc, wx.EXPAND)
-        
-#        sizer.Add(spinsTitle)
-#        sizer.Add(self.spinsRtc, wx.EXPAND)
-#        editorFrame.Show(True)
-        
-        
+               
         
         FilePane = sc.SizedPanel(pane, -1)
         FilePane.SetSizerType("vertical")
         FilePane.SetSizerProps(expand=True)
-
-#Never used?
-#        InteractionFilePane = sc.SizedPanel(pane, -1)
-#        InteractionFilePane.SetSizerType("vertical")
-#        InteractionFilePane.SetSizerProps(expand=True)
-
-        
+   
         self.interactionfile=''
         self.interactionfilectrl=wx.StaticText(FilePane, -1, "Interaction File:%s"%(self.interactionfile,))
-        b = wx.Button(FilePane, -1, "Browse", (50,50))
+        b = wx.Button(FilePane, -1, "Browse", size  = (60,30))
         self.Bind(wx.EVT_BUTTON, self.OnOpenInt, b)
         
         self.spinfile=''
         self.spinfilectrl=wx.StaticText(FilePane, -1, "Spin File:%s"%(self.spinfile,))
-        b = wx.Button(FilePane, -1, "Browse", (50,50))
+        b = wx.Button(FilePane, -1, "Browse", size = (60,30))
         self.Bind(wx.EVT_BUTTON, self.OnOpen, b)
         
 
 
 
         self.data={}
-        self.data['kx']=str(1.0)
+        self.data['kx']=str(0.0)
         self.data['ky']=str(0.0)
-        self.data['kz']=str(0.0)
+        self.data['kz']=str(1.0)
         DirectionPane = sc.SizedPanel(pane, -1)
         DirectionPane.SetSizerType("vertical")
         DirectionPane.SetSizerProps(expand=True)
@@ -237,17 +198,18 @@ class FormDialog(sc.SizedDialog):
         #Getting rid of standard button function
         #self.SetButtonSizer(self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL))
         
-        btnsizer = wx.StdDialogButtonSizer()
+        btnPane = sc.SizedPanel(pane, -1)
+        btnPane.SetSizerType("horizontal")
+        btnPane.SetSizerProps(expand=True)
         
-        self.btnOk = wx.Button(self, wx.ID_OK)
-        self.btnOk.SetDefault()
-        btnsizer.AddButton(self.btnOk)
+        self.btnOk = wx.Button(btnPane,-1, "Ok", size = (60, 30))
+        #self.btnOk.SetDefault()
+        #btnsizer.Add(self.btnOk)
 
-        btn = wx.Button(self, wx.ID_CANCEL)
-        btnsizer.AddButton(btn)
-        btnsizer.Realize()
+        btn = wx.Button(btnPane, -1, "Cancel", size = (60, 30))
+        #btnsizer.Add(btn)
         
-        self.SetButtonSizer(btnsizer)
+        #self.GetSizer().Add(btnsizer)
         
         #intercept OK button click event
         self.Bind(wx.EVT_BUTTON, self.OnOk, self.btnOk)
@@ -257,7 +219,14 @@ class FormDialog(sc.SizedDialog):
         # a little trick to make sure that you can't resize the dialog to
         # less screen space than the controls need
         self.Fit()
-        self.SetMinSize(self.GetSize())
+        size = self.GetSize()
+        print size
+        self.parent.SetSize(size)
+        self.parent.SetMinSize(size)
+        #This trick is not working becuase the size of the last pane is not being included for some reason
+        #self.parent.SetMinSize((645, 245))
+        #self.parent.SetMinSize((400,400))
+        
            
                 
         #Text editor
@@ -269,6 +238,7 @@ class FormDialog(sc.SizedDialog):
         
     def OnOk(self, event):
         #Formerly, when this was modal, this would be done in calling function
+        self.Fit()
         self.Validate()
         print "OK"
         self.TransferDataFromWindow()
@@ -378,7 +348,9 @@ class FormDialog(sc.SizedDialog):
 
 if __name__=='__main__':
     app=MyApp()
-    dlg=FormDialog(parent=None,id=-1)
+    frame1 = wx.Frame(None, -1, "Spinwaves")
+    dlg=FormDialog(parent=frame1,id=-1)
+    frome1.show()
     result=dlg.ShowModal()
     if result==wx.ID_OK:
         dlg.Validate()

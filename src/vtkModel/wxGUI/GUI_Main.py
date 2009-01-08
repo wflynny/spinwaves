@@ -1238,7 +1238,9 @@ class Frame(wx.Frame):
         CSim.ShowSimulationFrame()
         
     def OnLaunchSpinWave(self,evt):
-        dlg=spinwavepanel.FormDialog(parent=None,id=-1)
+        frame1 = wx.Frame(self, -1, "Spinwaves")
+        dlg=spinwavepanel.FormDialog(parent=frame1,id=-1)
+        #dlg=spinwavepanel.FormDialog(parent=None,id=-1)
         self.SetExtraStyle(wx.WS_EX_VALIDATE_RECURSIVELY)
 #No longer modal
 #        result=dlg.ShowModal()
@@ -1257,7 +1259,7 @@ class Frame(wx.Frame):
 #            print "Cancel"
 #        dlg.Destroy()
         
-        dlg.Show()
+        frame1.Show()
     
     def OnSaveImage(self, evt):
         """Saves an image of the current rendering.  Currently only .tiff
