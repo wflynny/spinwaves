@@ -116,30 +116,29 @@ def readFiles(interactionFileStr,spinFileStr):
     #the index they currently contain is the index from the file, which may have
     #changed.  Switch to new indices:
     #print "here2"
-    for atom1 in atomlist:
-        print atom1.neighbors
-        print atom1.origIndex
+#    for atom1 in atomlist:
+#        print atom1.neighbors
+#        print atom1.interactions
+#        print atom1.origIndex
     
     
     for atom1 in atomlist:
         invalidIndices = []
-        for neighborIndex in atom1.neighbors:
+        for neighborNum in range(len(atom1.neighbors)):
             #Find the atom that has this original index
-            if neighborIndex < len(atomlist):
+            if atom1.neighbors[neighborNum] < len(atomlist):
                 for i in range(len(atomlist)):
-                    if neighborIndex == atomlist[i].origIndex:
-                        neighborIndex = i
+                    if atom1.neighbors[neighborNum] == atomlist[i].origIndex:
+                        atom1.neighbors[neighborNum] = i
                         break
                 else:
                     raise Exception("atom not found")
             else:#This interaction is with an atom outside of the first interaction cell
-                invalidIndices.append(neighborIndex)
+                invalidIndices.append(neighborNum)
         for invalidIndex in invalidIndices:
-            atom1.neighbors.remove(invalidIndex)
+            atom1.neighbors.pop(neighborNum)
+            atom1.interactions.pop(neighborNum)
             
-    for atom1 in atomlist:
-        print atom1.neighbors
-        print atom1.origIndex
 
     #Match spin rotation matrices to atoms
     #print "here3"
@@ -166,7 +165,10 @@ def readFiles(interactionFileStr,spinFileStr):
             raise Exception()
             
             
-
+    for atom1 in atomlist:
+        print "neighbors: ", atom1.neighbors
+        print "\ninteractions: ", atom1.interactions
+        print "\nroation matrix: ", atom1.spinRmatrix
 #This method would use less memory, but it would be a little slower
 #    while True:
 #        line = get_tokenized_line(spinFile)

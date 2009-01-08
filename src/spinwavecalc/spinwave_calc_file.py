@@ -12,6 +12,7 @@ import readfiles
 from sympy import pngview,latex
 import scipy.linalg
 from matplotlib._pylab_helpers import Gcf
+#from sympy import latex
 
 #translations=[[0,0,0],
 #              [0,0,1],[0,0,-1]
@@ -21,9 +22,11 @@ from matplotlib._pylab_helpers import Gcf
 #              ]
 
 def print_matplotlib(s):
+    pylab.figure()
     pylab.text(0,0,s)
     pylab.axis('off')
-    pylab.show()
+    pylab.figure()
+    #pylab.show()
     return 
 
 
@@ -116,7 +119,7 @@ def generate_hdef(atom_list,Jij,Sxyz,N_atoms_uc,N_atoms):
     for i in range(N_atoms_uc): #correct
         N_int=len(atom_list[i].interactions)
         for j in range(N_int):            
-            print 'i',i,'j',j
+            #print 'i',i,'j',j
             if 0:
                 Hij=N.matrix(Sxyz[i])*atom_list[i].spin.T
                 print 'making Ham'
@@ -132,7 +135,8 @@ def generate_hdef(atom_list,Jij,Sxyz,N_atoms_uc,N_atoms):
                 print 'Sxyz i', N.matrix(Sxyz[i]),N.matrix(Sxyz[i]).shape
                 Hij=Sxyz[i]*Jij[atom_list[i].interactions[j]]
                 print 'S*Jij', Hij,Hij.shape
-            print "index: ", atom_list[i].neighbors[j], "  length = ", len(Sxyz)
+            #print "test ", atom_list[i]
+            #print "index: ", atom_list[i].neighbors[j], "  length = ", len(Sxyz)
             Sxyz_transpose=Sxyz[atom_list[i].neighbors[j]].reshape(3,1)
             #Sxyz_transpose=Sxyz_transpose.(3,1))
             print 'Sxyz.T',Sxyz_transpose.shape
@@ -415,9 +419,11 @@ def calculate_dispersion(atom_list,N_atoms_uc,N_atoms,Jij,direction,steps,showEi
             #print 'eigspoly'
             #print 'eigs poly',eigspoly
             print 'shape', TwogH2.shape
-            print 'recalculating'
+            print 'recalculating\n\n'
+            print TwogH2, "\n\n"
             eigs=TwogH2.eigenvals()
             x=sympy.Symbol('x')
+           # print_matplotlib(latex(TwogH2))
             #eigs=TwogH2.berkowitz_charpoly(x)
             print 'eigs', eigs
             keys=eigs.keys()
@@ -652,12 +658,20 @@ def driver(spinfile,interactionfile,direction,steps):
     #any atom.spin opbjects past here would have actually been rotation matrices
     #so they can be replaced with the new spinRmatrix
     atom_list, jnums, jmats,N_atoms_uc=readfiles.readFiles(interactionfile,spinfile)
+    #test
+    N_atoms_uc = 1
+    #sympy.matrices.Matrix
+    #atom_list[1].spinRmatrix = N.matrix([[-1, 0, 0],
+    #                                     [0, 1, 0],
+    #                                     [0,0,-1]],'Float64')
+    
     N_atoms=len(atom_list)
     #N_atoms_uc=1
     print 'N_atoms',N_atoms,'Natoms_uc',N_atoms_uc
     #atom_list=generate_atoms()
     #atom_list=generate_atoms_rot()
     Hsave=calculate_dispersion(atom_list,N_atoms_uc,N_atoms,jmats,direction,steps,showEigs=True)
+    print "\n\nhere\n\n before calc_eigs\n\n"
     calc_eigs(Hsave,direction,steps)
     direction={}
     direction['kx']=0.

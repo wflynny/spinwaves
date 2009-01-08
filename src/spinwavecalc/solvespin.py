@@ -147,6 +147,9 @@ def getmatrix(sx,sy,sz):
     """sx,sy,sz are components of a unit spin vector
     returns rotation matrix mat, such that mat*(0,0,1) = (sx,sy,sz), (both column matrices)"""
 
+    
+    
+    
     #sx, sy, sz dot product with (0,0,1)=
     c = sz
     #also equal to cos(angle between vectors) because they are both unit vectors
@@ -156,11 +159,36 @@ def getmatrix(sx,sy,sz):
     y = sx
     #k = 0
     
-    print "\ncross = \n\n", N.cross(N.array([0,0,1]), N.array([sx,sy,sz]))
-    print "\n\ndot = \n", N.dot(N.array([0,0,1]), N.array([sx,sy,sz]))
+
+    
+    #print "\ncross = \n\n", N.cross(N.array([0,0,1]), N.array([sx,sy,sz]))
+    #print "\n\ndot = \n", N.dot(N.array([0,0,1]), N.array([sx,sy,sz]))
     
     #sin(angle between them) because they are both unit vectors:
     s = math.sqrt(x**2 + y**2)
+    
+    #make it a unit vector
+    #length = math.sqrt(x**2 + y**2)
+    x = x/s
+    y = y/s
+    
+    #if the vector (sx, sy, sz) points along the z axis, this method of finding the vector
+    #to rotate about will not work because it will give a vector of (0,0,0)
+    if (sx == 0 and sy == 0):
+        #just rotate about x axis by pi
+        return N.matrix([[1,0,0],
+                         [0,c,s],
+                         [0,-s,c]])
+        #x = 1#so we will rotate about the x axis by an angle of pi if sz = -1 or 0 if sz = 1
+#        if sz > 0: #sz = 1, theta = 0
+#            s = 0
+#            c = 1
+#        if sz < 0: #sz = -1, theta = pi
+#            s = 0
+#            c = -1
+        #sin(0) = 0 (sz)
+        #cos(pi) = -1 (sz)
+    
     
     #a11 = i**2 + (1-i**2)*c
     #a12 = i*j*(1-c)
@@ -185,6 +213,8 @@ def getmatrix(sx,sy,sz):
     mat = N.matrix([[a11, a12, a13],
                     [a21, a22, a23],
                     [a31, a32, a33]])
+    
+    print "\n\n\nmat: \n", mat
     
     return mat
 
