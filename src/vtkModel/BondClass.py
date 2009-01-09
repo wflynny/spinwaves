@@ -2,6 +2,40 @@ import AtomClass
 #from vtk import *
 import numpy
 
+class JParam():
+    """This class represents one value in a 3*3 J matrix.  In the simplest case it would
+    contain a single float value, but it can also be a variable tied to other variables
+    for fitting purposes."""
+    def __init__(self, fit = False, value = 0., name = '', min = '-inf', max = '+inf', tied = []):
+        """-fit is a boolean value specifying whether this parameter is variable(True)
+        or a fixed float(False)
+        -value is the float value if there is one(if fit is False)
+        -min is a string of the float number representing the minimum possible value
+        (only used if fit is TRUE) '-inf' will be used for negative infinite.
+        -max is a string of the float number representing the maximim possible value
+        (only used if fit is TRUE) '+inf' will be used for positive infinite.
+        -tied is a list of all other JParam objects that this one is tied too(equal too)"""
+        self.fit = fit
+        self.value = value
+        self.min = min
+        self.max = max
+        self.tied = tied
+    
+    def isDefault(self):
+        """Returns true if the values are the in this parameter are the defualt values, or
+        if False if they have been set to something else."""
+        if not self.fit:
+            if self.value == 0.0:
+                return True
+        return False
+    
+    def __str__(self):
+        """This will return the value if fit==False, or the range of values if fit==True"""
+        if not self.fit:
+            return str(self.value)
+        return self.min + " - " + self.max
+
+
 
 class Bond():
     """This class represents interactions, or "bonds" between atoms."""
@@ -12,7 +46,8 @@ class Bond():
         r,g,b are the color of the actor. jMatrix is a numpy 2D array, such as
         [[1, 0, 0],
          [0, 1, 0],
-         [0, 0, 1]]   for a ferromagnetic interaction"""
+         [0, 0, 1]]   for a ferromagnetic interaction.  The values in the jMatrix
+         will be JParam objects, so that the values can be variable."""
 
         #Color
         self.r = r
@@ -23,6 +58,9 @@ class Bond():
         self.Atom2 = Atom2
         
         self.jMat = jMatrix #a numpy 2D array
+        print "\nnew Bond JMat =\n",jMatrix
+        
+        #New attributes added for fitting purposes
 
     
     def getAtom1(self):

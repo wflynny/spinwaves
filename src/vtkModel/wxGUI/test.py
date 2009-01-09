@@ -8,6 +8,15 @@ from utilities.anneal import anneal
 #from scikits.openopt import NLP
 from openopt.Kernel.NLSP import NLSP
 from openopt.Kernel import NLP
+from vtkModel.BondClass import JParam
+
+class test:
+    def __init__(self):
+        print 'init'
+        self.val = 1
+    
+    def __str__(self):
+        return str(self.val)
 
 
 
@@ -368,5 +377,13 @@ print "\n\n A*At= \n", mat2 * mat2.transpose()
 
 print "\nAt, A^-1\n\n", mat1.T, "\n", mat1.I
 print "\nAt, A^-1\n\n", mat2.T, "\n", mat2.I
+
+a = N.array([[JParam(), JParam()],
+             [JParam(), JParam()]])
+b = N.array([[JParam(), JParam()],
+             [JParam(), JParam()]])
+print a==b
+a[0,1] = JParam(False, 5)
+print a
 
 

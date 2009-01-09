@@ -10,6 +10,7 @@ from vtkModel.MagneticCellClass import MagneticCell
 import numpy
 import time
 import datetime
+from vtkModel.BondClass import JParam
 
 class Session():
     """Stores information about a user session
@@ -1263,6 +1264,118 @@ class bondTable(wx.grid.PyGridTableBase):
                      ['','','','','','','','','','']#Row 1
                      ]
         
+        #Set defualt Jij to 0's  JParam() defaults to 0
+        self.SetValue(0, 8, numpy.array([[JParam(),JParam(),JParam()],
+                                         [JParam(),JParam(),JParam()],
+                                         [JParam(),JParam(),JParam()]]))
+    
+    def GetNumberRows(self):
+        return len(self.data)
+    def AppendRows(self, num):
+        for i in range(num):
+            self.AppendRow()
+        return True
+    def GetNumberCols(self):
+        return len(self.colLabels)
+    def GetColLabelValue(self, col):
+        return self.colLabels[col]
+    def GetRowLabelValue(self, row):
+        return self.rowLabels[row]
+    def IsEmptyCell(self, row, col):
+        try:
+            return not self.data[row][col]
+        except IndexError:
+            return True
+        except ValueError: #Jij Matrix
+            return False
+    # Get/Set values in the table.  The Python version of these
+    # methods can handle any data-type, (as long as the Editor and
+    # Renderer understands the type too,) not just strings as in the
+    # C++ version.
+    def GetValue(self, row, col):
+        """Returns a String representation of the value in the given cell"""
+        try:
+            return str(self.data[row][col])#This must be a string or it cuases problems one the display side
+        except IndexError:
+            return ''
+        
+    def GetActualValue(self, row, col):
+        """Returns the actual value in the cell, not just the string representation
+        like GetValue"""
+        try:
+            return self.data[row][col]
+        except IndexError:
+            return None
+    def SetValue(self, row, col, value):
+        try:
+            self.data[row][col] = value
+        except IndexError:
+            # add a new row
+            self.AppendRow()
+            self.data[row][col]=value
+        return
+    
+ #   def AppendRows(self, numRows):
+ #       for i in range(numRows):
+ #           self.AppendRow()
+ #       return True
+    
+    def AppendRow(self):
+        row = [''] * (self.GetNumberCols())
+        self.data.append(row)
+        self.rowLabels.append('Bond ' + str(self.GetNumberRows()))
+        
+        #Set defualt Jij to 0's
+        #SetValue does not work for some reason:
+        #self.SetValue(self.GetNumberRows()-1, 8, numpy.array([[0.,0.,0.],[0.,0.,0.],[0.,0.,0.]]))
+        self.data[self.GetNumberRows()-1][8] = numpy.array([[JParam(),JParam(),JParam()],
+                                                            [JParam(),JParam(),JParam()],
+                                                            [JParam(),JParam(),JParam()]])
+
+        # tell the grid we've added a row
+        msg = wx.grid.GridTableMessage(self,            # The table
+                wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED, # what we did to it
+                1                                       # how many
+                )
+        self.GetView().ProcessTableMessage(msg)
+        return True
+    
+    def DeleteRows(self,pos=0,numRows=1):
+        if numRows>=0 and numRows<=self.GetNumberRows():
+            del self.data[pos:pos+numRows]
+            msg = wx.grid.GridTableMessage(self,            # The table
+            wx.grid.GRIDTABLE_NOTIFY_ROWS_DELETED, # what we did to it
+            pos,numRows                                     # how many
+            )
+            #msg = wx.grid.GridTableMessage(self, 0, numRows)
+            self.GetView().ProcessTableMessage(msg)
+            
+            self.UpdateValues()
+            return True
+        else:
+            return False
+        
+    def UpdateValues( self ):
+            """Update all displayed values"""
+            msg =wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
+            self.GetView().ProcessTableMessage(msg)
+
+
+
+class paramTable(wx.grid.PyGridTableBase):
+    """Acts as an intermediary between the displaye dlist of all parameters and the list
+    off JParam objects inside of 3*3 numpy.array objects contained in the bond table."""
+    def __init__(self, bondTable):
+        """The bondTable arg is an instance of bondTable which will actually contain
+        all the JParam objects."""
+        wx.grid.PyGridTableBase.__init__(self)
+        self.colLabels = ['Atom1 Number', '   Na   ','   Nb   ', '   Nc   ', 'Atom2 Number', '   Na   ','   Nb   ', '   Nc   ', ' Jij Matrix ', 'On']
+        self.rowLabels=['Bond 1']
+        
+        self.data = [
+                     ['','','','','','','','','','']#Row 1
+                     ]
+        
         #Set defualt Jij to 0's
         self.SetValue(0, 8, numpy.array([[0.,0.,0.],[0.,0.,0.],[0.,0.,0.]]))
     
@@ -1345,4 +1458,3 @@ class bondTable(wx.grid.PyGridTableBase):
             """Update all displayed values"""
             msg =wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
             self.GetView().ProcessTableMessage(msg)
-

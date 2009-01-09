@@ -36,6 +36,8 @@ import CSim
 import spinwavecalc.spinwavepanel as spinwavepanel
 import spinwavecalc.spinwave_calc_file as spinwave_calc_file
 
+from vtkModel.BondClass import JParam
+
 #Atom and cell info window
 
 class atomPanel(wx.Panel):
@@ -514,14 +516,13 @@ class atomListGrid(wx.grid.Grid):
 
 #Bond information window
 class bondListGrid(wx.grid.Grid):
-    """This is the table of bonds displayed inthe bond panel.  It displays
+    """This is the table of bonds displayed in the bond panel.  It displays
     values stored in the bond table stored by the session."""
     def __init__(self, parent, id, session):
         wx.grid.Grid.__init__(self, parent, id)
         self.table = session.getBondTable()
         self.SetTable(self.table)
         self.AutoSize()
-        
         
         #Set up last cell for clicks only
 #        wx.grid.Grid.EnableEditing(self,False)
@@ -558,7 +559,7 @@ class bondListGrid(wx.grid.Grid):
             else:
                 self.table.SetValue(row,9,'')
         elif col==8 and row >=0:  #Jij matrix
-            dialog = jijDialog(self.table.GetValue(row,8))#Pass current Jij value
+            dialog = jijDialog(self.table.GetActualValue(row,8))#Pass current Jij value
             result = dialog.ShowModal()
             if result == wx.ID_OK:
                 self.table.SetValue(row, 8, numpy.array(dialog.getMatrix()))
@@ -573,12 +574,15 @@ class bondListGrid(wx.grid.Grid):
 class bondPanel(wx.Panel):
     """This panel allows the user to create bonds."""
     def __init__(self, parent, id, session):
+        print 1
         wx.Panel.__init__(self, parent, id)
+        print "initializing bondtable"
         
         self.session = session
         
         #Create the table of bonds
         self.bondList = bondListGrid(self, -1, session)
+        print "set bondlistgrid"
         
         #Create the spinner which controls the length of the bond list
         self.bondSpinner = wx.SpinCtrl(self, -1, "")
@@ -601,6 +605,7 @@ class bondPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.OnGenerate, self.genButton)
         connect(self.OnBondAddition, signal = "Bond Added")
         connect(self.OnFileLoad, signal = "File Load")
+        print "done initializing bond table"
 
 
     def OnFileLoad(self):
@@ -669,7 +674,7 @@ class bondPanel(wx.Panel):
                     self.bondList.SetCellValue(i,6, self.bondList.GetCellValue(i+1,6))
                     self.bondList.SetCellValue(i,7, self.bondList.GetCellValue(i+1,7))
                     #Jij matrix must be taken directly from table, so that it is a numpy.array, and not just a string
-                    self.bondList.table.SetValue(i,8, self.bondList.table.GetValue(i+1,8))
+                    self.bondList.table.SetValue(i,8, self.bondList.table.GetActualValue(i+1,8))
                     #The others can be strings
                     self.bondList.SetCellValue(i,9, self.bondList.GetCellValue(i+1,9))
                     
@@ -683,8 +688,15 @@ class bondPanel(wx.Panel):
             if self.bondList.GetCellValue(row, i) != '':
                 return False
         
-        if self.bondList.GetCellValue(row, 8) == numpy.array([[0.,0.,0.],[0.,0.,0.],[0.,0.,0.]]):
-            return False
+        #if self.bondList.GetCellValue(row, 8) == numpy.array([[0.,0.,0.],[0.,0.,0.],[0.,0.,0.]]):
+        #    return False
+        
+        #Check if the J matrix is different from the default
+        matrix = self.bondList.table.GetActualValue(row, 8)
+        for i in range(3):
+            for j in range(3):
+                if not matrix[i][j].isDefault():
+                    return False
         
         return True #(regardless if it's on or not)
             
@@ -808,7 +820,7 @@ class bondPanel(wx.Panel):
                     failed = True
                     
 
-                jij = self.bondList.table.GetValue(row, 8)#numpy.array
+                jij = self.bondList.table.GetActualValue(row, 8)#numpy.array
                 
                 bondData.append([atom1Num, Na1,Nb1,Nc1, atom2Num, Na2,Nb2,Nc2, jij])
             else: #If the row is not checked, all cells should be white
@@ -839,7 +851,7 @@ class bondPanel(wx.Panel):
                     
             
         self.bondList.AutoSize()  #There may be a better way to do this, but
-        #this rerenders the cells to they show the color change
+        #this re-renders the cells so they show the color change
         
         return failed, bondData
         
@@ -858,6 +870,8 @@ class jijDialog(wx.Dialog):
     grid.  It allows them to enter a Jij Matrix."""
     def __init__(self, currentVal):
         wx.Dialog.__init__(self, None, -1, 'Jij Matrix', size = (300,300))
+        self.matrix = currentVal
+        
         okButton = wx.Button(self, wx.ID_OK, "OK", pos = (25, 225), size = (100, 25))
         okButton.SetDefault()
         cancelButton = wx.Button(self, wx.ID_CANCEL, "Cancel",  pos = (175, 225), size = (100, 25))     
@@ -866,29 +880,85 @@ class jijDialog(wx.Dialog):
 #        buttonSizer.Add(cancelButton, 1, wx.ALIGN_CENTER_HORIZONTAL)
 #        self.SetSizer(buttonSizer)
 
-        self.grid = wx.grid.Grid(self, -1, pos = (40,50))
+        #Add radio buttons to switch between fixed values and variables
+        self.fixedValues = True
+        
+        #if the currentVal contains any variable parameters, the radio button will be set
+        #to 'Variable', otherwise the default will be Fixed only
+        for i in range(3):
+            for j in range(3):
+                if currentVal[i][j].fit:
+                     self.fixedValues = False
+        
+        self.rb = wx.RadioBox(self, -1, "", (40,30), wx.DefaultSize,['Fixed Values Only ', 'Variable Values'],
+        2, wx.RA_SPECIFY_COLS)
+        if not self.fixedValues:
+            self.rb.SetSelection(1)
+        
+        self.Bind(wx.EVT_RADIOBOX, self.EvtRadioBox, self.rb)
+        self.rb.SetToolTip(wx.ToolTip("Are the values known, or will they be solved for?"))
+
+        self.grid = wx.grid.Grid(self, -1, pos = (40,80))
         self.grid.CreateGrid(3,3)
-        self.grid.SetColLabelValue(0,"    a    ")
-        self.grid.SetColLabelValue(1,"    b    ")
-        self.grid.SetColLabelValue(2,"    c    ")
+        self.grid.SetColLabelValue(0,"     a     ")
+        self.grid.SetColLabelValue(1,"     b     ")
+        self.grid.SetColLabelValue(2,"     c     ")
         self.grid.SetRowLabelValue(0,"a")
         self.grid.SetRowLabelValue(1,"b")
         self.grid.SetRowLabelValue(2,"c")
         #Fill the table in with the current Jmatrix value
-        self.grid.SetCellValue(0,0,str(currentVal[0][0]))
-        self.grid.SetCellValue(0,1,str(currentVal[0][1]))
-        self.grid.SetCellValue(0,2,str(currentVal[0][2]))
-        self.grid.SetCellValue(1,0,str(currentVal[1][0]))
-        self.grid.SetCellValue(1,1,str(currentVal[1][1]))
-        self.grid.SetCellValue(1,2,str(currentVal[1][2]))
-        self.grid.SetCellValue(2,0,str(currentVal[2][0]))
-        self.grid.SetCellValue(2,1,str(currentVal[2][1]))
-        self.grid.SetCellValue(2,2,str(currentVal[2][2]))
-        self.grid.AutoSize()
+        self.updateTable()
         
         #For validating when 'ok' button is pressed
         self.Bind(wx.EVT_BUTTON, self.OnOk, okButton)
+        
+        #When the user clicks on a cell
+        self.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.OnLeftClick ,self)
+        
+        
+    def updateTable(self):
+        self.grid.SetCellValue(0,0,str(self.matrix[0][0]))
+        self.grid.SetCellValue(0,1,str(self.matrix[0][1]))
+        self.grid.SetCellValue(0,2,str(self.matrix[0][2]))
+        self.grid.SetCellValue(1,0,str(self.matrix[1][0]))
+        self.grid.SetCellValue(1,1,str(self.matrix[1][1]))
+        self.grid.SetCellValue(1,2,str(self.matrix[1][2]))
+        self.grid.SetCellValue(2,0,str(self.matrix[2][0]))
+        self.grid.SetCellValue(2,1,str(self.matrix[2][1]))
+        self.grid.SetCellValue(2,2,str(self.matrix[2][2]))
+        self.grid.AutoSize()
+        
+    def OnLeftClick(self, evt):
+        """When there is a left lick on a cell, if the radio button is set to fixed
+        values, the event will be passed on and the user will be able to enter values.
+        If the radio button is set to variable, then the click will open another
+        in which the user can enter parameter information."""
+        if self.fixedValue():
+            evt.Skip()
+        
+        #Open a paramDialog
+        col=evt.GetCol()
+        row=evt.GetRow()
+
+        dialog = paramDialog(self.matrix[row][col])#Pass current Jij value
+        result = dialog.ShowModal()
+        if result == wx.ID_OK:
+            #since the parameter will be passed by reference, and keeping these references
+            #is important for each parameter which has a list of tied parameters, the dialog
+            #will set the values in the given JParam instance, rather than returning the value
+            dialog.setParam()
+            self.updateTable()
+
+        dialog.Destroy()
+        
+#        self.AutoSize()
+
     
+    
+    def EvtRadioBox(self, evt):
+        """called when radio buttons toggling between fixed values and variable are changed."""
+        self.fixedValues = (evt.GetInt() == 0)
+        print self.fixedValues
     
     def OnOk(self, event):
         """If the OK button is pressed, and the data is all of the right type,
@@ -919,18 +989,31 @@ class jijDialog(wx.Dialog):
     
     def getMatrix(self):
         """returns the 3x3 list of floats."""
+
         jMatrix = []
         for i in range(3):#rows
             row = []
             for j in range(3):
                 val = float(self.grid.GetCellValue(i,j))
-                row.append(val)
+                row.append(JParam(False, val))
             jMatrix.append(row)
         
         return jMatrix
+ 
             
-
+class paramDialog(wx.Dialog):
+    """This is a dialog box in which the user can enter information about a single
+    parameter."""
+    def __init__(self, param):
+        wx.Dialog.__init__(self, None, -1, 'Parameter ' + param.name, size = (300,300))
+        self.param = param
+        
+        okButton = wx.Button(self, wx.ID_OK, "OK", pos = (25, 225), size = (100, 25))
+        okButton.SetDefault()
+        cancelButton = wx.Button(self, wx.ID_CANCEL, "Cancel",  pos = (175, 225), size = (100, 25))
+        
        
+
 
 class vtkPanel(wx.Panel):
     """This is a the main panel which displays the 3D vtk rendering."""
