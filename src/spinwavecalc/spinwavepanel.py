@@ -6,6 +6,7 @@ import numpy as N
 import sys,os
 import spinwave_calc_file
 import wx.richtext
+from sympy import pi
 
 class MyApp(wx.App):
     def __init__(self, redirect=False, filename=None, useBestVisual=False, clearSigInt=True):
@@ -130,9 +131,9 @@ class RichTextFrame(wx.Frame):
 class FormDialog(sc.SizedPanel):
     def __init__(self, parent, id):
         self.parent = parent
-        valstyle=wx.WS_EX_VALIDATE_RECURSIVELY
+        #valstyle=wx.WS_EX_VALIDATE_RECURSIVELY
         sc.SizedPanel.__init__(self, parent, -1,
-                        style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)#| wx.WS_EX_VALIDATE_RECURSIVELY)
+                        style= wx.RESIZE_BORDER)#| wx.WS_EX_VALIDATE_RECURSIVELY)
         self.SetExtraStyle(wx.WS_EX_VALIDATE_RECURSIVELY)
         pane = self
         pane.SetSizerType("vertical")
@@ -144,12 +145,12 @@ class FormDialog(sc.SizedPanel):
    
         self.interactionfile=''
         self.interactionfilectrl=wx.StaticText(FilePane, -1, "Interaction File:%s"%(self.interactionfile,))
-        b = wx.Button(FilePane, -1, "Browse", size  = (60,30))
+        b = wx.Button(FilePane, -1, "Browse")
         self.Bind(wx.EVT_BUTTON, self.OnOpenInt, b)
         
         self.spinfile=''
         self.spinfilectrl=wx.StaticText(FilePane, -1, "Spin File:%s"%(self.spinfile,))
-        b = wx.Button(FilePane, -1, "Browse", size = (60,30))
+        b = wx.Button(FilePane, -1, "Browse")
         self.Bind(wx.EVT_BUTTON, self.OnOpen, b)
         
 
@@ -193,6 +194,27 @@ class FormDialog(sc.SizedPanel):
         spinctrl.SetValue(self.data['step'])
         self.Bind(wx.EVT_SPINCTRL,self.EvtSpinCtrl)
         self.spinctrl=spinctrl
+        
+        
+        #Add Range
+        self.kRange = {}
+        self.kRange['kMin'] = str(0)
+        self.kRange['kMax'] = str(2)
+        
+        wx.StaticText(pane, -1, "k Range")
+        kRangePane = sc.SizedPanel(pane, -1)
+        kRangePane.SetSizerType("horizontal")
+        
+        wx.StaticText(kRangePane, -1, "Min =")
+        self.kMinCtrl = wx.TextCtrl(kRangePane, -1, self.kRange['kMin'],validator=mFormValidator(self.kRange,'kMin'))
+        wx.StaticText(kRangePane, -1, "*pi")
+        
+        wx.StaticText(kRangePane, -1, "    Max =")
+        self.kMaxCtrl = wx.TextCtrl(kRangePane, -1, self.kRange['kMax'],validator=mFormValidator(self.kRange,'kMax'))
+        wx.StaticText(kRangePane, -1, "*pi")
+        
+        
+        
         # add dialog buttons
         
         #Getting rid of standard button function
@@ -202,11 +224,11 @@ class FormDialog(sc.SizedPanel):
         btnPane.SetSizerType("horizontal")
         btnPane.SetSizerProps(expand=True)
         
-        self.btnOk = wx.Button(btnPane,-1, "Ok", size = (60, 30))
+        self.btnOk = wx.Button(btnPane,-1, "Ok")
         #self.btnOk.SetDefault()
         #btnsizer.Add(self.btnOk)
 
-        btn = wx.Button(btnPane, -1, "Cancel", size = (60, 30))
+        btnCancel = wx.Button(btnPane, -1, "Cancel")
         #btnsizer.Add(btn)
         
         #self.GetSizer().Add(btnsizer)
@@ -214,16 +236,20 @@ class FormDialog(sc.SizedPanel):
         #intercept OK button click event
         self.Bind(wx.EVT_BUTTON, self.OnOk, self.btnOk)
         
+        #intercept Cancel button click event
+        self.Bind(wx.EVT_BUTTON, self.OnCancel, btnCancel)
+        
+
         
         #self.TransferDataToWindow()
         # a little trick to make sure that you can't resize the dialog to
         # less screen space than the controls need
         self.Fit()
         size = self.GetSize()
-        print size
+        size = (size[0]+5, size[1]+35)#I think borders may not be included because size is consisitantly too small
         self.parent.SetSize(size)
         self.parent.SetMinSize(size)
-        #This trick is not working becuase the size of the last pane is not being included for some reason
+        #This trick is not working because the self.GetSize() is too small
         #self.parent.SetMinSize((645, 245))
         #self.parent.SetMinSize((400,400))
         
@@ -236,6 +262,12 @@ class FormDialog(sc.SizedPanel):
         self.editorWin.Show(True)
 
         
+    def OnCancel(self, evt):
+        """Closes window"""
+        self.parent.Close()
+        
+    
+    
     def OnOk(self, event):
         #Formerly, when this was modal, this would be done in calling function
         self.Fit()
@@ -246,7 +278,7 @@ class FormDialog(sc.SizedPanel):
         print self.data['step']
         print self.interactionfile
         print self.spinfile
-        spinwave_calc_file.driver(self.spinfile,self.interactionfile,self.data,self.data['step'])
+        spinwave_calc_file.driver(self.spinfile,self.interactionfile,self.data,self.data['step'], float(self.kRange['kMin'])*pi, float(self.kRange['kMax'])*pi)
         #button click event is not passed on, so the window does not close when OK is clicked
 
     def EvtSpinCtrl(self,evt):

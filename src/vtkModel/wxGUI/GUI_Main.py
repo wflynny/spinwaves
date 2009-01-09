@@ -1328,10 +1328,12 @@ class App(wx.App):
         self.SetTopWindow(self.frame)
         #Create the atom frame
         frame1 = wx.Frame(self.frame, -1, "Atoms", size = (500,245))
+        frame1.SetMinSize((500,245))
         atomPanel(frame1, -1, session = session)
         frame1.Show()
         #Create the bond frame
         frame2 = wx.Frame(self.frame, -1, 'Bonds', size = (655,200))
+        frame2.SetMinSize((655, 140))
         bondPanel(frame2, -1, session = session)
         frame2.Show()
 

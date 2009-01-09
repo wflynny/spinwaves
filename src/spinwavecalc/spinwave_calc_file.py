@@ -435,7 +435,7 @@ def calculate_dispersion(atom_list,N_atoms_uc,N_atoms,Jij,direction,steps,showEi
         Hsave=TwogH2
         return Hsave
     
-def calc_eigs(Hsave,direction,steps):
+def calc_eigs(Hsave,direction,steps,min = 0, max = 2*pi):
         kx=sympy.Symbol('kx',real=True)
         ky=sympy.Symbol('ky',real=True)
         kz=sympy.Symbol('kz',real=True)
@@ -453,7 +453,7 @@ def calc_eigs(Hsave,direction,steps):
         wrange1=[]
         wrange=[]
         #wrangec=[]
-        for q in N.arange(0,2*pi,2*pi/steps):
+        for q in N.arange(min,max,max/steps):
             
             currnum=q*direction['kx']
             #print 'currnum x', currnum
@@ -643,7 +643,7 @@ def Sapplycommutation(atom_list,Sfou,k):
     
     return Sfou
 
-def driver(spinfile,interactionfile,direction,steps):
+def driver(spinfile,interactionfile,direction,steps, kMin, kMax):
 #    myfilestr=spinfile#r'c:\spins.txt'
 #    myspins=readfiles.read_spins(myfilestr)#Returns all spins from file in array form
 #    spins=readfiles.find_collinear(myspins)#This is actually a list of Rotation matrices
@@ -672,7 +672,7 @@ def driver(spinfile,interactionfile,direction,steps):
     #atom_list=generate_atoms_rot()
     Hsave=calculate_dispersion(atom_list,N_atoms_uc,N_atoms,jmats,direction,steps,showEigs=True)
     print "\n\nhere\n\n before calc_eigs\n\n"
-    calc_eigs(Hsave,direction,steps)
+    calc_eigs(Hsave,direction,steps, kMin, kMax)
     direction={}
     direction['kx']=0.
     direction['ky']=1.
