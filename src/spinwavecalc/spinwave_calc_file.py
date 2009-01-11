@@ -9,7 +9,7 @@ matplotlib.use('WXAgg')
 import pylab
 import readfiles
 #from readfiles import atom
-from sympy import pngview,latex
+#from sympy import pngview,latex
 import scipy.linalg
 from matplotlib._pylab_helpers import Gcf
 #from sympy import latex

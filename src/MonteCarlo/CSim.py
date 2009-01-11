@@ -8,7 +8,8 @@ import wx
 #import pylab
 import os
 #dllpath=r'C:\mytripleaxisproject\trunk\eclipse\src\spinwaves\C code'
-dllpath=r'C:\tom winter\code\C code'
+dllpath=r'C:\tom winter\code\C code'#NIST
+linux_so_path = r'/home/tom/Desktop/workCode/C code'#home laptop
 #dllpath=r'C:\Users\Tom\Documents\spinwaves\C code\monteCarlo.dll'
 
 
@@ -201,10 +202,12 @@ def simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath):
     if sys.platform=='win32':
         print 'win32'
         monteCarloDll = N.ctypeslib.load_library('monteCarlo', dllpath)
-#    elif sys.platform=='mac':
-#        monteCarloDll = N.ctypeslib.load_library('libpolarization2.so', '.')
-#    else:
-#        monteCarloDll = N.ctypeslib.load_library('libpolarization2.so', '.') #linux
+    elif sys.platform=='mac':
+        print 'mac'
+        monteCarloDll = N.ctypeslib.load_library('libpolarization2.so', '.')
+    else:
+        print 'Linux'
+        monteCarloDll = N.ctypeslib.load_library('libmonteCarlo', linux_so_path) #linux
         
     atoms, jMatrices = readFile(inFilePath)
 

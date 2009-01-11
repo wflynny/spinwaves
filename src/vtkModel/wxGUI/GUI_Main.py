@@ -4,14 +4,30 @@
 #So it can be run outside of eclipse
 #sys.path.append("C:\\spinwaves\\src")
 
-#Add the vtkModel path ( so this can be run from any directory)
+#Add the vtkModel path (so this can be run from any directory)
 import sys
 import os
-cwdList = os.getcwd().split('\\')
-cwdList.pop()#vtkModel
-cwdList.pop()#src
-mainPath = "\\".join(cwdList)
+
+
+if sys.platform=='win32':#and win64?
+    print 'win32'
+    cwdList = os.getcwd().split('\\')#windows uses backslash
+    cwdList.pop()#vtkModel
+    cwdList.pop()#src
+    mainPath = "\\".join(cwdList)
+elif sys.platform=='mac':
+    print 'mac'
+    #Not Handled yet
+else:
+    print 'Linux'
+    cwdList = os.getcwd().split('/')#Linux uses forward slashes
+    cwdList.pop()#vtkModel
+    cwdList.pop()#src
+    mainPath = "/".join(cwdList)
+    
+
 sys.path.append(mainPath)
+print mainPath
 #sys.path.append("C:\\spinwaves\\src\\MonteCarlo")
 
 
@@ -31,8 +47,8 @@ import time
 from Session import Session
 
 #It could not find MonteCarlo package (import MonteCarlo.CSim)
-sys.path.append(mainPath +"\\MonteCarlo")
-import CSim
+#sys.path.append(mainPath +"\\MonteCarlo")
+import MonteCarlo.CSim
 import spinwavecalc.spinwavepanel as spinwavepanel
 import spinwavecalc.spinwave_calc_file as spinwave_calc_file
 
@@ -913,7 +929,7 @@ class jijDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.OnOk, okButton)
         
         #When the user clicks on a cell
-        self.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.OnLeftClick ,self)
+        self.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.OnLeftClick ,self.grid)
         
         
     def updateTable(self):
@@ -931,22 +947,23 @@ class jijDialog(wx.Dialog):
     def OnLeftClick(self, evt):
         """When there is a left lick on a cell, if the radio button is set to fixed
         values, the event will be passed on and the user will be able to enter values.
-        If the radio button is set to variable, then the click will open another
+        If the radio button is set to variable, then the click will open another dialog
         in which the user can enter parameter information."""
-        if self.fixedValue():
+        if self.fixedValues:
+            print self.fixedValues
             evt.Skip()
-        
+        print "not fixed value"
         #Open a paramDialog
         col=evt.GetCol()
         row=evt.GetRow()
 
-        dialog = paramDialog(self.matrix[row][col])#Pass current Jij value
+        dialog = ParamDialog(self.matrix[row][col])#Pass current Jij value
         result = dialog.ShowModal()
         if result == wx.ID_OK:
             #since the parameter will be passed by reference, and keeping these references
             #is important for each parameter which has a list of tied parameters, the dialog
             #will set the values in the given JParam instance, rather than returning the value
-            dialog.setParam()
+            #dialog.setParam()
             self.updateTable()
 
         dialog.Destroy()
@@ -1001,18 +1018,97 @@ class jijDialog(wx.Dialog):
         return jMatrix
  
             
-class paramDialog(wx.Dialog):
+#class paramDialog(wx.Dialog):
+#    """This is a dialog box in which the user can enter information about a single
+#    parameter."""
+#    def __init__(self, param):
+#        wx.Dialog.__init__(self, None, -1, 'Parameter ' + param.name, size = (300,300))
+#        self.param = param
+#        
+#        okButton = wx.Button(self, wx.ID_OK, "OK", pos = (25, 225), size = (100, 25))
+#        okButton.SetDefault()
+#        cancelButton = wx.Button(self, wx.ID_CANCEL, "Cancel",  pos = (175, 225), size = (100, 25))
+        
+
+
+class ParamDialog(wx.Dialog):
     """This is a dialog box in which the user can enter information about a single
     parameter."""
-    def __init__(self, param):
-        wx.Dialog.__init__(self, None, -1, 'Parameter ' + param.name, size = (300,300))
+    def __init__(self, param, *args, **kwds):
+        # begin wxGlade: ParamDialog.__init__
+        wx.Dialog.__init__(self, *args, **kwds)
+        self.Type_of_Param_RadioBox = wx.RadioBox(self, -1, "Type of Parameter", choices=["Fixed Value", "Variable"], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
+        self.label_1 = wx.StaticText(self, -1, "Value:")
+        self.fixed_value_TxtCtrl = wx.TextCtrl(self, -1, "0.0")
+        self.label_2 = wx.StaticText(self, -1, "Min:")
+        self.min_val_TxtCtrl = wx.TextCtrl(self, -1, "-inf")
+        self.label_3 = wx.StaticText(self, -1, "Max:")
+        self.max_val_TxtCtrl = wx.TextCtrl(self, -1, "+inf")
+        self.label_4 = wx.StaticText(self, -1, "Tied to Parameters:")
+        self.tiedParamsTxtCtrl = wx.TextCtrl(self, -1, "")
+        self.okButton_copy = wx.Button(self, wx.ID_OK, "Ok")#Changed ID for Modal
+        self.cancelButton_copy = wx.Button(self, wx.ID_CANCEL, "Cancel")#Made cancel ID for modal
+
+        self.__set_properties()
+        self.__do_layout()
+
+        self.Bind(wx.EVT_RADIOBOX, self.OnTypeChange, self.Type_of_Param_RadioBox)
+        self.Bind(wx.EVT_BUTTON, self.OnOk, self.okButton_copy)
+        # end wxGlade
         self.param = param
-        
-        okButton = wx.Button(self, wx.ID_OK, "OK", pos = (25, 225), size = (100, 25))
-        okButton.SetDefault()
-        cancelButton = wx.Button(self, wx.ID_CANCEL, "Cancel",  pos = (175, 225), size = (100, 25))
-        
-       
+
+    def __set_properties(self):
+        # begin wxGlade: ParamDialog.__set_properties
+        self.SetTitle("Parameter")
+        self.Type_of_Param_RadioBox.SetToolTipString("Is the value known(fixed), or would you like to solve for it?")
+        self.Type_of_Param_RadioBox.SetSelection(0)
+        self.tiedParamsTxtCtrl.SetToolTipString("write the number of the other paramters which must be equal to this parameter.")
+        # end wxGlade
+
+    def __do_layout(self):
+        # begin wxGlade: ParamDialog.__do_layout
+        sizer_1 = wx.BoxSizer(wx.VERTICAL)
+        sizer_8_copy = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_7 = wx.BoxSizer(wx.VERTICAL)
+        sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_4 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_6 = wx.BoxSizer(wx.VERTICAL)
+        sizer_5 = wx.BoxSizer(wx.VERTICAL)
+        sizer_3 = wx.BoxSizer(wx.VERTICAL)
+        sizer_1.Add(self.Type_of_Param_RadioBox, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL|wx.FIXED_MINSIZE, 1)
+        sizer_3.Add(self.label_1, 0, 0, 0)
+        sizer_3.Add(self.fixed_value_TxtCtrl, 0, 0, 0)
+        sizer_2.Add(sizer_3, 1, wx.EXPAND, 0)
+        sizer_5.Add(self.label_2, 0, 0, 0)
+        sizer_5.Add(self.min_val_TxtCtrl, 0, 0, 0)
+        sizer_4.Add(sizer_5, 1, wx.EXPAND, 0)
+        sizer_6.Add(self.label_3, 0, 0, 0)
+        sizer_6.Add(self.max_val_TxtCtrl, 0, 0, 0)
+        sizer_4.Add(sizer_6, 1, wx.EXPAND, 0)
+        sizer_2.Add(sizer_4, 1, wx.EXPAND, 0)
+        sizer_1.Add(sizer_2, 1, wx.EXPAND, 0)
+        sizer_7.Add(self.label_4, 0, 0, 0)
+        sizer_7.Add(self.tiedParamsTxtCtrl, 0, wx.EXPAND, 0)
+        sizer_1.Add(sizer_7, 1, wx.EXPAND, 0)
+        sizer_1.Add((0, 15), 0, 0, 0)
+        sizer_8_copy.Add(self.okButton_copy, 0, 0, 0)
+        sizer_8_copy.Add(self.cancelButton_copy, 0, 0, 0)
+        sizer_1.Add(sizer_8_copy, 1, wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 0)
+        self.SetSizer(sizer_1)
+        sizer_1.Fit(self)
+        self.Layout()
+        # end wxGlade
+
+    def OnTypeChange(self, event): # wxGlade: ParamDialog.<event_handler>
+        print "Event handler `OnTypeChange' not implemented"
+        event.Skip()
+
+    def OnOk(self, event): # wxGlade: ParamDialog.<event_handler>
+        print "Event handler `OnOk' not implemented"
+        event.Skip()
+
+# end of class ParamDialog
+
 
 
 class vtkPanel(wx.Panel):
