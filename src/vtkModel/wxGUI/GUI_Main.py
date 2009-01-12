@@ -289,54 +289,54 @@ class atomPanel(wx.Panel):
         numA = None
         try:
             numA = float(a)
-            self.aText.SetStyle(0, len(a), wx.TextAttr(colBack = "white"))
+            self.aText.SetBackgroundColour("white")
         except:
-            self.aText.SetStyle(0, len(a), wx.TextAttr(colBack = bgColor))
+            self.aText.SetBackgroundColour(bgColor)
             failed = True
         
         #Validate b(must be a float)
         numB = None
         try:
             numB = float(b)
-            self.bText.SetStyle(0, len(b), wx.TextAttr(colBack = "white"))
+            self.bText.SetBackgroundColour("white")
         except:
-            self.bText.SetStyle(0, len(b), wx.TextAttr(colBack = bgColor))
+            self.bText.SetBackgroundColour(bgColor)
             failed = True
         
         #Validate c(must be a float)
         numC = None
         try:
             numC = float(c)
-            self.cText.SetStyle(0, len(c), wx.TextAttr(colBack = "white"))
+            self.cText.SetBackgroundColour("white")
         except:
-            self.cText.SetStyle(0, len(c), wx.TextAttr(colBack = bgColor))
+            self.cText.SetBackgroundColour(bgColor)
             failed = True
         
         #Validate alpha(must be a float)
         numAlpha = None
         try:
             numAlpha = float(alpha)
-            self.alphaText.SetStyle(0, len(alpha), wx.TextAttr(colBack = "white"))
+            self.alphaText.SetBackgroundColour("white")
         except:
-            self.alphaText.SetStyle(0, len(alpha), wx.TextAttr(colBack = bgColor))
+            self.alphaText.SetBackgroundColour(bgColor)
             failed = True
         
         #Validate beta(must be a float)
         numBeta = None
         try:
             numBeta = float(beta)
-            self.betaText.SetStyle(0, len(beta), wx.TextAttr(colBack = "white"))
+            self.betaText.SetBackgroundColour("white")
         except:
-            self.betaText.SetStyle(0, len(beta), wx.TextAttr(colBack = bgColor))
+            self.betaText.SetBackgroundColour(bgColor)
             failed = True
          
         #Validate gamma(must be a float)
         numGamma = None
         try:
             numGamma = float(gamma)
-            self.gammaText.SetStyle(0, len(gamma), wx.TextAttr(colBack = "white"))
+            self.gammaText.SetBackgroundColour("white")
         except:
-            self.gammaText.SetStyle(0, len(gamma), wx.TextAttr(colBack = bgColor))
+            self.gammaText.SetBackgroundColour(bgColor)
             failed = True
         
         
@@ -344,54 +344,54 @@ class atomPanel(wx.Panel):
         numMagNa = None
         try:
             numMagNa = int(magNa)
-            self.naText.SetStyle(0, len(magNa), wx.TextAttr(colBack = "white"))
+            self.naText.SetBackgroundColour("white")
         except:
-            self.naText.SetStyle(0, len(magNa), wx.TextAttr(colBack = bgColor))
+            self.naText.SetBackgroundColour(bgColor)
             failed = True
             
         #Validate Magnetic Cell Nb(must be an int)
         numMagNb = None
         try:
             numMagNb = int(magNb)
-            self.nbText.SetStyle(0, len(magNb), wx.TextAttr(colBack = "white"))
+            self.nbText.SetBackgroundColour("white")
         except:
-            self.nbText.SetStyle(0, len(magNb), wx.TextAttr(colBack = bgColor))
+            self.nbText.SetBackgroundColour(bgColor)
             failed = True
             
         #Validate Magnetic Cell Nc(must be an int)
         numMagNc = None
         try:
             numMagNc = int(magNc)
-            self.ncText.SetStyle(0, len(magNc), wx.TextAttr(colBack = "white"))
+            self.ncText.SetBackgroundColour("white")
         except:
-            self.ncText.SetStyle(0, len(magNc), wx.TextAttr(colBack = bgColor))
+            self.ncText.SetBackgroundColour(bgColor)
             failed = True
         
         #Validate cutoff Na(must be a int)
         numCutNa = None
         try:
             numCutNa = int(cutNa)
-            self.cutoffNaText.SetStyle(0, len(cutNa), wx.TextAttr(colBack = "white"))
+            self.cutoffNaText.SetBackgroundColour("white")
         except:
-            self.cutoffNaText.SetStyle(0, len(cutNa), wx.TextAttr(colBack = bgColor))
+            self.cutoffNaText.SetBackgroundColour(bgColor)
             failed = True
         
         #Validate cutoff Nb(must be a int)
         numCutNb = None
         try:
             numCutNb = int(cutNb)
-            self.cutoffNbText.SetStyle(0, len(cutNb), wx.TextAttr(colBack = "white"))
+            self.cutoffNbText.SetBackgroundColour("white")
         except:
-            self.cutoffNbText.SetStyle(0, len(cutNb), wx.TextAttr(colBack = bgColor))
+            self.cutoffNbText.SetBackgroundColour(bgColor)
             failed = True
         
         #Validate cutoff Nc(must be a int)
         numCutNc = None
         try:
             numCutNc = int(cutNc)
-            self.cutoffNcText.SetStyle(0, len(cutNc), wx.TextAttr(colBack = "white"))
+            self.cutoffNcText.SetBackgroundColour("white")
         except:
-            self.cutoffNcText.SetStyle(0, len(cutNc), wx.TextAttr(colBack = bgColor))
+            self.cutoffNcText.SetBackgroundColour(bgColor)
             failed = True
         
         
@@ -578,7 +578,9 @@ class bondListGrid(wx.grid.Grid):
             dialog = jijDialog(self.table.GetActualValue(row,8))#Pass current Jij value
             result = dialog.ShowModal()
             if result == wx.ID_OK:
-                self.table.SetValue(row, 8, numpy.array(dialog.getMatrix()))
+                #self.table.SetValue(row, 8, numpy.array(dialog.getMatrix()))
+                dialog.setMatrix()
+                self.Refresh()#values should have been updated
 
             dialog.Destroy()
 
@@ -933,6 +935,7 @@ class jijDialog(wx.Dialog):
         
         
     def updateTable(self):
+        """Updates displayed values to those in the parameter matrix"""
         self.grid.SetCellValue(0,0,str(self.matrix[0][0]))
         self.grid.SetCellValue(0,1,str(self.matrix[0][1]))
         self.grid.SetCellValue(0,2,str(self.matrix[0][2]))
@@ -952,13 +955,14 @@ class jijDialog(wx.Dialog):
         if self.fixedValues:
             evt.Skip()
         else:
-            print "not fixed value"
             #Open a paramDialog
             col=evt.GetCol()
             row=evt.GetRow()
     
             dialog = ParamDialog(self.matrix[row][col], self, -1)#Pass current Jij value
-            dialog.Show()
+            dialog.ShowModal()
+            self.updateTable()
+            dialog.Destroy()
 
 #            result = dialog.ShowModal()
 #            if result == wx.ID_OK:
@@ -977,7 +981,15 @@ class jijDialog(wx.Dialog):
     def EvtRadioBox(self, evt):
         """called when radio buttons toggling between fixed values and variable are changed."""
         self.fixedValues = (evt.GetInt() == 0)
-        print self.fixedValues
+        if not self.fixedValues:
+            #for values that are correctly entered set the JParam.value to the float value
+            for i in range(3):
+                for j in range(3):
+                    try:
+                        self.matrix[i][j].value = float(self.grid.GetCellValue(i,j))
+                    except:
+                        """do nothing"""    
+        self.updateTable()
     
     def OnOk(self, event):
         """If the OK button is pressed, and the data is all of the right type,
@@ -986,38 +998,48 @@ class jijDialog(wx.Dialog):
             event.Skip()
     
     def validate(self):
-        """Makes sure all the cell values are of type float, and turns the cell
+        """If the radio button is set to fixed values:
+        Makes sure all the cell values are of type float, and turns the cell
         pink if one is not."""
         bgColor = "pink"
         failed = False
-        for i in range(3):
-            for j in range(3):
-                try:
-                    float(self.grid.GetCellValue(i,j))
-                    attr = wx.grid.GridCellAttr()
-                    attr.SetBackgroundColour("white")
-                    self.grid.SetAttr(i,j,attr)
-                except:
-                    attr = wx.grid.GridCellAttr()
-                    attr.SetBackgroundColour(bgColor)
-                    self.grid.SetAttr(i,j, attr)
-                    failed = True
+        if self.fixedValues:
+            for i in range(3):
+                for j in range(3):
+                    try:
+                        float(self.grid.GetCellValue(i,j))
+                        attr = wx.grid.GridCellAttr()
+                        attr.SetBackgroundColour("white")
+                        self.grid.SetAttr(i,j,attr)
+                    except:
+                        attr = wx.grid.GridCellAttr()
+                        attr.SetBackgroundColour(bgColor)
+                        self.grid.SetAttr(i,j, attr)
+                        failed = True
         
-        self.grid.AutoSize() #To refresh cells
+        #self.grid.AutoSize() #To refresh cells
+        self.grid.Refresh()
         return not failed
-    
-    def getMatrix(self):
-        """returns the 3x3 list of floats."""
 
-        jMatrix = []
-        for i in range(3):#rows
-            row = []
-            for j in range(3):
-                val = float(self.grid.GetCellValue(i,j))
-                row.append(JParam(False, val))
-            jMatrix.append(row)
-        
-        return jMatrix
+    def setMatrix(self):
+        if self.fixedValues:
+            for i in range(3):
+                for j in range(3):
+                    self.matrix[i][j].value = float(self.grid.GetCellValue(i,j))
+
+
+
+#    def getMatrix(self):
+#        """returns the 3x3 list of floats."""
+#        jMatrix = []
+#        for i in range(3):#rows
+#            row = []
+#            for j in range(3):
+#                val = float(self.grid.GetCellValue(i,j))
+#                row.append(JParam(False, val))
+#            jMatrix.append(row)
+#        
+#        return jMatrix
  
             
 #class paramDialog(wx.Dialog):
@@ -1037,17 +1059,18 @@ class ParamDialog(wx.Dialog):
     """This is a dialog box in which the user can enter information about a single
     parameter."""
     def __init__(self, param, *args, **kwds):
+        tiedStr = str(param.tied).replace('[', '').replace(']','')
         # begin wxGlade: ParamDialog.__init__
         wx.Dialog.__init__(self, *args, **kwds)
         self.Type_of_Param_RadioBox = wx.RadioBox(self, -1, "Type of Parameter", choices=["Fixed Value", "Variable"], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
         self.label_1 = wx.StaticText(self, -1, "Value:")
-        self.fixed_value_TxtCtrl = wx.TextCtrl(self, -1, "0.0")
+        self.fixed_value_TxtCtrl = wx.TextCtrl(self, -1, str(param.value))
         self.label_2 = wx.StaticText(self, -1, "Min:")
-        self.min_val_TxtCtrl = wx.TextCtrl(self, -1, "-inf")
+        self.min_val_TxtCtrl = wx.TextCtrl(self, -1, param.min)
         self.label_3 = wx.StaticText(self, -1, "Max:")
-        self.max_val_TxtCtrl = wx.TextCtrl(self, -1, "+inf")
+        self.max_val_TxtCtrl = wx.TextCtrl(self, -1, param.max)
         self.label_4 = wx.StaticText(self, -1, "Tied to Parameters:")
-        self.tiedParamsTxtCtrl = wx.TextCtrl(self, -1, "")
+        self.tiedParamsTxtCtrl = wx.TextCtrl(self, -1, tiedStr)
         self.okButton_copy = wx.Button(self, wx.ID_OK, "Ok")#Changed ID for Modal
         self.cancelButton_copy = wx.Button(self, wx.ID_CANCEL, "Cancel")#Made cancel ID for modal
 
@@ -1114,7 +1137,7 @@ class ParamDialog(wx.Dialog):
             self.min_val_TxtCtrl.Enable(False)
             self.max_val_TxtCtrl.Enable(False)
             self.tiedParamsTxtCtrl.Enable(False)
-            self.fixed_val_TxtCtrl.Enable(True)
+            self.fixed_value_TxtCtrl.Enable(True)
         else:
             self.fixedVals = False
             self.min_val_TxtCtrl.Enable(True)
@@ -1123,51 +1146,85 @@ class ParamDialog(wx.Dialog):
             self.fixed_value_TxtCtrl.Enable(False)
 
     def OnOk(self, event): # wxGlade: ParamDialog.<event_handler>
-        print "Event handler `OnOk' not implemented"
-        if self.validate():
-            self.setParam()
-        event.Skip()#Exit
+        valid, fixed, val, min, max, tiedParams = self.validate()
+        if valid:
+            self.param.fit = not fixed
+            self.param.value = val
+            self.param.min = min
+            self.param.max = max
+            if self.param.fit:
+                for tiedParam in tiedParams:
+                    self.param.tieTo(tiedParam)
+            
+            event.Skip()#Exit
         
-    def setParam(self):
-        """sets the values in the JParam object to those entered in this window"""
-        print "setParam not yet implemented"
+    #def setParam(self):
+    #    """sets the values in the JParam object to those entered in this window"""
+    #    print "setParam not yet implemented"
 
         
     def validate(self):
         """validate all information entered in textControls to make sure it is of the 
         correct type/format"""
-        print "List of tied parameters not et validated!"
         success = True
         bgColor = "pink"
+        val = None
+        min = None
+        max = None
+        tiedparams = None
         if self.fixedVals:
             try:
                 valStr = self.fixed_value_TxtCtrl.GetValue()
                 val = float(valStr)
-                self.fixed_value_TxtCtrl.SetStyle(0, len(valStr), wx.TextAttr(colBack = "white"))
+                self.fixed_value_TxtCtrl.SetBackgroundColour("white")
             except:
-                self.fixed_value_TxtCtrl.SetStyle(0, len(valStr), wx.TextAttr(colBack = bgColor))
+                self.fixed_value_TxtCtrl.SetBackgroundColour(bgColor)
                 success = False
         else:
             try:
                 minStr = self.min_val_TxtCtrl.GetValue()
                 min = float(self.minStr)
-                self.min_val_TxtCtrl.SetStyle(0, len(minStr), wx.TextAttr(colBack = "white"))
+                self.min_val_TxtCtrl.SetBackgroundColour("white")
             except:
                 if minStr.strip() != "-inf":
-                    self.min_val_TxtCtrl.SetStyle(0, len(minStr), wx.TextAttr(colBack = bgColor))
+                    self.min_val_TxtCtrl.SetBackgroundColour(bgColor)
                     success = False
-            
+                min = "-inf"
             try:
                 maxStr = self.max_val_TxtCtrl.GetValue()
                 max = float(self.maxStr)
-                self.max_val_TxtCtrl.SetStyle(0, len(maxStr), wx.TextAttr(colBack = "white"))
+                self.max_val_TxtCtrl.SetBackgroundColour("white")
             except:
                 if maxStr.strip() != "+inf":
-                    self.max_val_TxtCtrl.SetStyle(0, len(maxStr), wx.TextAttr(colBack = bgColor))
+                    self.max_val_TxtCtrl.SetBackgroundColour(bgColor)
                     success = False
-
-        
-        return success
+                max = "+inf"
+            #validate list of tied parameters
+            tiedStr = self.tiedParamsTxtCtrl.GetValue()
+            tiedStr2 = tiedStr.replace(' ', '')#remove all spaces
+            tiedparams = tiedStr2.split(',')
+            #now resolve each element in tiedparams
+            #acceptable formats include  p1,p2,... or 1,2,...
+            print tiedparams
+            tiedParamInts =[]
+            if tiedparams != ['']:
+                for param in tiedparams:
+                    try:
+                        if param[0] == 'p':
+                            param = param[1:]#remove the 'p'
+                        tiedParamInts.append(float(param))
+                        #check if a coinciding parameter to this index number actually exits
+                        if not self.param.manager.validIndex(param):
+                            self.tiedParamsTxtCtrl.SetBackgroundColour(bgColor)
+                            self.Refresh()
+                            return False
+                    except:
+                        self.tiedParamsTxtCtrl.SetBackgroundColour(bgColor)
+                        self.Refresh()
+                        return False
+            self.tiedParamsTxtCtrl.SetBackgroundColour("white")
+        self.Refresh()
+        return success, self.fixedVals, val, min, max, tiedParamInts
 
 # end of class ParamDialog
 

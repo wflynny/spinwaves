@@ -11,6 +11,7 @@ import numpy
 import time
 import datetime
 from vtkModel.BondClass import JParam
+from vtkModel.Parameter_Manager import ParamManager
 
 class Session():
     """Stores information about a user session
@@ -20,8 +21,9 @@ class Session():
     the GUI, Session sends messages.(The GUI is aware of Session, but Session
     is not aware of the GUI.)"""
     def __init__(self):
+        self.parameter_manager = ParamManager()
         #Stores bond information
-        self.bondTable = bondTable()
+        self.bondTable = bondTable(self.parameter_manager)
         #Stores atom information
         self.atomTable = atomTable()
         self.MagCell = None
@@ -1255,8 +1257,9 @@ class atomTable(wx.grid.PyGridTableBase):
 class bondTable(wx.grid.PyGridTableBase):
     """Contains the information the user enters about interactions. The GUI displays
     what is in this table."""
-    def __init__(self):
+    def __init__(self, parameter_manager):
         wx.grid.PyGridTableBase.__init__(self)
+        self.paramManager = parameter_manager
         self.colLabels = ['Atom1 Number', '   Na   ','   Nb   ', '   Nc   ', 'Atom2 Number', '   Na   ','   Nb   ', '   Nc   ', ' Jij Matrix ', 'On']
         self.rowLabels=['Bond 1']
         
@@ -1265,9 +1268,9 @@ class bondTable(wx.grid.PyGridTableBase):
                      ]
         
         #Set defualt Jij to 0's  JParam() defaults to 0
-        self.SetValue(0, 8, numpy.array([[JParam(),JParam(),JParam()],
-                                         [JParam(),JParam(),JParam()],
-                                         [JParam(),JParam(),JParam()]]))
+        self.SetValue(0, 8, numpy.array([[JParam(self.paramManager),JParam(self.paramManager),JParam(self.paramManager)],
+                                         [JParam(self.paramManager),JParam(self.paramManager),JParam(self.paramManager)],
+                                         [JParam(self.paramManager),JParam(self.paramManager),JParam(self.paramManager)]]))
     
     def GetNumberRows(self):
         return len(self.data)
@@ -1328,9 +1331,9 @@ class bondTable(wx.grid.PyGridTableBase):
         #Set defualt Jij to 0's
         #SetValue does not work for some reason:
         #self.SetValue(self.GetNumberRows()-1, 8, numpy.array([[0.,0.,0.],[0.,0.,0.],[0.,0.,0.]]))
-        self.data[self.GetNumberRows()-1][8] = numpy.array([[JParam(),JParam(),JParam()],
-                                                            [JParam(),JParam(),JParam()],
-                                                            [JParam(),JParam(),JParam()]])
+        self.data[self.GetNumberRows()-1][8] = numpy.array([[JParam(self.paramManager),JParam(self.paramManager),JParam(self.paramManager)],
+                                                            [JParam(self.paramManager),JParam(self.paramManager),JParam(self.paramManager)],
+                                                            [JParam(self.paramManager),JParam(self.paramManager),JParam(self.paramManager)]])
 
         # tell the grid we've added a row
         msg = wx.grid.GridTableMessage(self,            # The table

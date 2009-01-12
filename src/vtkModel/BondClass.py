@@ -6,20 +6,31 @@ class JParam():
     """This class represents one value in a 3*3 J matrix.  In the simplest case it would
     contain a single float value, but it can also be a variable tied to other variables
     for fitting purposes."""
-    def __init__(self, fit = False, value = 0., name = '', min = '-inf', max = '+inf', tied = []):
+    def __init__(self, manager, fit = False, value = 0., min = '-inf', max = '+inf', tied = []):
         """-fit is a boolean value specifying whether this parameter is variable(True)
         or a fixed float(False)
+        -manager is the instance of ParamManager that is to contain this JParam
         -value is the float value if there is one(if fit is False)
         -min is a string of the float number representing the minimum possible value
         (only used if fit is TRUE) '-inf' will be used for negative infinite.
         -max is a string of the float number representing the maximim possible value
         (only used if fit is TRUE) '+inf' will be used for positive infinite.
-        -tied is a list of all other JParam objects that this one is tied too(equal too)"""
+        -tied is a list of all other JParam objects that this one is tied too(equal too)
+        It should only be touched by the manager class.  Use function tieTo to tie other
+        parameters to this one."""
+        self.manager = manager
+        self.manager.addParam(self)
+        
+        
         self.fit = fit
         self.value = value
         self.min = min
         self.max = max
         self.tied = tied
+        
+    def tieTo(self, index):
+        """Ties this parameter to the JParam in the manager at the given index."""
+        self.manager.tie(self, index)
     
     def isDefault(self):
         """Returns true if the values are the in this parameter are the defualt values, or
