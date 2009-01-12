@@ -950,23 +950,25 @@ class jijDialog(wx.Dialog):
         If the radio button is set to variable, then the click will open another dialog
         in which the user can enter parameter information."""
         if self.fixedValues:
-            print self.fixedValues
             evt.Skip()
-        print "not fixed value"
-        #Open a paramDialog
-        col=evt.GetCol()
-        row=evt.GetRow()
+        else:
+            print "not fixed value"
+            #Open a paramDialog
+            col=evt.GetCol()
+            row=evt.GetRow()
+    
+            dialog = ParamDialog(self.matrix[row][col], self, -1)#Pass current Jij value
+            dialog.Show()
 
-        dialog = ParamDialog(self.matrix[row][col])#Pass current Jij value
-        result = dialog.ShowModal()
-        if result == wx.ID_OK:
-            #since the parameter will be passed by reference, and keeping these references
-            #is important for each parameter which has a list of tied parameters, the dialog
-            #will set the values in the given JParam instance, rather than returning the value
-            #dialog.setParam()
-            self.updateTable()
-
-        dialog.Destroy()
+#            result = dialog.ShowModal()
+#            if result == wx.ID_OK:
+                #since the parameter will be passed by reference, and keeping these references
+                #is important for each parameter which has a list of tied parameters, the dialog
+                #will set the values in the given JParam instance, rather than returning the value
+#                dialog.setParam()
+#                self.updateTable()
+    
+            #dialog.Destroy()
         
 #        self.AutoSize()
 
@@ -1056,6 +1058,11 @@ class ParamDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.OnOk, self.okButton_copy)
         # end wxGlade
         self.param = param
+        #Default Radio control will be on fixed value, so other controls mus tbe disabled
+        self.fixedVals = True
+        self.min_val_TxtCtrl.Enable(False)
+        self.max_val_TxtCtrl.Enable(False)
+        self.tiedParamsTxtCtrl.Enable(False)
 
     def __set_properties(self):
         # begin wxGlade: ParamDialog.__set_properties
@@ -1102,10 +1109,65 @@ class ParamDialog(wx.Dialog):
     def OnTypeChange(self, event): # wxGlade: ParamDialog.<event_handler>
         print "Event handler `OnTypeChange' not implemented"
         event.Skip()
+        if event.GetInt()==0:
+            self.fixedVals = True
+            self.min_val_TxtCtrl.Enable(False)
+            self.max_val_TxtCtrl.Enable(False)
+            self.tiedParamsTxtCtrl.Enable(False)
+            self.fixed_val_TxtCtrl.Enable(True)
+        else:
+            self.fixedVals = False
+            self.min_val_TxtCtrl.Enable(True)
+            self.max_val_TxtCtrl.Enable(True)
+            self.tiedParamsTxtCtrl.Enable(True)
+            self.fixed_value_TxtCtrl.Enable(False)
 
     def OnOk(self, event): # wxGlade: ParamDialog.<event_handler>
         print "Event handler `OnOk' not implemented"
-        event.Skip()
+        if self.validate():
+            self.setParam()
+        event.Skip()#Exit
+        
+    def setParam(self):
+        """sets the values in the JParam object to those entered in this window"""
+        print "setParam not yet implemented"
+
+        
+    def validate(self):
+        """validate all information entered in textControls to make sure it is of the 
+        correct type/format"""
+        print "List of tied parameters not et validated!"
+        success = True
+        bgColor = "pink"
+        if self.fixedVals:
+            try:
+                valStr = self.fixed_value_TxtCtrl.GetValue()
+                val = float(valStr)
+                self.fixed_value_TxtCtrl.SetStyle(0, len(valStr), wx.TextAttr(colBack = "white"))
+            except:
+                self.fixed_value_TxtCtrl.SetStyle(0, len(valStr), wx.TextAttr(colBack = bgColor))
+                success = False
+        else:
+            try:
+                minStr = self.min_val_TxtCtrl.GetValue()
+                min = float(self.minStr)
+                self.min_val_TxtCtrl.SetStyle(0, len(minStr), wx.TextAttr(colBack = "white"))
+            except:
+                if minStr.strip() != "-inf":
+                    self.min_val_TxtCtrl.SetStyle(0, len(minStr), wx.TextAttr(colBack = bgColor))
+                    success = False
+            
+            try:
+                maxStr = self.max_val_TxtCtrl.GetValue()
+                max = float(self.maxStr)
+                self.max_val_TxtCtrl.SetStyle(0, len(maxStr), wx.TextAttr(colBack = "white"))
+            except:
+                if maxStr.strip() != "+inf":
+                    self.max_val_TxtCtrl.SetStyle(0, len(maxStr), wx.TextAttr(colBack = bgColor))
+                    success = False
+
+        
+        return success
 
 # end of class ParamDialog
 
