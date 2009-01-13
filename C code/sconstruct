@@ -7,4 +7,4 @@ elif sys.platform=='mac':
 	print 'I do not know how to build on Macs yet'
 else:
 	print 'building on linux'
-	SharedLibrary('polarization2.so', ['libPB.c']) #good
+	SharedLibrary('monteCarlo.so', ['main1.c', 'dSFMT.c']) #good
