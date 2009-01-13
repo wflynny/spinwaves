@@ -1169,9 +1169,8 @@ class ParamDialog(wx.Dialog):
         success = True
         bgColor = "pink"
         val = None
-        min = None
-        max = None
         tiedparams = None
+        tiedParamInts =[]
         if self.fixedVals:
             try:
                 valStr = self.fixed_value_TxtCtrl.GetValue()
@@ -1206,25 +1205,26 @@ class ParamDialog(wx.Dialog):
             #now resolve each element in tiedparams
             #acceptable formats include  p1,p2,... or 1,2,...
             print tiedparams
-            tiedParamInts =[]
             if tiedparams != ['']:
                 for param in tiedparams:
                     try:
                         if param[0] == 'p':
                             param = param[1:]#remove the 'p'
-                        tiedParamInts.append(float(param))
+                        paramInt = int(param)
+                        tiedParamInts.append(paramInt)
                         #check if a coinciding parameter to this index number actually exits
-                        if not self.param.manager.validIndex(param):
+                        if not self.param.manager.validIndex(paramInt):
                             self.tiedParamsTxtCtrl.SetBackgroundColour(bgColor)
                             self.Refresh()
-                            return False
+                            print 'invalid index'
+                            return False, self.fixedVals, val, min, max, tiedParamInts
                     except:
                         self.tiedParamsTxtCtrl.SetBackgroundColour(bgColor)
                         self.Refresh()
-                        return False
+                        return False, self.fixedVals, val, min, max, tiedParamInts
             self.tiedParamsTxtCtrl.SetBackgroundColour("white")
         self.Refresh()
-        return success, self.fixedVals, val, min, max, tiedParamInts
+        return success, self.fixedVals, val, minStr, maxStr, tiedParamInts
 
 # end of class ParamDialog
 
