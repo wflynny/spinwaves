@@ -547,6 +547,17 @@ class bondListGrid(wx.grid.Grid):
         self.SetColAttr(9,attr)
         self.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.OnLeftClick ,self)
         
+        #to toggle view between parameter values and names
+        self.Bind(wx.grid.EVT_GRID_CMD_LABEL_LEFT_CLICK, self.OnLabelClick, self)
+        
+    
+    def OnLabelClick(self, evt):
+        #True = value is displayed, False = name is displayed
+        self.table.valueView = not self.table.valueView
+        #For now the event will not be skipped because highlighting of rows or columns
+        #is unnecessary
+        self.Refresh()
+        
     def SetNumberRows(self, num):
         diff = num - self.table.GetNumberRows()
         if diff > 0:
@@ -933,7 +944,6 @@ class jijDialog(wx.Dialog):
         #When the user clicks on a cell
         self.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.OnLeftClick ,self.grid)
         
-        
     def updateTable(self):
         """Updates displayed values to those in the parameter matrix"""
         self.grid.SetCellValue(0,0,str(self.matrix[0][0]))
@@ -1016,6 +1026,7 @@ class jijDialog(wx.Dialog):
                         attr.SetBackgroundColour(bgColor)
                         self.grid.SetAttr(i,j, attr)
                         failed = True
+            
         
         #self.grid.AutoSize() #To refresh cells
         self.grid.Refresh()
@@ -1026,6 +1037,7 @@ class jijDialog(wx.Dialog):
             for i in range(3):
                 for j in range(3):
                     self.matrix[i][j].value = float(self.grid.GetCellValue(i,j))
+                    self.matrix[i][j].fit = False
 
 
 
@@ -1081,11 +1093,16 @@ class ParamDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.OnOk, self.okButton_copy)
         # end wxGlade
         self.param = param
-        #Default Radio control will be on fixed value, so other controls mus tbe disabled
-        self.fixedVals = True
-        self.min_val_TxtCtrl.Enable(False)
-        self.max_val_TxtCtrl.Enable(False)
-        self.tiedParamsTxtCtrl.Enable(False)
+        #Default Radio control
+        self.fixedVals = not self.param.fit
+        self.fixed_value_TxtCtrl.Enable(self.fixedVals)
+        self.min_val_TxtCtrl.Enable(not self.fixedVals)
+        self.max_val_TxtCtrl.Enable(not self.fixedVals)
+        self.tiedParamsTxtCtrl.Enable(not self.fixedVals)
+        if self.fixedVals:
+            self.Type_of_Param_RadioBox.SetSelection(0)
+        else:
+            self.Type_of_Param_RadioBox.SetSelection(1)
 
     def __set_properties(self):
         # begin wxGlade: ParamDialog.__set_properties
@@ -1150,13 +1167,19 @@ class ParamDialog(wx.Dialog):
         if valid:
             self.param.fit = not fixed
             self.param.value = val
-            self.param.min = min
-            self.param.max = max
             if self.param.fit:
-                for tiedParam in tiedParams:
-                    self.param.tieTo(tiedParam)
-            
+                self.param.min = min
+                self.param.max = max
+                if self.param.fit:
+                    self.param.tieToMany(tiedParams)
+            else:
+                self.param.tieToMany([])#untie all if it is set to a fixed value
+
             event.Skip()#Exit
+            
+            #test
+            for param in self.param.manager.parameters:
+                print param.tied
         
     #def setParam(self):
     #    """sets the values in the JParam object to those entered in this window"""
@@ -1169,6 +1192,8 @@ class ParamDialog(wx.Dialog):
         success = True
         bgColor = "pink"
         val = None
+        min = '-inf'
+        max = '+inf'
         tiedparams = None
         tiedParamInts =[]
         if self.fixedVals:
@@ -1182,22 +1207,26 @@ class ParamDialog(wx.Dialog):
         else:
             try:
                 minStr = self.min_val_TxtCtrl.GetValue()
-                min = float(self.minStr)
+                min = float(minStr)
                 self.min_val_TxtCtrl.SetBackgroundColour("white")
             except:
                 if minStr.strip() != "-inf":
                     self.min_val_TxtCtrl.SetBackgroundColour(bgColor)
                     success = False
-                min = "-inf"
             try:
                 maxStr = self.max_val_TxtCtrl.GetValue()
-                max = float(self.maxStr)
+                max = float(maxStr)
                 self.max_val_TxtCtrl.SetBackgroundColour("white")
+                #check that min < max
+                if min != '-inf':
+                    if min >= max:
+                        self.min_val_TxtCtrl.SetBackgroundColour(bgColor)
+                        self.max_val_TxtCtrl.SetBackgroundColour(bgColor)
+                        success = False    
             except:
                 if maxStr.strip() != "+inf":
                     self.max_val_TxtCtrl.SetBackgroundColour(bgColor)
                     success = False
-                max = "+inf"
             #validate list of tied parameters
             tiedStr = self.tiedParamsTxtCtrl.GetValue()
             tiedStr2 = tiedStr.replace(' ', '')#remove all spaces
@@ -1224,7 +1253,7 @@ class ParamDialog(wx.Dialog):
                         return False, self.fixedVals, val, min, max, tiedParamInts
             self.tiedParamsTxtCtrl.SetBackgroundColour("white")
         self.Refresh()
-        return success, self.fixedVals, val, minStr, maxStr, tiedParamInts
+        return success, self.fixedVals, val, str(min), str(max), tiedParamInts
 
 # end of class ParamDialog
 
