@@ -18,7 +18,7 @@ from simple import readFile, Timer, simpleAtom
 if sys.platform in ('darwin'):
     ext = '.dylib'
 elif sys.platform in ('win32','cygwin'):
-    ext = '.dll'
+    ext = '.pyd'
 else:
     ext = '.so'
 dllpath=os.path.join(os.path.dirname(__file__),'monteCarlo'+ext)

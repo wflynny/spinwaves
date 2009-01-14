@@ -7,33 +7,12 @@
 #Add the vtkModel path (so this can be run from any directory)
 import sys
 import os
-
-
-if sys.platform=='win32':#and win64?
-    print 'win32'
-    cwdList = os.getcwd().split('\\')#windows uses backslash
-    cwdList.pop()#vtkModel
-    cwdList.pop()#src
-    mainPath = "\\".join(cwdList)
-elif sys.platform=='mac':
-    print 'mac'
-    #Not Handled yet
-else:
-    print 'Linux'
-    cwdList = os.getcwd().split('/')#Linux uses forward slashes
-    cwdList.pop()#vtkModel
-    cwdList.pop()#src
-    mainPath = "/".join(cwdList)
-    
-
-sys.path.append(mainPath)
-print mainPath
-#sys.path.append("C:\\spinwaves\\src\\MonteCarlo")
-
-
+import time
 
 import wx
 import wx.grid
+from wx.py.dispatcher import connect, send
+
 from picker import Picker
 from wxVTKRenderWindowInteractor import *
 from vtkModel.SpaceGroups import *
@@ -41,9 +20,7 @@ from vtkModel.VTKDrawer import *
 from vtkModel.MagneticCellClass import *
 from vtkModel.CellClass import *
 #import random
-from wx.py.dispatcher import connect, send
 import vtkModel.SpaceGroups
-import time
 from Session import Session
 
 #It could not find MonteCarlo package (import MonteCarlo.CSim)
@@ -1621,11 +1598,13 @@ class App(wx.App):
         return True
     
 
-
-if __name__ == '__main__':
+def main():
     app = App(False)
     app.MainLoop()
-    
+
+if __name__ == '__main__':
+    main()
+
     
     
 
