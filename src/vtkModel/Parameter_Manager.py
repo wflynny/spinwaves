@@ -3,8 +3,7 @@ class ParamManager():
         self.parameters = []
     
     def addParam(self, param):
-        """Adds a new parameter to this list."""
-        print "addParam function"
+        """Appends a new parameter to this list."""
         self.parameters.append(param)
         
     def validIndex(self, index):
@@ -32,7 +31,6 @@ class ParamManager():
         param2.value = param1.value
         param2.min = param1.min
         param2.max = param1.max
-        
         #tie to any parameters tied to the second parameter
         for eachIndex in param2.tied:
             if not param1.isTiedTo(eachIndex):
@@ -47,8 +45,14 @@ class ParamManager():
         param2.tied.sort()
     
     def untie(self, paramObj, index):
-        paramObj.tied.remove(index)
-        self.parameters[index].tied.remove(self.parameters.index(paramObj))
+        """will untie the given Jparam object with the parameter given by index as well as
+        all parameters tied to the parameter at index."""
+        if paramObj.isTiedTo(index):
+            paramObj.tied.remove(index)
+            self.parameters[index].tied.remove(self.parameters.index(paramObj))
+        
+            for p in self.parameters[index].tied:
+                self.untie(paramObj, p)
     
     def removeParam(self, param):
         """removes the given JParam object from the list of parameters and corrects all

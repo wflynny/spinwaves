@@ -120,6 +120,12 @@ class Session():
         
         bondNodes = bondsNode.getElementsByTagName('bond')
 #        bondData = []
+        
+        #parameters are split up by the J matrix they are in, but need to be resolved
+        #into a single list.  This method is relying on the parameter numbers starting
+        #at 1 and not having any gaps, which should always be the case
+        allParamNodes = []
+        
         for i in range(len(bondNodes)):
             atom1Num = bondNodes[i].getAttribute('Atom1_Number')
             atom1Na = bondNodes[i].getAttribute('Atom1_Na')
@@ -142,43 +148,79 @@ class Session():
             
             #Jmatrix 
             nodes = bondNodes[i].getElementsByTagName('jMatrix')
-            if len(nodes) > 0:   
-                if len(nodes) == 1:
-                    jNode = nodes[0]
-                else:#There should only be one of these elements
-                    raise Exception('not valid XML Session file')
-                
-                j11 = float(jNode.getAttribute('j11'))
-                j12 = float(jNode.getAttribute('j12'))
-                j13 = float(jNode.getAttribute('j13'))
-                j21 = float(jNode.getAttribute('j21'))
-                j22 = float(jNode.getAttribute('j22'))
-                j23 = float(jNode.getAttribute('j23'))
-                j31 = float(jNode.getAttribute('j31'))
-                j32 = float(jNode.getAttribute('j32'))
-                j33 = float(jNode.getAttribute('j33'))
-                
-                jMatrix = numpy.array([[j11,j12,j12],
-                                       [j21,j22,j23],
-                                       [j31,j32,j33]])
-            else:
-                jMatrix = ''
+            #if len(nodes) > 0:   
+            if len(nodes) == 1:
+                jNode = nodes[0]
+            else:#There should only be one of these elements
+                raise Exception('not valid XML Session file')
             
-            self.bondTable.SetValue(i, 8, jMatrix)
-#            bondData.append([atom1Num, atom1Na, atom1Nb, atom1Nc, atom2Num, atom2Na, atom2Nb, atom2Nc, jMatrix, on])
+            parameterNodes = jNode.getElementsByTagName('Parameter')
+            if parameterNodes.length!=9:
+                raise Exception('not valid XML Session file: There should be 9 parameters per J-matrix')
             
-        #Create the Magnetic Cell
-#        spaceGroup = SpaceGroups.GetSpaceGroup(spaceGroupInt)
-#        unitcell = Cell(spaceGroup, 0,0,0, a, b, c, alpha, gamma, beta)
-#        for i in range(len(atomData)):
-#            unitcell.generateAtoms((float(atomData[i][2]), float(atomData[i][3]), float(atomData[i][4])), atomData[i][0])
-#        self.MagCell = MagneticCell(unitcell, 1,1,1, spaceGroup)
-#        self.changeBonds(bondData) 
+
+            #Add the nodes to the full list of parameters
+            for paramNode in parameterNodes:
+                allParamNodes.append(paramNode)
+            
+        #insert the parameters into the manager in the correct order
+        manager = ParamManager()
+        for i in range(len(allParamNodes)):
+            #i is also the current index in the manager list of parameters
+            for node in allParamNodes:
+                if int(node.getAttribute('name')[1:]) == i:
+                    fitStr = node.getAttribute('fit')
+                    if fitStr =='True':
+                        fit = True
+                    else:
+                        fit = False
+                    value = float(node.getAttribute('value'))
+                    min = node.getAttribute('min')
+                    max = node.getAttribute('max')
+                    
+                    param = JParam(manager, fit, value, min , max)
+                    tiedToStr = node.getAttribute('tiedTo')
+                    strList = tiedToStr[1:len(tiedToStr)-1].split(',')
+                    for tie in strList:
+                        if tie != '':
+                            param.tied.append(int(tie))
+        
+        #now construct the matrices with the appropriate JParam objects
+        numMatrices = len(allParamNodes)/9
+        print 'matrice: ', numMatrices
+        def findParam(posName, startIndex, endIndex):
+            """find the jParam object in the node list between indices startindex and endIndex.
+            (endIndex not included)"""
+            for i in range(startIndex, endIndex):
+                if allParamNodes[i].getAttribute('position') == posName:
+                    return manager.parameters[i]
+            
+            raise Exception('Problem resolving parameter to J Matrix from xml file')
+        
+        for i in range(numMatrices):
+            j11 = findParam('j11', i*9, i*9+9)
+            j12 = findParam('j12', i*9, i*9+9)
+            j13 = findParam('j13', i*9, i*9+9)
+            j21 = findParam('j21', i*9, i*9+9)
+            j22 = findParam('j22', i*9, i*9+9)
+            j23 = findParam('j23', i*9, i*9+9)
+            j31 = findParam('j31', i*9, i*9+9)
+            j32 = findParam('j32', i*9, i*9+9)
+            j33 = findParam('j33', i*9, i*9+9)
+            mat = numpy.array([[j11, j12, j13],
+                               [j21, j22, j23],
+                               [j31, j32, j33]])
+            
+            self.bondTable.SetValue(i, 8, mat)
+
         
         self.cellChange(spaceGroupInt, a, b, c, alpha, beta, gamma, Na, Nb, Nc, Na, Nb, Nc, atomData)
         
         #Send Message to GUI
         send(signal = "File Load", sender = "Session", spaceGroup = spaceGroupInt, a = a, b = b, c = c, alpha = alpha, beta = beta, gamma = gamma, magNa = Na, magNb = Nb, magNc = Nc, cutNa = Na, cutNb = Nb, cutNc = Nc)
+        
+        for i in manager.parameters:
+            print i
              
                 
     def changeBonds(self, bondData):
@@ -359,20 +401,22 @@ class Session():
           
             
             #Right now I allow bond creation without Jmatrix         
-            matrix = self.bondTable.GetValue(i, 8)
+            matrix = self.bondTable.GetActualValue(i, 8)
             print matrix
-            if matrix != '':
-                jMatrix = doc.createElement('jMatrix')
-                jMatrix.setAttribute('j11', str(matrix[0][0]))
-                jMatrix.setAttribute('j12', str(matrix[0][1]))
-                jMatrix.setAttribute('j13', str(matrix[0][2]))
-                jMatrix.setAttribute('j21', str(matrix[1][0]))
-                jMatrix.setAttribute('j22', str(matrix[1][1]))
-                jMatrix.setAttribute('j23', str(matrix[1][2]))
-                jMatrix.setAttribute('j31', str(matrix[2][0]))
-                jMatrix.setAttribute('j32', str(matrix[2][1]))
-                jMatrix.setAttribute('j33', str(matrix[2][2]))
-                bondElement.appendChild(jMatrix)
+            #if matrix != '':
+            jMatrix = doc.createElement('jMatrix')
+            for i in range(3):
+                for j in range(3):
+                    parameter = doc.createElement('Parameter')
+                    parameter.setAttribute('position', 'j'+str(i+1)+str(j+1))
+                    parameter.setAttribute('name', matrix[i][j].getName())
+                    parameter.setAttribute('fit', str(matrix[i][j].fit))
+                    parameter.setAttribute('value', str(matrix[i][j].value))
+                    parameter.setAttribute('min', matrix[i][j].min)
+                    parameter.setAttribute('max', matrix[i][j].max)
+                    parameter.setAttribute('tiedTo', str(matrix[i][j].tied))
+                    jMatrix.appendChild(parameter)
+            bondElement.appendChild(jMatrix)
             
         #Write to screen
         xml.dom.ext.PrettyPrint(doc)
@@ -1272,7 +1316,7 @@ class bondTable(wx.grid.PyGridTableBase):
                                          [JParam(self.paramManager),JParam(self.paramManager),JParam(self.paramManager)],
                                          [JParam(self.paramManager),JParam(self.paramManager),JParam(self.paramManager)]]))
         
-        #This control what is returned by GetValue for ht epurposes of displaying.
+        #This control what is returned by GetValue for the purposes of displaying.
         #If it is true, the value or range of values of each parameter will be shown.
         #If it is false, the name ('p' + index) will be returned by GetValue
         self.valueView = False
@@ -1365,6 +1409,11 @@ class bondTable(wx.grid.PyGridTableBase):
     
     def DeleteRows(self,pos=0,numRows=1):
         if numRows>=0 and numRows<=self.GetNumberRows():
+            #remove the parameter objects from the manager
+            for i in range(pos, pos + numRows):
+                for j in range(3):
+                    for k in range(3):
+                        self.paramManager.removeParam(self.data[i][8][j][k])
             del self.data[pos:pos+numRows]
             msg = wx.grid.GridTableMessage(self,            # The table
             wx.grid.GRIDTABLE_NOTIFY_ROWS_DELETED, # what we did to it

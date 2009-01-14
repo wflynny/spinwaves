@@ -9,7 +9,8 @@ class JParam():
     def __init__(self, manager, fit = False, value = 0., min = '-inf', max = '+inf'):
         """-fit is a boolean value specifying whether this parameter is variable(True)
         or a fixed float(False)
-        -manager is the instance of ParamManager that is to contain this JParam
+        -manager is the instance of ParamManager that is to contain this JParam.
+        This JParam will be appended to the manager list.
         -value is the float value if there is one(if fit is False)
         -min is a string of the float number representing the minimum possible value
         (only used if fit is TRUE) '-inf' will be used for negative infinite.
@@ -43,7 +44,7 @@ class JParam():
             self.tieTo(p)
     
     def isDefault(self):
-        """Returns true if the values are the in this parameter are the defualt values, or
+        """Returns true if the values are the in this parameter are the default values, or
         if False if they have been set to something else."""
         if not self.fit:
             if self.value == 0.0:
@@ -51,6 +52,8 @@ class JParam():
         return False
     
     def getName(self):
+        """returns the name of this parameter in the form p#, where # is the index number
+        in the manager's list of parameters."""
         return "p" + str(self.manager.getIndex(self))
     
     def isTiedTo(self, index):
@@ -90,7 +93,6 @@ class Bond():
         self.Atom2 = Atom2
         
         self.jMat = jMatrix #a numpy 2D array
-        print "\nnew Bond JMat =\n",jMatrix
         
         #New attributes added for fitting purposes
 

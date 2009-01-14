@@ -686,29 +686,10 @@ class bondPanel(wx.Panel):
     def clearEmptyRows(self):
         numRows = self.bondList.GetNumberRows()
         for r in range(0,numRows):
-            row = numRows - 1 - r #start from end
-            #print "row = ", row
+            row = numRows-1-r
             if self.RowIsEmpty(row):
-                #print "row is empty"
-                for i in range(row, self.bondList.GetNumberRows()-1):
-                    #Copy info up one row for all rows after the empty one
-                    #if i < self.bondList.GetNumberRows()-1:
-                    print "i = " , i
-                    self.bondList.SetCellValue(i,0, self.bondList.GetCellValue(i+1,0))
-                    self.bondList.SetCellValue(i,1, self.bondList.GetCellValue(i+1,1))
-                    self.bondList.SetCellValue(i,2, self.bondList.GetCellValue(i+1,2))
-                    self.bondList.SetCellValue(i,3, self.bondList.GetCellValue(i+1,3))
-                    self.bondList.SetCellValue(i,4, self.bondList.GetCellValue(i+1,4))
-                    self.bondList.SetCellValue(i,5, self.bondList.GetCellValue(i+1,5))
-                    self.bondList.SetCellValue(i,6, self.bondList.GetCellValue(i+1,6))
-                    self.bondList.SetCellValue(i,7, self.bondList.GetCellValue(i+1,7))
-                    #Jij matrix must be taken directly from table, so that it is a numpy.array, and not just a string
-                    self.bondList.table.SetValue(i,8, self.bondList.table.GetActualValue(i+1,8))
-                    #The others can be strings
-                    self.bondList.SetCellValue(i,9, self.bondList.GetCellValue(i+1,9))
-                    
-                #Delete last row
-                self.bondSpinner.SetValue(self.bondSpinner.GetValue()-1)
+                self.bondList.table.DeleteRows(row, 1)
+        self.bondSpinner.SetValue(self.bondList.GetNumberRows())
         
     def RowIsEmpty(self, row):
         """Returns true if no column of the row has been filled in, other than On/Off,
@@ -1040,33 +1021,6 @@ class jijDialog(wx.Dialog):
                     self.matrix[i][j].fit = False
 
 
-
-#    def getMatrix(self):
-#        """returns the 3x3 list of floats."""
-#        jMatrix = []
-#        for i in range(3):#rows
-#            row = []
-#            for j in range(3):
-#                val = float(self.grid.GetCellValue(i,j))
-#                row.append(JParam(False, val))
-#            jMatrix.append(row)
-#        
-#        return jMatrix
- 
-            
-#class paramDialog(wx.Dialog):
-#    """This is a dialog box in which the user can enter information about a single
-#    parameter."""
-#    def __init__(self, param):
-#        wx.Dialog.__init__(self, None, -1, 'Parameter ' + param.name, size = (300,300))
-#        self.param = param
-#        
-#        okButton = wx.Button(self, wx.ID_OK, "OK", pos = (25, 225), size = (100, 25))
-#        okButton.SetDefault()
-#        cancelButton = wx.Button(self, wx.ID_CANCEL, "Cancel",  pos = (175, 225), size = (100, 25))
-        
-
-
 class ParamDialog(wx.Dialog):
     """This is a dialog box in which the user can enter information about a single
     parameter."""
@@ -1166,7 +1120,6 @@ class ParamDialog(wx.Dialog):
         valid, fixed, val, min, max, tiedParams = self.validate()
         if valid:
             self.param.fit = not fixed
-            self.param.value = val
             if self.param.fit:
                 self.param.min = min
                 self.param.max = max
@@ -1174,6 +1127,7 @@ class ParamDialog(wx.Dialog):
                     self.param.tieToMany(tiedParams)
             else:
                 self.param.tieToMany([])#untie all if it is set to a fixed value
+                self.param.value = val
 
             event.Skip()#Exit
             
