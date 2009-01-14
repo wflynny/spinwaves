@@ -1,16 +1,27 @@
-from simple import readFile, Timer, simpleAtom
+import os
 import ctypes
 from ctypes import c_float, c_int, c_long
-import numpy as N
 import sys
 import time
+
+import numpy as N
 import wx
 #import pylab
-import os
+
+from simple import readFile, Timer, simpleAtom
+
 #dllpath=r'C:\mytripleaxisproject\trunk\eclipse\src\spinwaves\C code'
-dllpath=r'C:\tom winter\code\C code'#NIST
-linux_so_path = r'/home/tom/Desktop/workCode/C code'#home laptop
+#dllpath=r'C:\tom winter\code\C code'#NIST
+#linux_so_path = r'/home/tom/Desktop/workCode/C code'#home laptop
 #dllpath=r'C:\Users\Tom\Documents\spinwaves\C code\monteCarlo.dll'
+
+if sys.platform in ('darwin'):
+    ext = '.dylib'
+elif sys.platform in ('win32','cygwin'):
+    ext = '.dll'
+else:
+    ext = '.so'
+dllpath=os.path.join(os.path.dirname(__file__),'monteCarlo'+ext)
 
 
 def createVideo(spinsToImageFunction, outFilePath, inFilePath):
