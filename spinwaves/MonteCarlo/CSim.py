@@ -21,7 +21,9 @@ elif sys.platform in ('win32','cygwin'):
     ext = '.pyd'
 else:
     ext = '.so'
-dllpath=os.path.join(os.path.dirname(__file__),'monteCarlo'+ext)
+dllpath=os.path.join(os.path.dirname(__file__),'_monteCarlo'+ext)
+monteCarloDll = ctypes.cdll[dllpath]
+
 
 
 def createVideo(spinsToImageFunction, outFilePath, inFilePath):
@@ -209,17 +211,6 @@ def simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath):
     timer = Timer()
     
 
-    #Load the Dll
-    if sys.platform=='win32':
-        print 'win32'
-        monteCarloDll = N.ctypeslib.load_library('monteCarlo', dllpath)
-    elif sys.platform=='mac':
-        print 'mac'
-        monteCarloDll = N.ctypeslib.load_library('libpolarization2.so', '.')
-    else:
-        print 'Linux'
-        monteCarloDll = N.ctypeslib.load_library('libmonteCarlo', linux_so_path) #linux
-        
     atoms, jMatrices = readFile(inFilePath)
 
     

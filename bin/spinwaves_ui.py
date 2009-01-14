@@ -3,7 +3,9 @@
 import sys
 
 import spinwaves
-sys.path.append(spinwaves.__path__)
+print spinwaves.__path__
+sys.path.append(spinwaves.__path__[0])
+import vtkModel
 
 from spinwaves.vtkModel.wxGUI.GUI_Main import main
 

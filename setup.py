@@ -54,7 +54,8 @@ def configuration(parent_package='', top_path=None, package_name='spinwaves'):
                            long_description = LONG_DESCRIPTION)
 
     sources = [join('lib',f) for f in ['main1.c','dSFMT.c']]
-    config.add_extension('_monteCarlo',sources=sources,
+    config.add_extension(join('MonteCarlo','_monteCarlo'),
+                         sources=sources,
                          define_macros=[('DSFMT_MEXP',19937)])
 
     scripts = [join('bin',f) for f in ['spinwaves_ui.py']]
@@ -68,7 +69,7 @@ def main():
         packages = setuptools.find_packages(),
         include_package_data = True,
         #test_suite="nose.collector",
-        zip_safe = True, # the package can run out of an .egg file
+        zip_safe = False, # the package can run out of an .egg file
         classifiers = classifiers,
         platforms = ["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
         configuration = configuration,

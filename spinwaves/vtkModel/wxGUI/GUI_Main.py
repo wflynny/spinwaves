@@ -25,7 +25,7 @@ from Session import Session
 
 #It could not find MonteCarlo package (import MonteCarlo.CSim)
 #sys.path.append(mainPath +"\\MonteCarlo")
-import MonteCarlo.CSim
+import MonteCarlo.CSim as CSim
 import spinwavecalc.spinwavepanel as spinwavepanel
 import spinwavecalc.spinwave_calc_file as spinwave_calc_file
 
