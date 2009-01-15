@@ -1320,6 +1320,10 @@ class bondTable(wx.grid.PyGridTableBase):
         #If it is true, the value or range of values of each parameter will be shown.
         #If it is false, the name ('p' + index) will be returned by GetValue
         self.valueView = False
+        
+        #Each time a Jmatrix is added or removed to the list, the parameter panel needs
+        #to be notified.
+        self.param_panel = None
     
     def GetNumberRows(self):
         return len(self.data)
@@ -1405,10 +1409,17 @@ class bondTable(wx.grid.PyGridTableBase):
                 1                                       # how many
                 )
         self.GetView().ProcessTableMessage(msg)
+        
+        if self.param_panel:
+            self.param_panel.AddRow(self.GetNumberRows()-1)
+        
         return True
     
     def DeleteRows(self,pos=0,numRows=1):
         if numRows>=0 and numRows<=self.GetNumberRows():
+            #Update teh parameter panel
+            self.param_panel.RemoveRows(pos, numRows)
+            
             #remove the parameter objects from the manager
             for i in range(pos, pos + numRows):
                 for j in range(3):
@@ -1428,7 +1439,15 @@ class bondTable(wx.grid.PyGridTableBase):
             return False
         
     def UpdateValues( self ):
-            """Update all displayed values"""
-            msg =wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
-            self.GetView().ProcessTableMessage(msg)
-
+        """Update all displayed values"""
+        msg =wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
+        self.GetView().ProcessTableMessage(msg)
+        
+    def GetJMatrix(self, row):
+        return self.GetActualValue(row, 8)
+    
+    def AddParamPanel(self, panel):
+        self.param_panel = panel
+        for i in range(self.GetNumberRows()):
+            self.param_panel.AddRow(i)
+        

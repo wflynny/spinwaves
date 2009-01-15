@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 
 """This is the main GUI."""
-#So it can be run outside of eclipse
-#sys.path.append("C:\\spinwaves\\src")
 
-#Add the vtkModel path (so this can be run from any directory)
 import sys
 import os
 import time
@@ -488,7 +485,7 @@ class atomPanel(wx.Panel):
 
 
 class atomListGrid(wx.grid.Grid):
-    """This is the table of atom values.  It displays values in hte atom table
+    """This is the table of atom values.  It displays values in the atom table
     stored by the session."""
     def __init__(self, parent, id, session):
         wx.grid.Grid.__init__(self, parent, id)
@@ -611,7 +608,11 @@ class bondPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.OnGenerate, self.genButton)
         connect(self.OnBondAddition, signal = "Bond Added")
         connect(self.OnFileLoad, signal = "File Load")
-        print "done initializing bond table"
+
+        #Create the parameter editing frame
+        paramFrame = wx.Frame(self.GetParent(), -1, "Parameters")
+        param_panel = ParameterPanel(self.bondList.table, paramFrame, -1)
+        paramFrame.Show()
 
 
     def OnFileLoad(self):
@@ -850,6 +851,150 @@ class bondPanel(wx.Panel):
 #        self.atomList.GetTable().SetNumberRows(rows)
         event.Skip()
  
+
+class ParamTable(wx.grid.PyGridTableBase):
+    """This is the table base for the editable parameter tables in
+    ParameterPanel.  It only acts as an intermediary between the bondTable,
+    where the matrices of JParam objects are stored and the 3*3 parameter grid."""
+    
+    def __init__(self, bond_table_base, row_num):
+        wx.grid.PyGridTableBase.__init__(self)
+        self.bond_table = bond_table_base
+        self.row_num = row_num
+        
+    def GetNumberRows(self):
+        return 3
+    
+    def GetNumberCols(self):
+        return 3
+    
+    def GetValue(self, row, col):
+        """Returns a String representation of the value in the given cell."""
+        return self.bond_table.GetJMatrix(self.row_num)[row][col].__str__()
+        
+    def SetValue(self, row, col, value):
+        """Attempts to change the JParam in the bond table base."""
+        self.bond_table.GetJMatrix(self.row_num)[row][col].value = float(value)
+
+
+class ParameterPanel(wx.Panel):
+    def __init__(self, bond_table_base, *args, **kwds):
+        # begin wxGlade: ParameterPanel.__init__
+        kwds["style"] = wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.bond_num_col_label = wx.StaticText(self, -1, "Interaction Number")
+        self.tie_col_label = wx.StaticText(self, -1, "Tie Parameters")
+        self.edit_col_label = wx.StaticText(self, -1, "Edit Parameters")
+        #self.Type_of_Param_RadioBox = wx.RadioBox(self, -1, "Type of Parameter", choices=["Fixed Value", "Variable"], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
+        self.__set_properties()
+        self.__do_layout()
+        #self.Bind(wx.EVT_RADIOBOX, self.OnTypeChange, self.Type_of_Param_RadioBox)
+        
+        # end wxGlade
+        self.bond_table_base = bond_table_base
+        self.sized_items = []#keep a reference to all items added to the main
+        #sizer so that they can be removed later.
+        self.bond_table_base.AddParamPanel(self)
+
+    def __set_properties(self):
+        # begin wxGlade: ParameterPanel.__set_properties
+        self.tie_col_label.SetToolTipString("To tie parameters, click a parameter, then hold Ctrl and click other paramters to tie to.")
+        self.edit_col_label.SetToolTipString("Click a parameter to edit it.")
+        #self.Type_of_Param_RadioBox.SetToolTipString("Is the value known(fixed), or would you like to solve for it?")
+        #self.Type_of_Param_RadioBox.SetSelection(0)
+   
+        # end wxGlade
+
+    def __do_layout(self):
+        # begin wxGlade: ParameterPanel.__do_layout
+        self.main_grid_sizer = wx.FlexGridSizer(1, 3, 10, 10)#Initially has no matrices
+        sizer_1 = wx.BoxSizer(wx.VERTICAL)
+        self.main_grid_sizer.Add(self.bond_num_col_label, 0, 0, 0)
+        self.main_grid_sizer.Add(self.tie_col_label, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sizer_1.Add(self.edit_col_label, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        #sizer_1.Add(self.Type_of_Param_RadioBox, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL|wx.FIXED_MINSIZE, 1)
+        self.main_grid_sizer.Add(sizer_1, 1, wx.EXPAND, 0)
+        self.main_grid_sizer.AddGrowableCol(2)
+        self.SetSizer(self.main_grid_sizer)
+        self.main_grid_sizer.Fit(self)
+        # end wxGlade
+
+    def AddRow(self, row_num):
+        """Adds another row (to the end) with a new bond label, tie matrix,
+        and parameter editing matrix corresponding to the entry in the bond
+        table at row_num."""
+        bond_label = wx.StaticText(self, -1, "Bond " + str(row_num+1))
+        tie_grid = wx.grid.Grid(self, -1)
+        edit_grid = wx.grid.Grid(self, -1)
+        self.Bind(wx.grid.EVT_GRID_CMD_CELL_LEFT_CLICK, self.OnTieCellClick,
+                  tie_grid)
+        self.Bind(wx.grid.EVT_GRID_CMD_CELL_LEFT_CLICK, self.OnEditCellClick,
+                  edit_grid)
+        
+        tie_grid.CreateGrid(3, 3)
+        tie_grid.SetRowLabelSize(0)
+        tie_grid.SetColLabelSize(0)
+        #fill in the table with values
+        array = self.bond_table_base.GetJMatrix(row_num)
+        for i in range(3):
+            for j in range(3):
+                tie_grid.SetCellValue(i,j,array[i][j].getName())
+        
+        #self.tie_grid.SetColLabelValue(0, "")
+        tie_grid.SetToolTipString("To tie parameters, click a parameter, then\
+                                   hold Ctrl and click other parameters to tie\
+                                   to.")
+        #edit_grid.CreateGrid(3, 3)
+        edit_grid.SetTable(ParamTable(self.bond_table_base, row_num))
+        edit_grid.SetRowLabelSize(0)
+        edit_grid.SetColLabelSize(0)
+        edit_grid.SetToolTipString("Click a parameter to edit it.")
+        
+        self.main_grid_sizer.Add(bond_label, 0, wx.ALIGN_CENTER_HORIZONTAL |
+                                 wx.ALIGN_CENTER_VERTICAL, 0)
+        self.sized_items.append(bond_label)
+        self.main_grid_sizer.Add(tie_grid, 1, wx.EXPAND, 0)
+        self.sized_items.append(tie_grid)
+        self.main_grid_sizer.Add(edit_grid, 1, wx.EXPAND, 0)
+        self.sized_items.append(edit_grid)
+
+        self.main_grid_sizer.AddGrowableRow(row_num)
+        
+        self.main_grid_sizer.Fit(self)
+        #self.Fit()
+        self.GetParent().Fit()
+        self.GetParent().SetMinSize(self.GetParent().GetSize())
+        
+    
+    def RemoveRows(self, pos, numRows):
+        """remove numRows starting from the row at pos."""
+        print "remove ", pos, numRows
+        for i in range(pos*3, (pos+numRows)*3):#There are 3 columns
+            j = (pos+numRows)*3 -i + pos*3 -1#reverse the order
+            print j, len(self.sized_items)
+            print self.sized_items
+            item = self.sized_items.pop(j)
+            self.main_grid_sizer.Remove(item)
+            item.Destroy()
+        self.main_grid_sizer.Layout()
+        self.main_grid_sizer.Fit(self)
+        self.GetParent().Fit()
+        self.GetParent().SetMinSize(self.GetParent().GetSize())
+
+
+    def OnTypeChange(self, event): # wxGlade: ParameterPanel.<event_handler>
+        print "Event handler `OnTypeChange' not implemented!"
+        event.Skip()
+
+    def OnTieCellClick(self, event): # wxGlade: ParameterPanel.<event_handler>
+        print "Event handler `OnTieCellClick' not implemented!"
+        event.Skip()
+
+    def OnEditCellClick(self, event): # wxGlade: ParameterPanel.<event_handler>
+        print "Event handler `OnEditCellClick' not implemented!"
+        event.Skip()
+
+# end of class ParameterPanel
 
 
 class jijDialog(wx.Dialog):
