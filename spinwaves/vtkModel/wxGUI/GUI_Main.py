@@ -875,6 +875,9 @@ class ParamTable(wx.grid.PyGridTableBase):
     def SetValue(self, row, col, value):
         """Attempts to change the JParam in the bond table base."""
         self.bond_table.GetJMatrix(self.row_num)[row][col].value = float(value)
+        
+    def GetParameter(self, row, col):
+        return self.bond_table.GetJMatrix(self.row_num)[row][col]
 
 
 class ParameterPanel(wx.Panel):
@@ -892,9 +895,25 @@ class ParameterPanel(wx.Panel):
         
         # end wxGlade
         self.bond_table_base = bond_table_base
-        self.sized_items = []#keep a reference to all items added to the main
+        #self.sized_items = []#keep a reference to all items added to the main
         #sizer so that they can be removed later.
+        self.labels = []
+        self.tie_grids = []
+        self.edit_grids = []
+        self.selected_parameter = None #for click tying
         self.bond_table_base.AddParamPanel(self)
+        
+        self.colors = []
+        self.__populateColorList()
+        
+    def __populateColorList(self):
+        #This will make 47 colors and hence support a max of 47 tie groups
+        for r in range(0,256,64):
+            for g in range(0,256,64):
+                for b in range(64,256,64):
+                    if not(b==255 and r ==0 and g ==0):#hard to read dark blue
+                        self.colors.append((r,g,b))
+        print "colors: ", len(self.colors)
 
     def __set_properties(self):
         # begin wxGlade: ParameterPanel.__set_properties
@@ -952,13 +971,13 @@ class ParameterPanel(wx.Panel):
         
         self.main_grid_sizer.Add(bond_label, 0, wx.ALIGN_CENTER_HORIZONTAL |
                                  wx.ALIGN_CENTER_VERTICAL, 0)
-        self.sized_items.append(bond_label)
+        self.labels.append(bond_label)
         self.main_grid_sizer.Add(tie_grid, 1, wx.EXPAND, 0)
-        self.sized_items.append(tie_grid)
+        self.tie_grids.append(tie_grid)
         self.main_grid_sizer.Add(edit_grid, 1, wx.EXPAND, 0)
-        self.sized_items.append(edit_grid)
+        self.edit_grids.append(edit_grid)
 
-        self.main_grid_sizer.AddGrowableRow(row_num)
+        self.main_grid_sizer.AddGrowableRow(row_num+1)
         
         self.main_grid_sizer.Fit(self)
         #self.Fit()
@@ -969,16 +988,26 @@ class ParameterPanel(wx.Panel):
     def RemoveRows(self, pos, numRows):
         """remove numRows starting from the row at pos."""
         print "remove ", pos, numRows
-        for i in range(pos*3, (pos+numRows)*3):#There are 3 columns
-            j = (pos+numRows)*3 -i + pos*3 -1#reverse the order
-            print j, len(self.sized_items)
-            print self.sized_items
-            item = self.sized_items.pop(j)
-            self.main_grid_sizer.Remove(item)
-            item.Destroy()
+        for i in range(pos, (pos+numRows)):#There are 3 columns
+            j = (pos+numRows) -i + pos -1#reverse the order
+            print j, len(self.labels), len(self.tie_grids), len(self.edit_grids)
+            label = self.labels.pop(j)
+            tie_grid = self.tie_grids.pop(j)
+            edit_grid = self.edit_grids.pop(j)
+            self.main_grid_sizer.Remove(label)
+            self.main_grid_sizer.Remove(tie_grid)
+            self.main_grid_sizer.Remove(edit_grid)
+            label.Destroy()
+            tie_grid.Destroy()
+            edit_grid.Destroy()
         self.main_grid_sizer.Layout()
         self.main_grid_sizer.Fit(self)
+        #Increasing the min size fits the frame nicely
+        self.GetParent().SetMinSize((1,1))
+        #self.Fit()
         self.GetParent().Fit()
+        #self.GetParent().SetSize(self.GetSize())
+        #self.GetParent().Refresh()
         self.GetParent().SetMinSize(self.GetParent().GetSize())
 
 
@@ -987,12 +1016,54 @@ class ParameterPanel(wx.Panel):
         event.Skip()
 
     def OnTieCellClick(self, event): # wxGlade: ParameterPanel.<event_handler>
-        print "Event handler `OnTieCellClick' not implemented!"
-        event.Skip()
+        col=event.GetCol()
+        row=event.GetRow()
+        grid = event.GetEventObject()
+        #Get the parameter object from the associated edit_grid
+        edit_grid = self.edit_grids[self.tie_grids.index(grid)]
+        param = edit_grid.GetTable().GetParameter(row, col)
+        if not wx.GetMouseState().ControlDown():
+            self.selected_parameter = param
+        else:
+            self.selected_parameter.tieTo(param.GetIndex())
+        
+        self.UpdateTables()
+
 
     def OnEditCellClick(self, event): # wxGlade: ParameterPanel.<event_handler>
-        print "Event handler `OnEditCellClick' not implemented!"
-        event.Skip()
+
+        #If the radio button is later added, the event will be skipped if it is
+        #set to fixed values
+        #event.Skip()
+        #Open a paramDialog
+        col=event.GetCol()
+        row=event.GetRow()
+        grid = event.GetEventObject()
+
+        dialog = ParamDialog(grid.GetTable().GetParameter(row, col), self, -1)#Pass current Jij value
+        dialog.ShowModal()
+        #grid.Refresh()
+        self.UpdateTables()
+        dialog.Destroy()
+        
+    def UpdateTables(self):
+        for i in range(len(self.labels)):
+            #Set the colors of the cells in tie grids
+            for row in range(3):
+                for col in range(3):
+                    #Get the parameter object from the associated edit_grid
+                    edit_grid = self.edit_grids[i]
+                    param = edit_grid.GetTable().GetParameter(row, col)
+                    if len(param.tied) == 0:
+                        color = (255, 255, 255)#white if not tied
+                    else:
+                        color = self.colors[param.group]
+                    attr = wx.grid.GridCellAttr()
+                    attr.SetBackgroundColour(color)
+                    self.tie_grids[i].SetAttr(row,col,attr)
+                    print param.group, color
+            self.tie_grids[i].Refresh()
+            self.edit_grids[i].Refresh()
 
 # end of class ParameterPanel
 

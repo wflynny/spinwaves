@@ -25,6 +25,8 @@ class JParam():
         self.min = min
         self.max = max
         self.tied = []#only the manager should touch this
+        self.group = None
+        self.manager.AssignNewGroup(self)
         
     def tieTo(self, index):
         """Ties this parameter to the JParam in the manager at the given index."""
@@ -63,6 +65,9 @@ class JParam():
             return True
         except:
             return False
+    
+    def GetIndex(self):
+        return self.manager.getIndex(self)
     
     def __str__(self):
         """This will return the value if fit==False, or the range of values if fit==True"""
