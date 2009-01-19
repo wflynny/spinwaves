@@ -45,6 +45,12 @@ class ParamManager():
         param2.min = param1.min
         param2.max = param1.max
         param2.group = param1.group
+        #param1.fit = param2.fit
+        #param1.value = param2.value
+        #param1.min = param2.min
+        #param1.max = param2.max
+        #param1.group = param2.group
+        
         self.__updateGroups()
         #tie to any parameters tied to the second parameter
         for eachIndex in param2.tied:

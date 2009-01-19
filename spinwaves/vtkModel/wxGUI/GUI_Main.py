@@ -2,8 +2,6 @@
 
 """This is the main GUI."""
 
-import sys
-import os
 import time
 
 import wx
@@ -870,7 +868,10 @@ class ParamTable(wx.grid.PyGridTableBase):
     
     def GetValue(self, row, col):
         """Returns a String representation of the value in the given cell."""
-        return self.bond_table.GetJMatrix(self.row_num)[row][col].__str__()
+        try:#sometimes it is not Destroyd fast enough
+            return self.bond_table.GetJMatrix(self.row_num)[row][col].__str__()
+        except:
+            return ''
         
     def SetValue(self, row, col, value):
         """Attempts to change the JParam in the bond table base."""
@@ -882,18 +883,18 @@ class ParamTable(wx.grid.PyGridTableBase):
 
 class ParameterPanel(wx.Panel):
     def __init__(self, bond_table_base, *args, **kwds):
-        # begin wxGlade: ParameterPanel.__init__
         kwds["style"] = wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.bond_num_col_label = wx.StaticText(self, -1, "Interaction Number")
         self.tie_col_label = wx.StaticText(self, -1, "Tie Parameters")
         self.edit_col_label = wx.StaticText(self, -1, "Edit Parameters")
         #self.Type_of_Param_RadioBox = wx.RadioBox(self, -1, "Type of Parameter", choices=["Fixed Value", "Variable"], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
+        
+        self.main_grid_sizer = wx.FlexGridSizer(1, 3, 10, 10)#Initially has no matrices
         self.__set_properties()
         self.__do_layout()
         #self.Bind(wx.EVT_RADIOBOX, self.OnTypeChange, self.Type_of_Param_RadioBox)
         
-        # end wxGlade
         self.bond_table_base = bond_table_base
         #self.sized_items = []#keep a reference to all items added to the main
         #sizer so that they can be removed later.
@@ -907,13 +908,13 @@ class ParameterPanel(wx.Panel):
         self.__populateColorList()
         
     def __populateColorList(self):
-        #This will make 47 colors and hence support a max of 47 tie groups
-        for r in range(0,256,64):
-            for g in range(0,256,64):
-                for b in range(64,256,64):
-                    if not(b==255 and r ==0 and g ==0):#hard to read dark blue
+        #This will make 27 colors and hence support a max of 27 tie groups
+        for r in range(0,256,32):
+            for g in range(0,256,32):
+                for b in range(0,256,32):
+                    if(r+g+b > 128):#get rid of dark colors
                         self.colors.append((r,g,b))
-        print "colors: ", len(self.colors)
+        self.colors.reverse()#lighter colors first
 
     def __set_properties(self):
         # begin wxGlade: ParameterPanel.__set_properties
@@ -926,7 +927,6 @@ class ParameterPanel(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: ParameterPanel.__do_layout
-        self.main_grid_sizer = wx.FlexGridSizer(1, 3, 10, 10)#Initially has no matrices
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         self.main_grid_sizer.Add(self.bond_num_col_label, 0, 0, 0)
         self.main_grid_sizer.Add(self.tie_col_label, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
@@ -949,6 +949,7 @@ class ParameterPanel(wx.Panel):
                   tie_grid)
         self.Bind(wx.grid.EVT_GRID_CMD_CELL_LEFT_CLICK, self.OnEditCellClick,
                   edit_grid)
+        self.Bind(wx.grid.EVT_GRID_CMD_CELL_LEFT_DCLICK, self.OnEditCellDClick, edit_grid)
         
         tie_grid.CreateGrid(3, 3)
         tie_grid.SetRowLabelSize(0)
@@ -960,9 +961,9 @@ class ParameterPanel(wx.Panel):
                 tie_grid.SetCellValue(i,j,array[i][j].getName())
         
         #self.tie_grid.SetColLabelValue(0, "")
-        tie_grid.SetToolTipString("To tie parameters, click a parameter, then\
-                                   hold Ctrl and click other parameters to tie\
-                                   to.")
+        tie_grid.SetToolTipString("To tie parameters, click a parameter, then \
+hold Ctrl and click other parameters to tie to.")
+        
         #edit_grid.CreateGrid(3, 3)
         edit_grid.SetTable(ParamTable(self.bond_table_base, row_num))
         edit_grid.SetRowLabelSize(0)
@@ -1000,6 +1001,16 @@ class ParameterPanel(wx.Panel):
             label.Destroy()
             tie_grid.Destroy()
             edit_grid.Destroy()
+            #decrease the row num in the existing objects
+            for index in range(len(self.labels)):
+                #self.main_grid_sizer.Remove(self.labels[index])
+                #self.labels[index] = wx.StaticText(self, -1, "Bond " + str(index+1))
+                #self.main_grid_sizer.Insert(index+3, self.labels[index])
+                self.edit_grids[index].GetTable().row_num -= 1
+                array = self.bond_table_base.GetJMatrix(index)
+                for row in range(3):
+                    for col in range(3):
+                        self.tie_grids[index].SetCellValue(row, col, array[row][col].getName())
         self.main_grid_sizer.Layout()
         self.main_grid_sizer.Fit(self)
         #Increasing the min size fits the frame nicely
@@ -1027,6 +1038,9 @@ class ParameterPanel(wx.Panel):
         else:
             self.selected_parameter.tieTo(param.GetIndex())
         
+        if param.group >= len(self.colors):
+            dialog = wx.MessageDialog(self, "There are no more unique colors, colors must now be repeated.", "Out of Colors")
+            dialog.ShowModal()
         self.UpdateTables()
 
 
@@ -1046,6 +1060,12 @@ class ParameterPanel(wx.Panel):
         self.UpdateTables()
         dialog.Destroy()
         
+    def OnEditCellDClick(self, evt):
+        """Untie the parameter when it is double clicked."""
+        index = self.tie_grids.index(evt.GetEventObject())
+        param = self.edit_grids[index][evt.GetRow()][evt.GetCol()]
+        param.tieToMany([])
+        
     def UpdateTables(self):
         for i in range(len(self.labels)):
             #Set the colors of the cells in tie grids
@@ -1057,7 +1077,10 @@ class ParameterPanel(wx.Panel):
                     if len(param.tied) == 0:
                         color = (255, 255, 255)#white if not tied
                     else:
-                        color = self.colors[param.group]
+                        if param.group < len(self.colors):
+                            color = self.colors[param.group]
+                        else:
+                            color = self.colors[param.group%len(self.colors)]
                     attr = wx.grid.GridCellAttr()
                     attr.SetBackgroundColour(color)
                     self.tie_grids[i].SetAttr(row,col,attr)
@@ -1077,7 +1100,7 @@ class jijDialog(wx.Dialog):
         
         okButton = wx.Button(self, wx.ID_OK, "OK", pos = (25, 225), size = (100, 25))
         okButton.SetDefault()
-        cancelButton = wx.Button(self, wx.ID_CANCEL, "Cancel",  pos = (175, 225), size = (100, 25))     
+        wx.Button(self, wx.ID_CANCEL, "Cancel",  pos = (175, 225), size = (100, 25))     
 #        buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
 #        buttonSizer.Add(okButton, 1, wx.ALIGN_CENTER_HORIZONTAL)
 #        buttonSizer.Add(cancelButton, 1, wx.ALIGN_CENTER_HORIZONTAL)
@@ -1091,7 +1114,7 @@ class jijDialog(wx.Dialog):
         for i in range(3):
             for j in range(3):
                 if currentVal[i][j].fit:
-                     self.fixedValues = False
+                    self.fixedValues = False
         
         self.rb = wx.RadioBox(self, -1, "", (40,30), wx.DefaultSize,['Fixed Values Only ', 'Variable Values'],
         2, wx.RA_SPECIFY_COLS)
@@ -1218,7 +1241,7 @@ class ParamDialog(wx.Dialog):
     """This is a dialog box in which the user can enter information about a single
     parameter."""
     def __init__(self, param, *args, **kwds):
-        tiedStr = str(param.tied).replace('[', '').replace(']','')
+        tiedStr = str(param.tied).replace('[', '').replace(']','') + "  group = " + str(param.group)
         # begin wxGlade: ParamDialog.__init__
         wx.Dialog.__init__(self, *args, **kwds)
         self.Type_of_Param_RadioBox = wx.RadioBox(self, -1, "Type of Parameter", choices=["Fixed Value", "Variable"], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
