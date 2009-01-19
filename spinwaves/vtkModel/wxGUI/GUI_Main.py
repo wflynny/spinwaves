@@ -949,7 +949,8 @@ class ParameterPanel(wx.Panel):
                   tie_grid)
         self.Bind(wx.grid.EVT_GRID_CMD_CELL_LEFT_CLICK, self.OnEditCellClick,
                   edit_grid)
-        self.Bind(wx.grid.EVT_GRID_CMD_CELL_LEFT_DCLICK, self.OnEditCellDClick, edit_grid)
+        self.Bind(wx.grid.EVT_GRID_CMD_CELL_LEFT_DCLICK, self.OnEditCellDClick, 
+                  edit_grid)
         
         tie_grid.CreateGrid(3, 3)
         tie_grid.SetRowLabelSize(0)
@@ -1086,6 +1087,7 @@ hold Ctrl and click other parameters to tie to.")
                     self.tie_grids[i].SetAttr(row,col,attr)
                     print param.group, color
             self.tie_grids[i].Refresh()
+            self.tie_grids[i].ClearSelection()
             self.edit_grids[i].Refresh()
 
 # end of class ParameterPanel
