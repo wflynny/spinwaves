@@ -177,8 +177,9 @@ class Session():
                     value = float(node.getAttribute('value'))
                     min = node.getAttribute('min')
                     max = node.getAttribute('max')
+                    default = float(node.getAttribute('default'))
                     
-                    param = JParam(manager, fit, value, min , max)
+                    param = JParam(manager, fit, value, min , max, default)
                     tiedToStr = node.getAttribute('tiedTo')
                     strList = tiedToStr[1:len(tiedToStr)-1].split(',')
                     for tie in strList:
@@ -414,6 +415,7 @@ class Session():
                     parameter.setAttribute('value', str(matrix[i][j].value))
                     parameter.setAttribute('min', matrix[i][j].min)
                     parameter.setAttribute('max', matrix[i][j].max)
+                    parameter.setAttribute('default', str(matrix[i][j].default))
                     parameter.setAttribute('tiedTo', str(matrix[i][j].tied))
                     jMatrix.appendChild(parameter)
             bondElement.appendChild(jMatrix)
@@ -863,27 +865,23 @@ class Session():
                                             if not atomListContains(cellAtoms, newAtom2):
                                                 cellAtoms.append(newAtom2)
                                     
-                                 
-                                    
-
-        
-
-        #This much works...
-        #for i in cellAtoms:
-        #    print i.pos
-       # 
-       # for i in cellBonds.list:
-       #     print "Cell Bonds ", i.pos1, " ", i.pos2
-       #     
-       # for i in interCellBonds.list:
-       #     print "interCell Bonds ", i.pos1, " ", i.pos2
             
             
         #Write the matrix list to the file
         file.write("#J Matrices\n#Number J11 J12 J13 J21 J22 J23 J31 J32 J33\n")
         for i in range(len(matrices)):
             jMat = matrices[i]
-            jStr = str(i) + " " + str(jMat[0][0]) + " " + str(jMat[0][1]) + " " + str(jMat[0][2]) + " " + str(jMat[1][0]) + " " + str(jMat[1][1]) + " " + str(jMat[1][2]) + " " + str(jMat[2][0]) + " " + str(jMat[2][1]) + " " + str(jMat[2][2])
+            #Old method for J matrices of floats
+            #jStr = str(i) + " " + str(jMat[0][0]) + " " + str(jMat[0][1]) + " " + str(jMat[0][2]) + " " + str(jMat[1][0]) + " " + str(jMat[1][1]) + " " + str(jMat[1][2]) + " " + str(jMat[2][0]) + " " + str(jMat[2][1]) + " " + str(jMat[2][2])
+            jStr = str(i) + " " + str(jMat[0][0].default)
+            jStr += " " + str(jMat[0][1].default) 
+            jStr += " " + str(jMat[0][2].default)
+            jStr += " " + str(jMat[1][0].default) 
+            jStr += " " + str(jMat[1][1].default) 
+            jStr += " " + str(jMat[1][2].default)
+            jStr += " " + str(jMat[2][0].default) 
+            jStr += " " + str(jMat[2][1].default) 
+            jStr += " " + str(jMat[2][2].default)
             file.write(jStr + "\n")
         
         

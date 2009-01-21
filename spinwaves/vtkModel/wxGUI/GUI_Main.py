@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""This is the main GUI."""
+"""This contains the visual elements of the GUI."""
 
 import time
 
@@ -29,6 +29,8 @@ from vtkModel.BondClass import JParam
 #Atom and cell info window
 
 class atomPanel(wx.Panel):
+    """This is the panel in which the user enters information about the space group,
+    dimensions of the unit cell and the atom information."""
     def __init__(self, parent, id, session):
         wx.Panel.__init__(self, parent, id)
         
@@ -237,10 +239,7 @@ class atomPanel(wx.Panel):
     def validate(self):
         """Checks that all values are the right type
 
-        Any field that is not of the right type will be turned pink.  The
-        textCtrl will turn the backcolor of the writting pink, while whole cells
-        in the grid will turn pink.  Therefore, if there is no writting in a
-        textCtrl field, there will be no color either unitl the user types."""
+        Any field that is not of the right type will be turned pink."""
         a = self.aText.GetValue() #str - float
         b = self.bText.GetValue() #str - float
         c = self.cText.GetValue() #str - float
@@ -882,6 +881,8 @@ class ParamTable(wx.grid.PyGridTableBase):
 
 
 class ParameterPanel(wx.Panel):
+    """This is the panel in which the user can edit parameters(values in the Jij
+    martices)."""
     def __init__(self, bond_table_base, *args, **kwds):
         kwds["style"] = wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -908,7 +909,7 @@ class ParameterPanel(wx.Panel):
         self.__populateColorList()
         
     def __populateColorList(self):
-        #This will make 27 colors and hence support a max of 27 tie groups
+        #Create the list of colors used for visualization of the ties between parameters
         for r in range(0,256,32):
             for g in range(0,256,32):
                 for b in range(0,256,32):
@@ -950,7 +951,7 @@ class ParameterPanel(wx.Panel):
         self.Bind(wx.grid.EVT_GRID_CMD_CELL_LEFT_CLICK, self.OnEditCellClick,
                   edit_grid)
         self.Bind(wx.grid.EVT_GRID_CMD_CELL_LEFT_DCLICK, self.OnEditCellDClick, 
-                  edit_grid)
+                  tie_grid)
         
         tie_grid.CreateGrid(3, 3)
         tie_grid.SetRowLabelSize(0)
@@ -981,8 +982,8 @@ hold Ctrl and click other parameters to tie to.")
 
         self.main_grid_sizer.AddGrowableRow(row_num+1)
         
+        self.main_grid_sizer.Layout()
         self.main_grid_sizer.Fit(self)
-        #self.Fit()
         self.GetParent().Fit()
         self.GetParent().SetMinSize(self.GetParent().GetSize())
         
@@ -1016,10 +1017,7 @@ hold Ctrl and click other parameters to tie to.")
         self.main_grid_sizer.Fit(self)
         #Increasing the min size fits the frame nicely
         self.GetParent().SetMinSize((1,1))
-        #self.Fit()
         self.GetParent().Fit()
-        #self.GetParent().SetSize(self.GetSize())
-        #self.GetParent().Refresh()
         self.GetParent().SetMinSize(self.GetParent().GetSize())
 
 
@@ -1027,7 +1025,12 @@ hold Ctrl and click other parameters to tie to.")
         print "Event handler `OnTypeChange' not implemented!"
         event.Skip()
 
-    def OnTieCellClick(self, event): # wxGlade: ParameterPanel.<event_handler>
+    def OnTieCellClick(self, event):
+        """When a cell in the parameter tying matrices is clicked and the
+        Control Key is held, it will be tied to the last parameter to be
+        clicked.  Otherwise, if the Control Key is not held, the parameter will
+        be tied to any parameters which are clikced later while holding the
+        Control Key."""
         col=event.GetCol()
         row=event.GetRow()
         grid = event.GetEventObject()
@@ -1045,7 +1048,7 @@ hold Ctrl and click other parameters to tie to.")
         self.UpdateTables()
 
 
-    def OnEditCellClick(self, event): # wxGlade: ParameterPanel.<event_handler>
+    def OnEditCellClick(self, event):
 
         #If the radio button is later added, the event will be skipped if it is
         #set to fixed values
@@ -1064,10 +1067,14 @@ hold Ctrl and click other parameters to tie to.")
     def OnEditCellDClick(self, evt):
         """Untie the parameter when it is double clicked."""
         index = self.tie_grids.index(evt.GetEventObject())
-        param = self.edit_grids[index][evt.GetRow()][evt.GetCol()]
+        param = self.edit_grids[index].GetTable().GetParameter(evt.GetRow(), 
+                                                               evt.GetCol())
         param.tieToMany([])
+        self.UpdateTables()
         
     def UpdateTables(self):
+        """Updates the grid displays to match the values o fhte parameters they
+        represent."""
         for i in range(len(self.labels)):
             #Set the colors of the cells in tie grids
             for row in range(3):
@@ -1085,7 +1092,7 @@ hold Ctrl and click other parameters to tie to.")
                     attr = wx.grid.GridCellAttr()
                     attr.SetBackgroundColour(color)
                     self.tie_grids[i].SetAttr(row,col,attr)
-                    print param.group, color
+                    #print param.group, color
             self.tie_grids[i].Refresh()
             self.tie_grids[i].ClearSelection()
             self.edit_grids[i].Refresh()
@@ -1232,6 +1239,9 @@ class jijDialog(wx.Dialog):
         return not failed
 
     def setMatrix(self):
+        """If the radio button is set to fixed values, then the values of the
+        parameters will be set to the values entered in the grid.  The numbers
+        should be validated first before this function is called."""
         if self.fixedValues:
             for i in range(3):
                 for j in range(3):
@@ -1243,10 +1253,13 @@ class ParamDialog(wx.Dialog):
     """This is a dialog box in which the user can enter information about a single
     parameter."""
     def __init__(self, param, *args, **kwds):
-        tiedStr = str(param.tied).replace('[', '').replace(']','') + "  group = " + str(param.group)
+        tiedStr = str(param.tied).replace('[', '').replace(']','')
         # begin wxGlade: ParamDialog.__init__
         wx.Dialog.__init__(self, *args, **kwds)
-        self.Type_of_Param_RadioBox = wx.RadioBox(self, -1, "Type of Parameter", choices=["Fixed Value", "Variable"], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
+        self.Param_Type_RB = wx.RadioBox(self, -1, "Type of Parameter",
+                                         choices=["Fixed Value", "Variable"],
+                                         majorDimension=1,
+                                         style=wx.RA_SPECIFY_ROWS)
         self.label_1 = wx.StaticText(self, -1, "Value:")
         self.fixed_value_TxtCtrl = wx.TextCtrl(self, -1, str(param.value))
         self.label_2 = wx.StaticText(self, -1, "Min:")
@@ -1255,13 +1268,15 @@ class ParamDialog(wx.Dialog):
         self.max_val_TxtCtrl = wx.TextCtrl(self, -1, param.max)
         self.label_4 = wx.StaticText(self, -1, "Tied to Parameters:")
         self.tiedParamsTxtCtrl = wx.TextCtrl(self, -1, tiedStr)
-        self.okButton_copy = wx.Button(self, wx.ID_OK, "Ok")#Changed ID for Modal
-        self.cancelButton_copy = wx.Button(self, wx.ID_CANCEL, "Cancel")#Made cancel ID for modal
+        self.okButton_copy = wx.Button(self, wx.ID_OK, "Ok")
+        self.cancelButton_copy = wx.Button(self, wx.ID_CANCEL, "Cancel")
+        self.default_label = wx.StaticText(self, -1, "Default")
+        self.defaultTxtCtrl = wx.TextCtrl(self, -1, str(param.default))
 
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(wx.EVT_RADIOBOX, self.OnTypeChange, self.Type_of_Param_RadioBox)
+        self.Bind(wx.EVT_RADIOBOX, self.OnTypeChange, self.Param_Type_RB)
         self.Bind(wx.EVT_BUTTON, self.OnOk, self.okButton_copy)
         # end wxGlade
         self.param = param
@@ -1271,16 +1286,17 @@ class ParamDialog(wx.Dialog):
         self.min_val_TxtCtrl.Enable(not self.fixedVals)
         self.max_val_TxtCtrl.Enable(not self.fixedVals)
         self.tiedParamsTxtCtrl.Enable(not self.fixedVals)
+        self.defaultTxtCtrl.Enable(not self.fixed_value_TxtCtrl)
         if self.fixedVals:
-            self.Type_of_Param_RadioBox.SetSelection(0)
+            self.Param_Type_RB.SetSelection(0)
         else:
-            self.Type_of_Param_RadioBox.SetSelection(1)
+            self.Param_Type_RB.SetSelection(1)
 
     def __set_properties(self):
         # begin wxGlade: ParamDialog.__set_properties
         self.SetTitle("Parameter")
-        self.Type_of_Param_RadioBox.SetToolTipString("Is the value known(fixed), or would you like to solve for it?")
-        self.Type_of_Param_RadioBox.SetSelection(0)
+        self.Param_Type_RB.SetToolTipString("Is the value known(fixed), or would you like to solve for it?")
+        self.Param_Type_RB.SetSelection(0)
         self.tiedParamsTxtCtrl.SetToolTipString("write the number of the other paramters which must be equal to this parameter.")
         # end wxGlade
 
@@ -1294,7 +1310,7 @@ class ParamDialog(wx.Dialog):
         sizer_6 = wx.BoxSizer(wx.VERTICAL)
         sizer_5 = wx.BoxSizer(wx.VERTICAL)
         sizer_3 = wx.BoxSizer(wx.VERTICAL)
-        sizer_1.Add(self.Type_of_Param_RadioBox, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL|wx.FIXED_MINSIZE, 1)
+        sizer_1.Add(self.Param_Type_RB, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL|wx.FIXED_MINSIZE, 1)
         sizer_3.Add(self.label_1, 0, 0, 0)
         sizer_3.Add(self.fixed_value_TxtCtrl, 0, 0, 0)
         sizer_2.Add(sizer_3, 1, wx.EXPAND, 0)
@@ -1309,6 +1325,10 @@ class ParamDialog(wx.Dialog):
         sizer_7.Add(self.label_4, 0, 0, 0)
         sizer_7.Add(self.tiedParamsTxtCtrl, 0, wx.EXPAND, 0)
         sizer_1.Add(sizer_7, 1, wx.EXPAND, 0)
+        
+        sizer_1.Add(self.default_label, 0, 0, 0)
+        sizer_1.Add(self.defaultTxtCtrl, 0, 0, 0)
+        
         sizer_1.Add((0, 15), 0, 0, 0)
         sizer_8_copy.Add(self.okButton_copy, 0, 0, 0)
         sizer_8_copy.Add(self.cancelButton_copy, 0, 0, 0)
@@ -1327,20 +1347,23 @@ class ParamDialog(wx.Dialog):
             self.max_val_TxtCtrl.Enable(False)
             self.tiedParamsTxtCtrl.Enable(False)
             self.fixed_value_TxtCtrl.Enable(True)
+            self.defaultTxtCtrl.Enable(False)
         else:
             self.fixedVals = False
             self.min_val_TxtCtrl.Enable(True)
             self.max_val_TxtCtrl.Enable(True)
             self.tiedParamsTxtCtrl.Enable(True)
             self.fixed_value_TxtCtrl.Enable(False)
+            self.defaultTxtCtrl.Enable(True)
 
     def OnOk(self, event): # wxGlade: ParamDialog.<event_handler>
-        valid, fixed, val, min, max, tiedParams = self.validate()
+        valid, fixed, val, min, max, tiedParams, default = self.validate()
         if valid:
             self.param.fit = not fixed
             if self.param.fit:
                 self.param.min = min
                 self.param.max = max
+                self.param.default = default
                 if self.param.fit:
                     self.param.tieToMany(tiedParams)
             else:
@@ -1364,6 +1387,7 @@ class ParamDialog(wx.Dialog):
         success = True
         bgColor = "pink"
         val = None
+        default = None
         min = '-inf'
         max = '+inf'
         tiedparams = None
@@ -1399,6 +1423,12 @@ class ParamDialog(wx.Dialog):
                 if maxStr.strip() != "+inf":
                     self.max_val_TxtCtrl.SetBackgroundColour(bgColor)
                     success = False
+            try:
+                defaultStr = self.defaultTxtCtrl.GetValue()
+                default = float(defaultStr)
+                self.defaultTxtCtrl.SetBackgroundColour("white")
+            except:
+                self.defaultTxtCtrl.SetBackgroundColour(bgColor)
             #validate list of tied parameters
             tiedStr = self.tiedParamsTxtCtrl.GetValue()
             tiedStr2 = tiedStr.replace(' ', '')#remove all spaces
@@ -1425,7 +1455,7 @@ class ParamDialog(wx.Dialog):
                         return False, self.fixedVals, val, min, max, tiedParamInts
             self.tiedParamsTxtCtrl.SetBackgroundColour("white")
         self.Refresh()
-        return success, self.fixedVals, val, str(min), str(max), tiedParamInts
+        return success, self.fixedVals, val, str(min), str(max), tiedParamInts, default
 
 # end of class ParamDialog
 

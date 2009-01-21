@@ -45,6 +45,7 @@ class ParamManager():
         param2.min = param1.min
         param2.max = param1.max
         param2.group = param1.group
+        param2.default = param1.default
         #param1.fit = param2.fit
         #param1.value = param2.value
         #param1.min = param2.min

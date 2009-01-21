@@ -6,7 +6,7 @@ class JParam():
     """This class represents one value in a 3*3 J matrix.  In the simplest case it would
     contain a single float value, but it can also be a variable tied to other variables
     for fitting purposes."""
-    def __init__(self, manager, fit = False, value = 0., min = '-inf', max = '+inf'):
+    def __init__(self, manager, fit = False, value = 0., min = '-inf', max = '+inf', default = 0.):
         """-fit is a boolean value specifying whether this parameter is variable(True)
         or a fixed float(False)
         -manager is the instance of ParamManager that is to contain this JParam.
@@ -15,7 +15,9 @@ class JParam():
         -min is a string of the float number representing the minimum possible value
         (only used if fit is TRUE) '-inf' will be used for negative infinite.
         -max is a string of the float number representing the maximim possible value
-        (only used if fit is TRUE) '+inf' will be used for positive infinite."""
+        (only used if fit is TRUE) '+inf' will be used for positive infinite.
+        -default is the value the monte carlo ground state calculator file 
+        export will default to if the value is set to variable."""
         self.manager = manager
         self.manager.addParam(self)
         
@@ -24,6 +26,7 @@ class JParam():
         self.value = value
         self.min = min
         self.max = max
+        self.default = default
         self.tied = []#only the manager should touch this
         self.group = None
         self.manager.AssignNewGroup(self)
