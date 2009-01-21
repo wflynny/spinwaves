@@ -610,8 +610,13 @@ class bondPanel(wx.Panel):
         paramFrame = wx.Frame(self.GetParent(), -1, "Parameters")
         param_panel = ParameterPanel(self.bondList.table, paramFrame, -1)
         paramFrame.Show()
+        
+        connect(self.OnParamChange, signal = "Parameter Values Changed")
 
 
+    def OnParamChange(self):
+        self.bondList.Refresh()
+    
     def OnFileLoad(self):
         """Executed when the session sends a message that a file was loaded."""
         self.bondSpinner.SetValue(self.bondList.GetNumberRows())
@@ -1095,6 +1100,7 @@ hold Ctrl and click other parameters to tie to.")
         else:
             self.selected_parameter.tieTo(param.GetIndex())
         self.UpdateTables()
+        send(signal = "Parameter Values Changed", sender = "Jij Dialog")
 
 
     def OnEditCellClick(self, event):
@@ -1423,6 +1429,8 @@ class ParamDialog(wx.Dialog):
             #test
             for param in self.param.manager.parameters:
                 print param.tied
+        
+        send(signal = "Parameter Values Changed", sender = "Parameter Dialog")
         
     #def setParam(self):
     #    """sets the values in the JParam object to those entered in this window"""

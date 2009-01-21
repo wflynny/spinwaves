@@ -12,6 +12,7 @@ import time
 import datetime
 from vtkModel.BondClass import JParam
 from vtkModel.Parameter_Manager import ParamManager
+import vtkModel.CifFile as CifFile
 
 class Session():
     """Stores information about a user session
@@ -280,7 +281,7 @@ class Session():
         """Reads in a .cif file."""
         cf = CifFile.ReadCif(filename)
         
-        #Assuming all data is in one outter block like NIST examples:
+        #Assuming all data is in one outer block like NIST examples:
         data = cf[cf.keys()[0]]
         
         #Create a Crystollographic Unit Cell
@@ -1217,7 +1218,7 @@ class atomTable(wx.grid.PyGridTableBase):
     what is in this table."""
     def __init__(self):
         wx.grid.PyGridTableBase.__init__(self)
-        self.colLabels = ['   Name   ', 'Atomic Number','    x    ', '    y    ','    z    ', '  Dx  ', '  Dy  ', '  Dz  ']
+        self.colLabels = ['   Name   ', 'Atomic Number','   x   ', '   y   ','   z   ', '  Dx  ', '  Dy  ', '  Dz  ']
         self.rowLabels=['Atom 1']
         
         self.data = [
@@ -1302,7 +1303,7 @@ class bondTable(wx.grid.PyGridTableBase):
     def __init__(self, parameter_manager):
         wx.grid.PyGridTableBase.__init__(self)
         self.paramManager = parameter_manager
-        self.colLabels = ['Atom1 Number', '   Na   ','   Nb   ', '   Nc   ', 'Atom2 Number', '   Na   ','   Nb   ', '   Nc   ', ' Jij Matrix ', 'On']
+        self.colLabels = ['Atom1 Number', '  Na  ','  Nb  ', '  Nc  ', 'Atom2 Number', '  Na  ','  Nb  ', '  Nc  ', '  Jij Matrix  ', 'On']
         self.rowLabels=['Bond 1']
         
         self.data = [
