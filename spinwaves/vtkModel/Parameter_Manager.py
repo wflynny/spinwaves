@@ -13,7 +13,7 @@ class ParamManager():
         num = len(self.groups)
         self.groups.append( [num,True] )
         param.group = num
-        print "assigned ", param.group
+        #print "assigned ", param.group
     
     def addParam(self, param):
         """Appends a new parameter to this list."""
@@ -81,6 +81,18 @@ class ParamManager():
                     break
             else:
                 self.groups[i][1] = False
+                
+        #shuffle groups down to eliminate empty group numbers
+        #for i in range(len(self.groups)):
+        #    if not self.groups[i][1]:
+        #        for param in self.parameters:
+        #            if param.group > i:
+        #                param.group -= 1
+        #    self.groups[i][1] = True
+                
+    def getGroups(self):
+        """Returns a list of lists of like-grouped parameters."""
+        
     
     def untie(self, paramObj, index):
         """will untie the given Jparam object with the parameter given by index as well as

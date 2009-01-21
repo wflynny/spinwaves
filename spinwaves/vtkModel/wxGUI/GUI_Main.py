@@ -857,8 +857,8 @@ class ParamTable(wx.grid.PyGridTableBase):
     def __init__(self, bond_table_base, row_num):
         wx.grid.PyGridTableBase.__init__(self)
         self.bond_table = bond_table_base
-        self.row_num = row_num
-        
+        self.row_num = row_num     
+    
     def GetNumberRows(self):
         return 3
     
@@ -867,7 +867,7 @@ class ParamTable(wx.grid.PyGridTableBase):
     
     def GetValue(self, row, col):
         """Returns a String representation of the value in the given cell."""
-        try:#sometimes it is not Destroyd fast enough
+        try:#sometimes it is not Destroyed fast enough
             return self.bond_table.GetJMatrix(self.row_num)[row][col].__str__()
         except:
             return ''
@@ -906,16 +906,66 @@ class ParameterPanel(wx.Panel):
         self.bond_table_base.AddParamPanel(self)
         
         self.colors = []
+        self.currentColor = 0
+        self.colorMappings = []
         self.__populateColorList()
+        
+        connect(self.OnParamChange, signal = "Parameter Values Changed")
+        
+    def OnParamChange(self):
+        for edit_grid in self.edit_grids:
+            edit_grid.Refresh()
         
     def __populateColorList(self):
         #Create the list of colors used for visualization of the ties between parameters
-        for r in range(0,256,32):
-            for g in range(0,256,32):
-                for b in range(0,256,32):
+        for r in range(0,256,64):
+            for g in range(0,256,64):
+                for b in range(0,256,64):
                     if(r+g+b > 128):#get rid of dark colors
                         self.colors.append((r,g,b))
         self.colors.reverse()#lighter colors first
+        
+        #remove similar colors
+        i = 0
+        while i < len(self.colors):
+            c1 = self.colors[i]
+            i2 = i+1
+            while i2 < len(self.colors):
+                c2 = self.colors[i2]
+                if c2[0] + c2[1] + c2[2] > 192:
+                    if c2[0] == c1[0] and c2[1] == c1[1] and abs(c2[2] - c1[2]) < 85:
+                        if c2[0]>128 or c2[1]>128:
+                            self.colors.pop(i2)
+                    elif c2[0] == c1[0] and c2[2] == c1[2] and abs(c2[1] - c1[1]) < 85:
+                        if c2[2]>128 or c2[0]>128:
+                            self.colors.pop(i2)
+                    elif c2[2] == c1[2] and c2[1] == c1[1] and abs(c2[0] - c1[0]) < 85:
+                        if c2[2]>128 or c2[1]>128:
+                            self.colors.pop(i2)
+                i2 += 1
+            i += 1
+        
+        self.colors.pop(12)
+        #self.colors.pop()
+        
+        #shuffle them
+        for i in range(0,len(self.colors),2):
+            self.colors.append(self.colors.pop(i))
+        #print self.colors
+        
+    def _getColor(self, group):
+        for mapping in self.colorMappings:
+            if mapping[0] == group:
+                return self.colors[mapping[1]]
+        
+        if(self.currentColor+1 < len(self.colors)):
+            self.currentColor +=1
+        else:
+            self.currentColor = 0
+            dialog = wx.MessageDialog(self, "There are no more unique colors, colors must now be repeated.", "Out of Colors")
+            dialog.ShowModal()
+        self.colorMappings.append((group, self.currentColor))
+        return self.colors[self.currentColor]
 
     def __set_properties(self):
         # begin wxGlade: ParameterPanel.__set_properties
@@ -990,10 +1040,10 @@ hold Ctrl and click other parameters to tie to.")
     
     def RemoveRows(self, pos, numRows):
         """remove numRows starting from the row at pos."""
-        print "remove ", pos, numRows
+        #print "remove ", pos, numRows
         for i in range(pos, (pos+numRows)):#There are 3 columns
             j = (pos+numRows) -i + pos -1#reverse the order
-            print j, len(self.labels), len(self.tie_grids), len(self.edit_grids)
+            #print j, len(self.labels), len(self.tie_grids), len(self.edit_grids)
             label = self.labels.pop(j)
             tie_grid = self.tie_grids.pop(j)
             edit_grid = self.edit_grids.pop(j)
@@ -1004,10 +1054,12 @@ hold Ctrl and click other parameters to tie to.")
             tie_grid.Destroy()
             edit_grid.Destroy()
             #decrease the row num in the existing objects
-            for index in range(len(self.labels)):
-                #self.main_grid_sizer.Remove(self.labels[index])
-                #self.labels[index] = wx.StaticText(self, -1, "Bond " + str(index+1))
-                #self.main_grid_sizer.Insert(index+3, self.labels[index])
+            for index in range(j, len(self.labels)):
+                self.main_grid_sizer.Remove(self.labels[index])
+                self.labels[index] = wx.StaticText(self, -1, "Bond " + str(index+1))
+                self.main_grid_sizer.Insert((index+1)*3, self.labels[index], 0,
+                                            wx.ALIGN_CENTER_HORIZONTAL |
+                                            wx.ALIGN_CENTER_VERTICAL, 0)
                 self.edit_grids[index].GetTable().row_num -= 1
                 array = self.bond_table_base.GetJMatrix(index)
                 for row in range(3):
@@ -1029,8 +1081,9 @@ hold Ctrl and click other parameters to tie to.")
         """When a cell in the parameter tying matrices is clicked and the
         Control Key is held, it will be tied to the last parameter to be
         clicked.  Otherwise, if the Control Key is not held, the parameter will
-        be tied to any parameters which are clikced later while holding the
+        be tied to any parameters which are clicked later while holding the
         Control Key."""
+        
         col=event.GetCol()
         row=event.GetRow()
         grid = event.GetEventObject()
@@ -1041,10 +1094,6 @@ hold Ctrl and click other parameters to tie to.")
             self.selected_parameter = param
         else:
             self.selected_parameter.tieTo(param.GetIndex())
-        
-        if param.group >= len(self.colors):
-            dialog = wx.MessageDialog(self, "There are no more unique colors, colors must now be repeated.", "Out of Colors")
-            dialog.ShowModal()
         self.UpdateTables()
 
 
@@ -1073,7 +1122,7 @@ hold Ctrl and click other parameters to tie to.")
         self.UpdateTables()
         
     def UpdateTables(self):
-        """Updates the grid displays to match the values o fhte parameters they
+        """Updates the grid displays to match the values of the parameters they
         represent."""
         for i in range(len(self.labels)):
             #Set the colors of the cells in tie grids
@@ -1085,10 +1134,7 @@ hold Ctrl and click other parameters to tie to.")
                     if len(param.tied) == 0:
                         color = (255, 255, 255)#white if not tied
                     else:
-                        if param.group < len(self.colors):
-                            color = self.colors[param.group]
-                        else:
-                            color = self.colors[param.group%len(self.colors)]
+                        color = self._getColor(param.group)
                     attr = wx.grid.GridCellAttr()
                     attr.SetBackgroundColour(color)
                     self.tie_grids[i].SetAttr(row,col,attr)
@@ -1246,7 +1292,9 @@ class jijDialog(wx.Dialog):
             for i in range(3):
                 for j in range(3):
                     self.matrix[i][j].value = float(self.grid.GetCellValue(i,j))
+                    self.matrix[i][j].default = self.matrix[i][j].value
                     self.matrix[i][j].fit = False
+                    send(signal = "Parameter Values Changed", sender = "Jij Dialog")
 
 
 class ParamDialog(wx.Dialog):
