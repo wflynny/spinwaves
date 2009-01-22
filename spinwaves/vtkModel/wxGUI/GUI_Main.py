@@ -179,6 +179,9 @@ class atomPanel(wx.Panel):
         sizer.Add(self.atomList, 1, wx.EXPAND)
         
         self.SetSizer(sizer)
+        self.Fit()
+        self.GetParent().Fit()
+        self.GetParent().SetMinSize(self.GetParent().GetSize())
         
         #execute the function OnGenerate when the generate button is pressed
         self.Bind(wx.EVT_BUTTON, self.OnGenerate, self.genButton)
@@ -203,8 +206,11 @@ class atomPanel(wx.Panel):
         self.cutoffNbText.SetValue(cutNb.__str__())
         self.cutoffNcText.SetValue(cutNc.__str__())
         self.atomSpinner.SetValue(self.atomList.GetNumberRows())
-        self.atomList.ForceRefresh()
+        #self.atomList.ForceRefresh()
+        self.atomList.Refresh()
         self.atomList.AutoSize()
+        self.Fit()
+        self.GetParent().Fit()
 #        for i in range(len(atomData)):
 #            self.atomList.SetCellValue(i, 0, atomData[i][0].__str__())
 #            self.atomList.SetCellValue(i, 1, atomData[i][1].__str__())
@@ -478,6 +484,9 @@ class atomPanel(wx.Panel):
         rows = self.atomSpinner.GetValue()
         self.atomList.SetNumberRows(rows)
 #        self.atomList.GetTable().SetNumberRows(rows)
+        self.Fit()
+        self.GetParent().Fit()
+
         event.Skip()
 
 
@@ -574,15 +583,11 @@ class bondListGrid(wx.grid.Grid):
 class bondPanel(wx.Panel):
     """This panel allows the user to create bonds."""
     def __init__(self, parent, id, session):
-        print 1
         wx.Panel.__init__(self, parent, id)
-        print "initializing bondtable"
         
         self.session = session
-        
         #Create the table of bonds
         self.bondList = bondListGrid(self, -1, session)
-        print "set bondlistgrid"
         
         #Create the spinner which controls the length of the bond list
         self.bondSpinner = wx.SpinCtrl(self, -1, "")
@@ -611,6 +616,11 @@ class bondPanel(wx.Panel):
         param_panel = ParameterPanel(self.bondList.table, paramFrame, -1)
         paramFrame.Show()
         
+        #Fit this window
+        self.Fit()
+        self.GetParent().Fit()#Fit the frame containing this panel
+        self.GetParent().SetMinSize(self.GetParent().GetSize())
+        
         connect(self.OnParamChange, signal = "Parameter Values Changed")
 
 
@@ -621,6 +631,9 @@ class bondPanel(wx.Panel):
         """Executed when the session sends a message that a file was loaded."""
         self.bondSpinner.SetValue(self.bondList.GetNumberRows())
         self.bondList.AutoSize()
+        
+        self.Fit()
+        self.GetParent().Fit()#Fit the frame containing this panel
 #    def OnFileLoad(self, bondData):
 #        for i in range(len(bondData)):
 #            self.bondList.SetCellValue(i, 0, bondData[i][0])
@@ -662,6 +675,8 @@ class bondPanel(wx.Panel):
         self.clearEmptyRows()
 #        self.OnGenerate(None)
         self.bondList.AutoSize()
+        self.Fit()
+        self.GetParent().Fit()#Fit the frame containing this panel
         
     def clearEmptyRows(self):
         numRows = self.bondList.GetNumberRows()
@@ -851,6 +866,8 @@ class bondPanel(wx.Panel):
         self.bondList.SetNumberRows(rows)
         self.bondList.AutoSize()
 #        self.atomList.GetTable().SetNumberRows(rows)
+        self.Fit()
+        self.GetParent().Fit()#Fit the frame containing this panel
         event.Skip()
  
 
@@ -1156,16 +1173,10 @@ class jijDialog(wx.Dialog):
     """This dialog is displayed when the user clicks on the Jij Cell in the bond
     grid.  It allows them to enter a Jij Matrix."""
     def __init__(self, currentVal):
-        wx.Dialog.__init__(self, None, -1, 'Jij Matrix', size = (300,300))
+        wx.Dialog.__init__(self, None, -1, 'Jij Matrix')
         self.matrix = currentVal
-        
-        okButton = wx.Button(self, wx.ID_OK, "OK", pos = (25, 225), size = (100, 25))
-        okButton.SetDefault()
-        wx.Button(self, wx.ID_CANCEL, "Cancel",  pos = (175, 225), size = (100, 25))     
-#        buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
-#        buttonSizer.Add(okButton, 1, wx.ALIGN_CENTER_HORIZONTAL)
-#        buttonSizer.Add(cancelButton, 1, wx.ALIGN_CENTER_HORIZONTAL)
-#        self.SetSizer(buttonSizer)
+       
+        mainSizer = wx.BoxSizer(wx.VERTICAL)   
 
         #Add radio buttons to switch between fixed values and variables
         self.fixedValues = True
@@ -1177,15 +1188,16 @@ class jijDialog(wx.Dialog):
                 if currentVal[i][j].fit:
                     self.fixedValues = False
         
-        self.rb = wx.RadioBox(self, -1, "", (40,30), wx.DefaultSize,['Fixed Values Only ', 'Variable Values'],
+        self.rb = wx.RadioBox(self, -1, "", wx.DefaultPosition, wx.DefaultSize,['Fixed Values Only ', 'Variable Values'],
         2, wx.RA_SPECIFY_COLS)
+        mainSizer.Add(self.rb, 0,wx.ALIGN_CENTER_HORIZONTAL | wx.BOTTOM ,10)
         if not self.fixedValues:
             self.rb.SetSelection(1)
         
         self.Bind(wx.EVT_RADIOBOX, self.EvtRadioBox, self.rb)
         self.rb.SetToolTip(wx.ToolTip("Are the values known, or will they be solved for?"))
 
-        self.grid = wx.grid.Grid(self, -1, pos = (40,80))
+        self.grid = wx.grid.Grid(self, -1)
         self.grid.CreateGrid(3,3)
         self.grid.SetColLabelValue(0,"     a     ")
         self.grid.SetColLabelValue(1,"     b     ")
@@ -1195,6 +1207,21 @@ class jijDialog(wx.Dialog):
         self.grid.SetRowLabelValue(2,"c")
         #Fill the table in with the current Jmatrix value
         self.updateTable()
+        mainSizer.Add(self.grid, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        
+        okButton = wx.Button(self, wx.ID_OK, "OK")
+        okButton.SetDefault()
+        cancelButton = wx.Button(self, wx.ID_CANCEL, "Cancel")
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add(okButton)
+        btnSizer.Add(cancelButton)
+        mainSizer.Add((1,15),0,0,0)
+        mainSizer.Add(btnSizer, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        #self.SetSizer(mainSizer)
+        border = wx.BoxSizer(wx.HORIZONTAL)
+        border.Add(mainSizer, 0, wx.ALL, 20)
+        self.SetSizer(border)
+        self.Fit()
         
         #For validating when 'ok' button is pressed
         self.Bind(wx.EVT_BUTTON, self.OnOk, okButton)
@@ -1351,7 +1378,7 @@ class ParamDialog(wx.Dialog):
         self.SetTitle("Parameter")
         self.Param_Type_RB.SetToolTipString("Is the value known(fixed), or would you like to solve for it?")
         self.Param_Type_RB.SetSelection(0)
-        self.tiedParamsTxtCtrl.SetToolTipString("write the number of the other paramters which must be equal to this parameter.")
+        self.tiedParamsTxtCtrl.SetToolTipString("write the number of the other parameters which must be equal to this parameter.")
         # end wxGlade
 
     def __do_layout(self):
@@ -1912,14 +1939,17 @@ class App(wx.App):
         self.frame.Show()
         self.SetTopWindow(self.frame)
         #Create the atom frame
-        frame1 = wx.Frame(self.frame, -1, "Atoms", size = (500,245))
-        frame1.SetMinSize((500,245))
+        frame1 = wx.Frame(self.frame, -1, "Atoms")
+        #frame1.SetMinSize((500,245))
         atomPanel(frame1, -1, session = session)
         frame1.Show()
         #Create the bond frame
-        frame2 = wx.Frame(self.frame, -1, 'Bonds', size = (655,200))
-        frame2.SetMinSize((655, 140))
+        frame2 = wx.Frame(self.frame, -1, 'Bonds')
+        #frame2.SetMinSize((655, 140))
         bondPanel(frame2, -1, session = session)
+        #bondPanel.Fit()
+        #frame2.Fit()
+        #frame2.SetMinSize(frame2.GetSize())
         frame2.Show()
 
         return True
