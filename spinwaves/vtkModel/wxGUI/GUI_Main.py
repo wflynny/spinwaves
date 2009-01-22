@@ -1282,6 +1282,7 @@ class jijDialog(wx.Dialog):
                 for j in range(3):
                     try:
                         self.matrix[i][j].value = float(self.grid.GetCellValue(i,j))
+                        self.matrix[i][j].default = self.matrix[i][j].value
                     except:
                         """do nothing"""    
         self.updateTable()
@@ -1450,6 +1451,7 @@ class ParamDialog(wx.Dialog):
             else:
                 self.param.tieToMany([])#untie all if it is set to a fixed value
                 self.param.value = val
+                self.param.default = val
 
             event.Skip()#Exit
             

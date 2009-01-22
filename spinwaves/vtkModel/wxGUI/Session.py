@@ -28,8 +28,7 @@ class Session():
         #Stores atom information
         self.atomTable = atomTable()
         self.MagCell = None
-        #For now the magnetic cell class will be used for the cutoff cell since
-        #they are exactly the same
+        #For now the magnetic cell class will be used for the cutoff cell
         
     def getAtomTable(self):
         return self.atomTable
@@ -657,16 +656,89 @@ class Session():
     
     
     def exportForMonteCarlo(self, filename, size):
-        """Exports the bond information to a file in a format more usefull for
-        the Simulated Anealing.
+        """Exports the bond information to a file in a format more useful for
+        the Simulated Annealing.
 
         #AtomNumber AtomPosition(X Y Z) Anisotropy(X Y Z) OtherIndex Jmatrix OtherIndex Jmatrix..."""
 #        size = 2
         
         timer = Timer()
+        matrices, allAtoms = self.Export_Aux(size)  
+        timer.printTime()
+        print "number of atoms: ", len(allAtoms), "\n writing to disk..."
         
         file = open(filename, 'w')
-   
+        
+        #Can add flag in here if the coordinates are <= Na, Nb, Nc
+        #(if it's in the cutoff cell) for the spinwave calculation
+        def inInteractionCellStr(atoms, atom):
+            """Used for output to create an "X" if the atom is in the first interaction
+            Cell or "O" if not.  This is the actual smallest interaction cell, not the
+            cutoff cell created by the user.  An atom is in the first cutoff cell if it
+            is either in crystollographic unit cell (0,0,0) or if it bonds with an atom
+            that is."""
+            #First check if the atom is in the first crystallographic cell
+            if atom.pos[0] < 1.0 and atom.pos[1] < 1.0 and atom.pos[2] < 1.0:
+                return "X"
+            #If not, check if it bonds to an atom that is
+            for i in range(len(atom.interactions)):
+                if atoms[atom.interactions[i][0]].pos[0]<1.0 and atoms[atom.interactions[i][0]].pos[1]<1.0 and atoms[atom.interactions[i][0]].pos[2]<1.0:
+                    return "X"
+            
+            for interaction in atom.interCellInteractions:
+                interactingAtom = atoms[interaction[0]]
+                if interactingAtom.pos[0]<1.0 and interactingAtom.pos[1]<1.0 and interactingAtom.pos[2]<1.0:
+                    return "X"
+            
+            return "O"
+        
+        
+        #Write the matrix list to the file
+        file.write("#J Matrices\n#Number J11 J12 J13 J21 J22 J23 J31 J32 J33\n")
+        for i in range(len(matrices)):
+            jMat = matrices[i]
+            #Old method for J matrices of floats
+            #jStr = str(i) + " " + str(jMat[0][0]) + " " + str(jMat[0][1]) + " " + str(jMat[0][2]) + " " + str(jMat[1][0]) + " " + str(jMat[1][1]) + " " + str(jMat[1][2]) + " " + str(jMat[2][0]) + " " + str(jMat[2][1]) + " " + str(jMat[2][2])
+            jStr = str(i) + " " + str(jMat[0][0].default)
+            jStr += " " + str(jMat[0][1].default) 
+            jStr += " " + str(jMat[0][2].default)
+            jStr += " " + str(jMat[1][0].default) 
+            jStr += " " + str(jMat[1][1].default) 
+            jStr += " " + str(jMat[1][2].default)
+            jStr += " " + str(jMat[2][0].default) 
+            jStr += " " + str(jMat[2][1].default) 
+            jStr += " " + str(jMat[2][2].default)
+            file.write(jStr + "\n")
+        
+        
+        #print out the simple atom list
+        file.write("#AtomNumber InFirstInteractionCell AtomPosition(X Y Z) Anisotropy(X Y Z) OtherIndex Jmatrix OtherIndex Jmatrix...\n")
+        for atomIndex in range(len(allAtoms)):
+            atom = allAtoms[atomIndex]
+            atomStr = str(atomIndex) + " " + inInteractionCellStr(allAtoms, atom) + " " + str(atom.pos[0]) + " " + str(atom.pos[1]) + " " + str(atom.pos[2])
+            atomStr += " " + str(atom.anisotropy[0]) + " " + str(atom.anisotropy[1]) + " " + str(atom.anisotropy[2])
+            for interaction in atom.interactions:
+                otherAtom = interaction[0]
+                jMat = interaction[1]
+                atomStr += " " + str(otherAtom)
+                atomStr += " " + str(jMat)
+            for interaction in atom.interCellInteractions:#And again for inter-cell
+                otherAtom = interaction[0]
+                jMat = interaction[1]
+                atomStr += " " + str(otherAtom)
+                atomStr += " " + str(jMat)
+            file.write(atomStr + "\n")
+        
+        file.close()
+        print "done"
+        timer.printTime()
+            
+      
+    def Export_Aux(self, size):
+        """The section of export that does not write to the file, but organizes
+        the atoms in a way that is useful for the monte carlo simulation has
+        been moved to this function, so that the simulation can be run without
+        files."""
         class SimpleBond():
             def __init__(self, pos1, pos2, jMatrix, anisotropy1 = None, anisotropy2 = None):
                 self.pos1 = pos1
@@ -866,24 +938,6 @@ class Session():
                                             if not atomListContains(cellAtoms, newAtom2):
                                                 cellAtoms.append(newAtom2)
                                     
-            
-            
-        #Write the matrix list to the file
-        file.write("#J Matrices\n#Number J11 J12 J13 J21 J22 J23 J31 J32 J33\n")
-        for i in range(len(matrices)):
-            jMat = matrices[i]
-            #Old method for J matrices of floats
-            #jStr = str(i) + " " + str(jMat[0][0]) + " " + str(jMat[0][1]) + " " + str(jMat[0][2]) + " " + str(jMat[1][0]) + " " + str(jMat[1][1]) + " " + str(jMat[1][2]) + " " + str(jMat[2][0]) + " " + str(jMat[2][1]) + " " + str(jMat[2][2])
-            jStr = str(i) + " " + str(jMat[0][0].default)
-            jStr += " " + str(jMat[0][1].default) 
-            jStr += " " + str(jMat[0][2].default)
-            jStr += " " + str(jMat[1][0].default) 
-            jStr += " " + str(jMat[1][1].default) 
-            jStr += " " + str(jMat[1][2].default)
-            jStr += " " + str(jMat[2][0].default) 
-            jStr += " " + str(jMat[2][1].default) 
-            jStr += " " + str(jMat[2][2].default)
-            file.write(jStr + "\n")
         
         
         allAtoms = []
@@ -989,7 +1043,7 @@ class Session():
         
         
         
-        timer.printTime()
+#        timer.printTime()
         print"translating..."
         
         def validBond(index1, index2, direction):
@@ -1027,7 +1081,7 @@ class Session():
         
         #This method iterates through the whole list of atoms.  Each time it encounters
         #an interaction it translates it to all later corresponding indices.  This was
-        #a necessary change form the method above, because with the method above, a bond
+        #a necessary change from the method above, because with the method above, a bond
         #would stop propagating as soon as it encountered one invalid location (an edge).
         #This new method, however, will re-copy interactions that were copied early on 
         #in the main loop, but are encountered later again in the main loop.  This could
@@ -1097,59 +1151,15 @@ class Session():
 #                break
 #        else:
 #            print "Balanced!"
-            
-        
-        timer.printTime()
-        print "number of atoms: ", len(allAtoms), "\n writing to disk..."
+
+        return matrices, allAtoms
         
         
-        #Can add flag in here if the coordinates are <= Na, Nb, Nc
-        #(if it's in the cutoff cell) for the spinwave calculation
-        def inInteractionCellStr(atoms, atom):
-            """Used for output to create an "X" if the atom is in the first interaction
-            Cell or "O" if not.  This is the actual smallest interaction cell, not the
-            cutoff cell created by the user.  An atom is in the first cutoff cell if it
-            is either in crystollographic unit cell (0,0,0) or if it bonds with an atom
-            that is."""
-            #First check if the atom is in the first crystallographic cell
-            if atom.pos[0] < 1.0 and atom.pos[1] < 1.0 and atom.pos[2] < 1.0:
-                return "X"
-            #If not, check if it bonds to an atom that is
-            for i in range(len(atom.interactions)):
-                if atoms[atom.interactions[i][0]].pos[0]<1.0 and atoms[atom.interactions[i][0]].pos[1]<1.0 and atoms[atom.interactions[i][0]].pos[2]<1.0:
-                    return "X"
-            
-            for interaction in atom.interCellInteractions:
-                interactingAtom = atoms[interaction[0]]
-                if interactingAtom.pos[0]<1.0 and interactingAtom.pos[1]<1.0 and interactingAtom.pos[2]<1.0:
-                    return "X"
-            
-            return "O"
         
         
-        #print out the simple atom list
-        file.write("#AtomNumber InFirstInteractionCell AtomPosition(X Y Z) Anisotropy(X Y Z) OtherIndex Jmatrix OtherIndex Jmatrix...\n")
-        for atomIndex in range(len(allAtoms)):
-            atom = allAtoms[atomIndex]
-            atomStr = str(atomIndex) + " " + inInteractionCellStr(allAtoms, atom) + " " + str(atom.pos[0]) + " " + str(atom.pos[1]) + " " + str(atom.pos[2])
-            atomStr += " " + str(atom.anisotropy[0]) + " " + str(atom.anisotropy[1]) + " " + str(atom.anisotropy[2])
-            for interaction in atom.interactions:
-                otherAtom = interaction[0]
-                jMat = interaction[1]
-                atomStr += " " + str(otherAtom)
-                atomStr += " " + str(jMat)
-            for interaction in atom.interCellInteractions:#And again for inter-cell
-                otherAtom = interaction[0]
-                jMat = interaction[1]
-                atomStr += " " + str(otherAtom)
-                atomStr += " " + str(jMat)
-            file.write(atomStr + "\n")
         
-        file.close()
-        print "done"
-        timer.printTime()
-            
         
+      
     def loadSpinFile(self, fileName):
         """Loads the file output from the simulated annealing that lists the spin
         for each atom."""

@@ -213,8 +213,35 @@ def simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath):
 
     atoms, jMatrices = readFile(inFilePath)
 
+    spins = Sim_Aux(k, tMax, tMin, tFactor, atoms, jMatrices)
     
+    
+    print "writing spins to file..."
+    timer.printTime()
+    
+    #output the spins to a file
+    outFile = open(outFilePath, 'w')
+    outFile.write("#Atom_Number Position_X Position_Y Position_Z Spin_X Spin_Y Spin_Z\n")
+    for i in range(len(atoms)):
+        atom = atoms[i]
+        Posx = str(atom.pos[0])
+        Posy = str(atom.pos[1])
+        Posz = str(atom.pos[2])
+        spin = spins[i]
+        Spinx = str(spin[0])
+        Spiny = str(spin[1])
+        Spinz = str(spin[2])
+        atomStr = str(i) + " " + Posx + " " + Posy + " " + Posz + " " + Spinx + " " + Spiny + " " + Spinz + "\n"
+        outFile.write(atomStr)
+    
+    outFile.close()
+    
+    timer.printTime()
+    print "simulation done"
 
+def Sim_Aux(k, tMax, tMin, tFactor, atoms, jMatrices):
+    """The simulation has been separated (into this method) from the file
+    reading and writing so that it can be run without files."""
     #Create the atom list in C
     successCode = c_int(0)
     atomListPointer = monteCarloDll.new_atom_list(c_int(len(atoms)), ctypes.byref(successCode))
@@ -258,7 +285,7 @@ def simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath):
         monteCarloDll.set_atom(atomListPointer, c_int(i), anisotropy, matList, neighbors, c_int(numInteractions), s1)
     
     print "atoms added"
-    timer.printTime()
+    #timer.printTime()
 
     #Create JMatrix List in C
     matPointer = monteCarloDll.new_jMatrix_list(c_int(len(jMatrices)), ctypes.byref(successCode))
@@ -284,7 +311,6 @@ def simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath):
     #Run the simulation
     monteCarloDll.simulate(atomListPointer, c_int(len(atoms)), matPointer, c_int(k), c_float(tMax), c_float(tMin), c_float(tFactor))
 
-    
     #Get the spins from the C code
     spins = []
     for i in range(len(atoms)):
@@ -292,37 +318,11 @@ def simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath):
         monteCarloDll.getSpin(atomListPointer, c_int(i), ctypes.byref(spin))
         spins.append(spin)
     
-   
     #Free the memory used by the C code
     monteCarloDll.del_jMat(matPointer)
     monteCarloDll.del_atom(atomListPointer)
     
-    
-    print "writing spins to file..."
-    timer.printTime()
-    
-    #output the spins to a file
-    outFile = open(outFilePath, 'w')
-    outFile.write("#Atom_Number Position_X Position_Y Position_Z Spin_X Spin_Y Spin_Z\n")
-    for i in range(len(atoms)):
-        atom = atoms[i]
-        Posx = str(atom.pos[0])
-        Posy = str(atom.pos[1])
-        Posz = str(atom.pos[2])
-        spin = spins[i]
-        Spinx = str(spin[0])
-        Spiny = str(spin[1])
-        Spinz = str(spin[2])
-        atomStr = str(i) + " " + Posx + " " + Posy + " " + Posz + " " + Spinx + " " + Spiny + " " + Spinz + "\n"
-        outFile.write(atomStr)
-    
-    outFile.close()
-    
-    
-    
-    timer.printTime()
-    print "done"
-
+    return spins
 
 
 class MonteCarloPanel(wx.Panel):

@@ -5,7 +5,7 @@ import SpaceGroups
 from CellClass import Cell
 
 class MagneticCell():
-    """This class is instantiatged with a crystallograpic unit cell (complete with atoms)
+    """This class is instantiated with a crystallographic unit cell (complete with atoms)
     and the dimensions of the magnetic unit cell.  Bonds are then added using
     the addBond() method.  In short, atoms are added to and stored in the
     crystallographic cell (Cell class), but "bonds" are added to and stored in

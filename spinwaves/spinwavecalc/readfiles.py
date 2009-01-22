@@ -92,6 +92,8 @@ def readFiles(interactionFileStr,spinFileStr):
                         if tokenized[1] == 'x':  #If it is in the first interaction cell
                             print "atom in first interaction cell"
                             x,y,z=float(tokenized[2]),float(tokenized[3]),float(tokenized[4])
+                            if x < 1 and y < 1 and z < 1:
+                                numcell += 1
                             Dx,Dy,Dz=float(tokenized[5]),float(tokenized[6]),float(tokenized[7])
                             #spin0=N.matrix([[1,0,0],[0,1,0],[0,0,1]],'float64')
                             pos0=[x,y,z]
@@ -122,22 +124,20 @@ def readFiles(interactionFileStr,spinFileStr):
 #        print atom1.origIndex
     
     
-    for atom1 in atomlist:
-        invalidIndices = []
-        for neighborNum in range(len(atom1.neighbors)):
-            #Find the atom that has this original index
-            if atom1.neighbors[neighborNum] < len(atomlist):
-                for i in range(len(atomlist)):
-                    if atom1.neighbors[neighborNum] == atomlist[i].origIndex:
-                        atom1.neighbors[neighborNum] = i
-                        break
-                else:
-                    raise Exception("atom not found")
-            else:#This interaction is with an atom outside of the first interaction cell
-                invalidIndices.append(neighborNum)
-        for invalidIndex in invalidIndices:
-            atom1.neighbors.pop(neighborNum)
-            atom1.interactions.pop(neighborNum)
+    #change interaction indices to match indices in new list
+    for a in atomlist:
+        neighborList = a.neighbors
+        i = 0
+        while i < len(neighborList):
+            neighbor_index = neighborList[i]
+            for atom_index in range(len(atomlist)):
+                atom1 = atomlist[atom_index]
+                if atom1.origIndex == neighbor_index:
+                    a.neighbors[i] = atom_index
+                    i +=1
+                    break
+            else:#This interaction index is not in the interaction cell
+                neighborList.pop(i)
             
 
     #Match spin rotation matrices to atoms
@@ -147,7 +147,6 @@ def readFiles(interactionFileStr,spinFileStr):
     lines = spinFile.readlines()
     spinFile.close()
     for atom1 in atomlist:
-        print "here4 ", atom1.pos
         #search for the spin entry that matches this atoms coordinates
         for line in lines:
             tokenized_line = line.split()
@@ -165,10 +164,10 @@ def readFiles(interactionFileStr,spinFileStr):
             raise Exception()
             
             
-    for atom1 in atomlist:
-        print "neighbors: ", atom1.neighbors
-        print "\ninteractions: ", atom1.interactions
-        print "\nroation matrix: ", atom1.spinRmatrix
+#    for atom1 in atomlist:
+#        print "neighbors: ", atom1.neighbors
+#        print "\ninteractions: ", atom1.interactions
+#        print "\nroation matrix: ", atom1.spinRmatrix
 #This method would use less memory, but it would be a little slower
 #    while True:
 #        line = get_tokenized_line(spinFile)
@@ -177,18 +176,12 @@ def readFiles(interactionFileStr,spinFileStr):
 #        if line[0] == '#': #The line is commented out
 #            pass
 #        pos = (float(line[1]), float(line[2]), float(line[3]))
-        #find the
-    
-    
-    #print "here5"
-    #atomlist now only contains atoms which are used(in the first interaction 'cell')
-    numcell = len(atomlist)
     
     #for test purposes
     #for spin in spins:
     #    print spin
     #print "numSpins: ", len(spins)
-    return atomlist, jnums, jmats,numcell
+    return atomlist, jnums, jmats, numcell
     
 
 def read_spins(myfilestr):

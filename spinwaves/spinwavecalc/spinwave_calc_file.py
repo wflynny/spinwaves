@@ -658,8 +658,6 @@ def driver(spinfile,interactionfile,direction,steps, kMin, kMax):
     #any atom.spin opbjects past here would have actually been rotation matrices
     #so they can be replaced with the new spinRmatrix
     atom_list, jnums, jmats,N_atoms_uc=readfiles.readFiles(interactionfile,spinfile)
-    #test
-    N_atoms_uc = 1
     #sympy.matrices.Matrix
     #atom_list[1].spinRmatrix = N.matrix([[-1, 0, 0],
     #                                     [0, 1, 0],
@@ -671,7 +669,6 @@ def driver(spinfile,interactionfile,direction,steps, kMin, kMax):
     #atom_list=generate_atoms()
     #atom_list=generate_atoms_rot()
     Hsave=calculate_dispersion(atom_list,N_atoms_uc,N_atoms,jmats,direction,steps,showEigs=True)
-    print "\n\nhere\n\n before calc_eigs\n\n"
     calc_eigs(Hsave,direction,steps, kMin, kMax)
     direction={}
     direction['kx']=0.
