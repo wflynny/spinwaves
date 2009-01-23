@@ -138,6 +138,7 @@ def readFiles(interactionFileStr,spinFileStr):
                     break
             else:#This interaction index is not in the interaction cell
                 neighborList.pop(i)
+                a.interactions.pop(i)
             
 
     #Match spin rotation matrices to atoms

@@ -1,8 +1,14 @@
+import sys
+import sympy
+import numpy
+import pylab
+from sympy import pi
+from numpy import PINF, NINF
 from MonteCarlo.simple import simpleAtom
 from MonteCarlo.CSim import Sim_Aux
 from spinwavecalc.readfiles import findmat, atom as SpinwaveAtom
 from spinwavecalc.spinwave_calc_file import calculate_dispersion, calc_eigs
-import sys
+
 class ParamManager():
     def __init__(self):
         self.parameters = []
@@ -144,14 +150,14 @@ class ParamManager():
 
 
 class Fitter():
-    def __init__(self, session, size, k = 100, tMax = 10, tMin = 0.01, 
-                 tFactor = .95, spinwave_direction, spinwave_steps,
-                 spinwave_kMin, spinwave_kMax):
-        self.spinwave_direction = spinwave_direction
-        self.spinwave_steps = spinwave_steps
-        self.spinwave_kMin = kMin
-        self.spinwave_kMax = kMax
-    
+    def __init__(self, session, spinwave_domain = [], size=2, k = 100,
+                 tMax = 10, tMin = 0.005, tFactor = .95):
+        """The optimizer will read min_range_list, max_range_list, and change
+        fit_list values to be between the minimum and maximum values at the
+        same index.  Then GetResult() is called to return the list of
+        eigenvalues.
+        -spinwave_domain is a list of tuples (x,y,z)"""
+        self.spinwave_domain = spinwave_domain
         self._k = k
         self._tMax = tMax
         self._tMin = tMin
@@ -164,27 +170,29 @@ class Fitter():
         for atom in allAtoms:
             new_atom = simpleAtom(atom.pos, atom.anisotropy)
             new_atom.interactions = atom.interactions
-            new_atom.interactions.extend(interCellInteractions)
-            self.simpleAtoms.append(new_atom)
+            new_atom.interactions.extend(atom.interCellInteractions)
+            self._simpleAtoms.append(new_atom)
         
         groupList = session.parameter_manager.GetGroupedList()
         self._paramGroupList = []
         self.fit_list = []
         self.min_range_list = []
         self.max_range_list = []
+        print "\ngrouplist: ", groupList
         for group in groupList:
             param = group[0]
+            print "\nfit = ", param.fit
             if param.fit:
-                self._paramGroupList.append(param)
+                self._paramGroupList.append(group)
                 self.fit_list.append(param.default)
                 try:
                     self.min_range_list.append(float(param.min))
                 except ValueError:
-                    self.min_range_list.append(absolute_min)#should be -inf 
+                    self.min_range_list.append(NINF)#should be -inf 
                 try:
                     self.max_range_list.append(float(param.max))
                 except ValueError:
-                    self.max_range_list.append(absolute_max)#should be +inf
+                    self.max_range_list.append(PINF)#should be +inf
         
     
     def GetResult(self):
@@ -193,11 +201,51 @@ class Fitter():
             group = self._paramGroupList[i]
             for param in group:
                 #This will change the values in the matrices
-                param.value = self.fit_list[i].value
+                param.value = self.fit_list[i]
+        monteCarloMats = []
+        #Used later for spinwave calculation
+        jnums = []
+        jmats = []
+        for i in range(len(self._matrices)):
+            j11 = self._matrices[i][0][0].value
+            j12 = self._matrices[i][0][1].value
+            j13 = self._matrices[i][0][2].value
+            j21 = self._matrices[i][1][0].value
+            j22 = self._matrices[i][1][1].value
+            j23 = self._matrices[i][1][2].value
+            j31 = self._matrices[i][2][0].value
+            j32 = self._matrices[i][2][1].value
+            j33 = self._matrices[i][2][2].value
+            monteCarloMats.append(numpy.array([[j11,j12,j13],
+                                               [j21,j22,j23],
+                                               [j31,j32,j33]]))
+            #Used later for spinwave calculation
+            jij=sympy.matrices.Matrix([[j11,j12,j13],
+                                       [j21,j22,j23],
+                                       [j31,j32,j33]])
+            jnums.append(i)
+            jmats.append(jij)
+        
+        
         
         #Run the monteCarlo simulation
+        #temporary (bad) method of picking tMin/tMax
+        #maxJ = 0#abs val
+        #minJ = 0#abs val
+        jAvg = 0
+        for mat in monteCarloMats:
+            jSum = 0
+            for i in range(3):
+                for j in range(3):
+                    val = abs(mat[i][j])
+                    jSum += val
+            jAvg += jSum/9
+        
+        self._tMax = jAvg*5
+        self._tMin = jAvg/500
+        
         spins = Sim_Aux(self._k, self._tMax, self._tMin, self._tFactor,
-                        self._simpleAtoms, self._matrices)
+                        self._simpleAtoms, monteCarloMats)
         
         
         
@@ -210,18 +258,10 @@ class Fitter():
             for i in range(len(atom.interactions)):
                 if atoms[atom.interactions[i][0]].pos[0]<1.0 and atoms[atom.interactions[i][0]].pos[1]<1.0 and atoms[atom.interactions[i][0]].pos[2]<1.0:
                     return True
-            
-            for interaction in atom.interCellInteractions:
-                interactingAtom = atoms[interaction[0]]
-                if interactingAtom.pos[0]<1.0 and interactingAtom.pos[1]<1.0 and interactingAtom.pos[2]<1.0:
-                    return True
-            
             return False
         
         #Do the spinwave calculation
         spinwave_atoms = []
-        jnums = []
-        jmats = []
         first_cell_atoms = 0
         for i in range(len(self._simpleAtoms)):
             atom = self._simpleAtoms[i]
@@ -232,7 +272,7 @@ class Fitter():
                 spinwave_atom = SpinwaveAtom(pos=atom.pos, Dx=Dx,Dy=Dy,Dz=Dz,
                                              orig_Index = i)
                 rmat = findmat(spins[i])#indices match up
-                spinwace_atom.spinRmatrix = rmat
+                spinwave_atom.spinRmatrix = rmat
                 
                 for interaction in atom.interactions:
                     spinwave_atom.neighbors.append(interaction[0])
@@ -255,30 +295,27 @@ class Fitter():
                         break
                 else:#This neighbor index is not in the interaction cell
                     neighborList.pop(i)
-                    
-        for i in range(len(self._matrices)):
-            j11 = self._matrices[i][0][0].value
-            j12 = self._matrices[i][0][1].value
-            j13 = self._matrices[i][0][2].value
-            j21 = self._matrices[i][1][0].value
-            j22 = self._matrices[i][1][1].value
-            j23 = self._matrices[i][1][2].value
-            j31 = self._matrices[i][2][0].value
-            j32 = self._matrices[i][2][1].value
-            j33 = self._matrices[i][2][2].value
-            jij=sympy.matrices.Matrix([[j11,j12,j13],[j21,j22,j23],[j31,j32,j33]])
-            jnums.append(i)
-            jmats.append(jij)
+                    a.interactions.pop(i)
         
         N_atoms=len(spinwave_atoms)
-        print 'N_atoms',N_atoms,'Natoms_uc',N_atoms_uc
-        Hsave=calculate_dispersion(spinwave_atoms,first_cell_atoms,N_atoms,jmats,self.spinwave_direction,self.spinwave_steps,showEigs=True)
-        calc_eigs(Hsave, self.spinwave_direction, self.spinwave_steps, self.spinwave_kMin, self.spinwave_kMax)
-        pylab.Show()
+        Hsave=calculate_dispersion(spinwave_atoms,first_cell_atoms,N_atoms,jmats
+                                   ,showEigs=True)
+        qrange = []
+        wrange = []
+        q = 0
+        for point in self.spinwave_domain:
+            q += 1
+            wrange.append(calc_eigs(Hsave,point[0], point[1], point[2]))
+            qrange.append(q)
+     
+        wrange=numpy.real(wrange)
+        wrange=numpy.array(wrange)
+        wrange=numpy.real(wrange.T)
         
-                        
-            
-
+        #for wrange1 in wrange:
+        #    pylab.plot(qrange,wrange1,'s')
+        #pylab.show()
+        return wrange[0]#for now just one set
 
         
             

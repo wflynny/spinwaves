@@ -7,6 +7,10 @@ import time
 import wx
 import wx.grid
 from wx.py.dispatcher import connect, send
+from scipy.optimize.optimize import fmin, fmin_cg
+from sympy import pi, cos
+import pylab
+import numpy
 
 from picker import Picker
 from wxVTKRenderWindowInteractor import *
@@ -25,6 +29,7 @@ import spinwavecalc.spinwavepanel as spinwavepanel
 import spinwavecalc.spinwave_calc_file as spinwave_calc_file
 
 from vtkModel.BondClass import JParam
+from vtkModel.Parameter_Manager import Fitter
 
 #Atom and cell info window
 
@@ -1714,6 +1719,25 @@ class BondMode():
                 send(signal = "Bond Added", sender = "VTK Window", atom1 = self.atom1, atom2 = obj)
                 self.atom1 = None
 
+
+def chi_sq(x,fitter,err,domain):
+    chi = 0
+    fitter.fit_list = x
+    calc_vals = fitter.GetResult()
+    print "\neigen values = ", calc_vals
+    for i in range(len(fitter.fit_list)):
+        diff = calc_vals[i] - (4 - 4*cos(domain[i][2]))
+        diff=diff.evalf()#test
+        print diff
+        num = diff**2
+        den = err[i]**2
+        print den
+        chi += num#/den
+    print "\nChi^2 = ", chi
+    return chi
+
+
+
 class Frame(wx.Frame):
     """This is the main frame containing the vtkPanel."""
     def __init__(self, parent, id, session):
@@ -1767,6 +1791,7 @@ class Frame(wx.Frame):
         loadSpinsMenuItem = monteCarloMenu.Append(wx.NewId(), "Load Spins from file")
 #        outputSnapshotsMenuItem = monteCarloMenu.Append(wx.NewId(), "Output snapshots")
         calculateSpinwavesMenuItem=monteCarloMenu.Append(wx.NewId(), "Perform Spinwave Calculation")
+        fitParametersMenuItem = monteCarloMenu.Append(wx.NewId(), "Fit Parameters")
         menuBar.Append(monteCarloMenu, "Monte Carlo")
         
         
@@ -1797,6 +1822,7 @@ class Frame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnSaveImage, saveImageMenuItem)
         self.Bind(wx.EVT_MENU, self.OnLaunchSim, runSimulationMenuItem)
         self.Bind(wx.EVT_MENU, self.OnLaunchSpinWave, calculateSpinwavesMenuItem)
+        self.Bind(wx.EVT_MENU, self.OnFitParameters, fitParametersMenuItem)
           
 #        self.Bind(wx.EVT_MENU, self.createMonteCarloVideo, outputSnapshotsMenuItem)
         
@@ -1845,7 +1871,44 @@ class Frame(wx.Frame):
             send("Save Image", sender = "Main Frame", path = imagePath)
         
         CSim.createVideo(imageOutputFunction, "C:\\Spins.txt", "C:\\Export.txt")
+
             
+    
+    def OnFitParameters(self, evt):
+        #domain = []
+        #test case
+        domain = [(0,0,.25*pi),
+                  (0,0,.5*pi),
+                  (0,0,.75 *pi),
+                  (0,0, pi),
+                  (0,0,1.25 *pi),
+                  (0,0,1.5 *pi),
+                  (0,0,1.75 * pi),
+                  (0,0,2*pi)]
+        err = [1e-1]*8
+        
+        fitter = Fitter(self.session, domain)
+        ans = fmin(chi_sq, fitter.fit_list,args=(fitter,err,domain),maxiter=15,ftol=.01,maxfun=20)
+        lower=fitter.min_range_list
+        upper=fitter.max_range_list
+        lower[0]=0.8
+        upper[0]=1.2
+        #ans=scipy.optimize.anneal(chi_sq,fitter.fit_list,lower=lower,upper=upper)
+        
+        #ans=ans[0]
+        print ans
+        wrange=[]
+        qrange = []
+        for a in domain:
+            qrange.append(a[2])
+        wrange=(fitter.GetResult())
+        print numpy.__dict__
+        datavals=(4 - 4*numpy.cos(numpy.array(qrange)))
+        pylab.plot(qrange,datavals,'s')
+        pylab.plot(qrange,wrange)
+        pylab.show()
+                
+                
     
     def OnLaunchSim(self, evt):
         """Runs the simulation from this app."""

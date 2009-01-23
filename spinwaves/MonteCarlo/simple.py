@@ -82,7 +82,7 @@ def readFile(filename):
                 newAtom.interactions.append([otherAtomIndex, jMatInt])
             
             if int(values[0]) != len(atoms):
-                print "problem, indeces don't match up!"
+                print "problem, indices don't match up!"
             atoms.append(newAtom)
 #            print "newAtom:", newAtom.pos, newAtom.interactions
 #            time.sleep(5)

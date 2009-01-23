@@ -360,7 +360,7 @@ def gen_XdX(atom_list,operator_table,operator_table_dagger,Hcomm,N_atoms_uc):
 
 
 
-def calculate_dispersion(atom_list,N_atoms_uc,N_atoms,Jij,direction,steps,showEigs=False):
+def calculate_dispersion(atom_list,N_atoms_uc,N_atoms,Jij,showEigs=False):
     Sabn=generate_sabn(N_atoms)       
     #print 'Sabn',Sabn 
     Sxyz=generate_sxyz(Sabn,atom_list)
@@ -435,84 +435,76 @@ def calculate_dispersion(atom_list,N_atoms_uc,N_atoms,Jij,direction,steps,showEi
         Hsave=TwogH2
         return Hsave
     
-def calc_eigs(Hsave,direction,steps,min = 0, max = 2*pi):
-        kx=sympy.Symbol('kx',real=True)
-        ky=sympy.Symbol('ky',real=True)
-        kz=sympy.Symbol('kz',real=True)
-        k=[kx,ky,kz]
-        TwogH2=Hsave
-        S=sympy.Symbol('S',real=True)
-        D=sympy.Symbol('D',real=True)
-        #TwogH2=TwogH2.subs(J,-1.0)
-        TwogH2=TwogH2.subs(S,1.0)
-        #eigs=TwogH2.eigenvals()
-        #print 'subbed_eigs',eigs
-        #TwogH2=TwogH2.subs(D,1.0)
-        qrange=[]
-        wrange0=[]
-        wrange1=[]
-        wrange=[]
-        #wrangec=[]
-        for q in N.arange(min,max,max/steps):
+def calc_eigs(Hsave,kx_val,ky_val,kz_val):
+    kx=sympy.Symbol('kx',real=True)
+    ky=sympy.Symbol('ky',real=True)
+    kz=sympy.Symbol('kz',real=True)
+    k=[kx,ky,kz]
+    TwogH2=Hsave
+    S=sympy.Symbol('S',real=True)
+    D=sympy.Symbol('D',real=True)
+    #TwogH2=TwogH2.subs(J,-1.0)
+    TwogH2=TwogH2.subs(S,1.0)
+    #eigs=TwogH2.eigenvals()
+    #print 'subbed_eigs',eigs
+    #TwogH2=TwogH2.subs(D,1.0)
+    #qrange=[]
+    #wrange0=[]
+    #wrange1=[]
+    #wrange=[]
+    #wrangec=[]
+    currnum=kx_val
+    #print 'currnum x', currnum
+    TwogH3=TwogH2.subs(kx,currnum)
+    currnum=ky_val
+    #print 'currnum y',currnum
+    TwogH3=TwogH3.subs(ky,currnum)
+    currnum=kz_val
+    TwogH3=TwogH3.subs(kz,currnum)
+    #I=sympy.Symbol('I')
+    Ntwo=TwogH3#.subs(I,1.0j)
+    m,n=Ntwo.shape
+    #print Ntwo.applyfunc(sympy.Basic.evalf)
+    Nthree=N.empty([m,n],complex)
+    if 1:
+        for i in range(m):
+            for j in range(n):
+                #print i,j
+                #print Ntwo[i,j]
+                #print 'matching'
+                #print 'kx',Ntwo[i,j].match(kx)
+                #print 'ky',Ntwo[i,j].match(ky)
+                #Ntwo[i,j]=sympy.re(Ntwo[i,j].evalf())
+                #Ntwo[i,j]=Ntwo[i,j].evalf()
+                Nthree[i,j]=complex(Ntwo[i,j].expand(complex=True))#.subs(I,1.0j)
+                if 1:
+                    if N.absolute(Nthree[i,j])<1e-5:
+                        Nthree[i,j]=0
+        #print 'Ntwo',Ntwo
+        #print 'Nthree',Nthree
+        if 1:
             
-            currnum=q*direction['kx']
-            #print 'currnum x', currnum
-            TwogH3=TwogH2.subs(kx,currnum)
-            currnum=q*direction['ky']
-            #print 'currnum y',currnum
-            TwogH3=TwogH3.subs(ky,currnum)
-            currnum=q*direction['kz']
-            TwogH3=TwogH3.subs(kz,currnum)
-            #I=sympy.Symbol('I')
-            Ntwo=TwogH3#.subs(I,1.0j)
-            m,n=Ntwo.shape
-            #print Ntwo.applyfunc(sympy.Basic.evalf)
-            Nthree=N.empty([m,n],complex)
-            if 1:
-                for i in range(m):
-                    for j in range(n):
-                        #print i,j
-                        #print Ntwo[i,j]
-                        #print 'matching'
-                        #print 'kx',Ntwo[i,j].match(kx)
-                        #print 'ky',Ntwo[i,j].match(ky)
-                        #Ntwo[i,j]=sympy.re(Ntwo[i,j].evalf())
-                        #Ntwo[i,j]=Ntwo[i,j].evalf()
-                        Nthree[i,j]=complex(Ntwo[i,j].expand(complex=True))#.subs(I,1.0j)
-                        if 1:
-                            if N.absolute(Nthree[i,j])<1e-5:
-                                Nthree[i,j]=0
-            #print 'Ntwo',Ntwo
-            #print 'Nthree',Nthree
-            if 1:
-                
-                l,v=scipy.linalg.eig(Nthree)
-                #print l[1]
-                qrange.append(q)
-                #print 'num eigs', l.shape
-                #wrange0.append(l[0])
-                #wrange1.append(l[3])
-                wrange.append(l)
-            #print N.linalg.eigvals(Ntwo)
-            #eigs=TwogH2.eigenvals()
-            #print 'eigs', eigs
-            #print 'eigenvalues', sympy.simplify(eigs[1][0])
-        #wrange0=N.real(wrange0)
-        print 'wrange',wrange
-        wrange=N.real(wrange)
+            l,v=scipy.linalg.eig(Nthree)
+            #print l[1]
+            #qrange.append(q)
+            #print 'num eigs', l.shape
+            #wrange0.append(l[0])
+            #wrange1.append(l[3])
+            #wrange.append(l)
+            return l
+        #print N.linalg.eigvals(Ntwo)
+        #eigs=TwogH2.eigenvals()
+        #print 'eigs', eigs
+        #print 'eigenvalues', sympy.simplify(eigs[1][0])
+    #wrange0=N.real(wrange0)
+    #for wrange1 in wrange:
+        #pylab.plot(qrange,wrange0,'s')
         #print qrange
-        #print wrange
-        wrange=N.array(wrange)
-        
-        wrange=N.real(wrange.T)
-        for wrange1 in wrange:
-            #pylab.plot(qrange,wrange0,'s')
-            #print qrange
-            #print wrange1
-            #print len(qrange),len(wrange1)
-            #print inum
-            #inum=inum+1
-            pylab.plot(qrange,wrange1,'s')
+        #print wrange1
+        #print len(qrange),len(wrange1)
+        #print inum
+        #inum=inum+1
+        #pylab.plot(qrange,wrange1,'s')
         
 
 
@@ -668,8 +660,27 @@ def driver(spinfile,interactionfile,direction,steps, kMin, kMax):
     print 'N_atoms',N_atoms,'Natoms_uc',N_atoms_uc
     #atom_list=generate_atoms()
     #atom_list=generate_atoms_rot()
-    Hsave=calculate_dispersion(atom_list,N_atoms_uc,N_atoms,jmats,direction,steps,showEigs=True)
-    calc_eigs(Hsave,direction,steps, kMin, kMax)
+    for atom in atom_list:
+        print atom.neighbors
+        print atom.interactions
+    
+    Hsave=calculate_dispersion(atom_list,N_atoms_uc,N_atoms,jmats,showEigs=True)
+    
+    qrange = []
+    wrange = []
+    for q in N.arange(kMin,kMax,kMax/steps):
+        wrange.append(calc_eigs(Hsave,q*direction['kx'], q*direction['ky'], q*direction['kz']))
+        qrange.append(q)
+    
+    wrange=N.real(wrange)
+    wrange=N.array(wrange)
+    wrange=N.real(wrange.T)
+    
+    for wrange1 in wrange:
+        pylab.plot(qrange,wrange1,'s')
+    
+    
+    
     direction={}
     direction['kx']=0.
     direction['ky']=1.

@@ -107,7 +107,8 @@ class Session():
             Dy = atomNodes[i].getAttribute('SIA_Dy')
             Dz = atomNodes[i].getAttribute('SIA_Dz')
             
-            atomData.append([name, atomicNum, x,y,z, Dx, Dy, Dz])
+            atomData.append([name, int(atomicNum), float(x),float(y),float(z),
+                             float(Dx), float(Dy), float(Dz)])
             
             self.atomTable.SetValue(i, 0, name)
             self.atomTable.SetValue(i, 1, atomicNum)
