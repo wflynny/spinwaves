@@ -166,6 +166,7 @@ class Session():
             
         #insert the parameters into the manager in the correct order
         manager = ParamManager()
+        tiedLists = []
         for i in range(len(allParamNodes)):
             #i is also the current index in the manager list of parameters
             for node in allParamNodes:
@@ -181,11 +182,21 @@ class Session():
                     default = float(node.getAttribute('default'))
                     
                     param = JParam(manager, fit, value, min , max, default)
+                    print len(manager.parameters)
                     tiedToStr = node.getAttribute('tiedTo')
                     strList = tiedToStr[1:len(tiedToStr)-1].split(',')
+                    tied = []
                     for tie in strList:
                         if tie != '':
-                            param.tied.append(int(tie))
+                            tied.append(int(tie))
+                    tiedLists.append(tied)
+                    break
+            else:
+                raise Exception("Incorrect parameter indices in XML file.")
+            
+        for i in range(len(manager.parameters)):
+            manager.parameters[i].tieToMany(tiedLists[i])
+        self.parameter_manager = manager
         
         #now construct the matrices with the appropriate JParam objects
         numMatrices = len(allParamNodes)/9

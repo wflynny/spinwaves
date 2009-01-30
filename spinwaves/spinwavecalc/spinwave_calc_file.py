@@ -148,7 +148,8 @@ def generate_hdef(atom_list,Jij,Sxyz,N_atoms_uc,N_atoms):
             Hij=-Hij-atom_list[i].Dx*Sxyz[i][0]**2-atom_list[i].Dy*Sxyz[i][1]**2-atom_list[i].Dz*Sxyz[i][2]**2
             Hdef=Hdef+Hij
     print 'generated hdef'
-    print Hdef,Hdef.atoms(sympy.Symbol)
+    print 'Hdef:', Hdef
+    print '\nHdef.atoms: ', Hdef.atoms(sympy.Symbol)
     return Hdef
 
 

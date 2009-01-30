@@ -1,6 +1,8 @@
 import sys
 import sympy
 import numpy
+import matplotlib
+matplotlib.use('WXAgg')
 import pylab
 from sympy import pi
 from numpy import PINF, NINF
@@ -100,9 +102,6 @@ class ParamManager():
         #            if param.group > i:
         #                param.group -= 1
         #    self.groups[i][1] = True
-                
-    def getGroups(self):
-        """Returns a list of lists of like-grouped parameters."""
         
     
     def untie(self, paramObj, index):
@@ -151,16 +150,16 @@ class ParamManager():
 
 class Fitter():
     def __init__(self, session, spinwave_domain = [], size=2, k = 100,
-                 tMax = 10, tMin = 0.005, tFactor = .95):
+                 tFactor = .95):
         """The optimizer will read min_range_list, max_range_list, and change
         fit_list values to be between the minimum and maximum values at the
         same index.  Then GetResult() is called to return the list of
         eigenvalues.
-        -spinwave_domain is a list of tuples (x,y,z)"""
+        -spinwave_domain is a list of tuples (kx,ky,kz)"""
         self.spinwave_domain = spinwave_domain
         self._k = k
-        self._tMax = tMax
-        self._tMin = tMin
+        self.tMin = .01
+        self.tMax = 10
         self._tFactor = tFactor
         #matrices is a list of 2D numpy arrays of JParam objects
         #allAtoms is a list of simpleAtoms as defined in the method Export_Aux
@@ -230,8 +229,6 @@ class Fitter():
         
         #Run the monteCarlo simulation
         #temporary (bad) method of picking tMin/tMax
-        #maxJ = 0#abs val
-        #minJ = 0#abs val
         jAvg = 0
         for mat in monteCarloMats:
             jSum = 0
@@ -241,8 +238,8 @@ class Fitter():
                     jSum += val
             jAvg += jSum/9
         
-        self._tMax = jAvg*5
-        self._tMin = jAvg/500
+        self._tMax = jAvg*10
+        self._tMin = jAvg/600
         
         spins = Sim_Aux(self._k, self._tMax, self._tMin, self._tFactor,
                         self._simpleAtoms, monteCarloMats)
@@ -304,9 +301,10 @@ class Fitter():
         wrange = []
         q = 0
         for point in self.spinwave_domain:
-            q += 1
+            #print "point:", point
             wrange.append(calc_eigs(Hsave,point[0], point[1], point[2]))
             qrange.append(q)
+            q += 1
      
         wrange=numpy.real(wrange)
         wrange=numpy.array(wrange)
@@ -315,6 +313,7 @@ class Fitter():
         #for wrange1 in wrange:
         #    pylab.plot(qrange,wrange1,'s')
         #pylab.show()
+        
         return wrange[0]#for now just one set
 
         
