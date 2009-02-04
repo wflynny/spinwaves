@@ -1970,7 +1970,9 @@ class Frame(wx.Frame):
         CSim.ShowSimulationFrame()
         
     def OnLaunchSpinWave(self,evt):
-        frame1 = wx.Frame(self, -1, "Spinwaves")
+        myparent=self
+        #myparent=None
+        frame1 = wx.Frame(myparent, -1, "Spinwaves")
         dlg=spinwavepanel.FormDialog(parent=frame1,id=-1)
         #dlg=spinwavepanel.FormDialog(parent=None,id=-1)
         self.SetExtraStyle(wx.WS_EX_VALIDATE_RECURSIVELY)
@@ -1992,6 +1994,7 @@ class Frame(wx.Frame):
 #        dlg.Destroy()
         
         frame1.Show()
+        frame1.Refresh()
     
     def OnSaveImage(self, evt):
         """Saves an image of the current rendering.  Currently only .tiff
