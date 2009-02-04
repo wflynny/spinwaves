@@ -382,16 +382,20 @@ if __name__=='__main__':
     app=MyApp()
     frame1 = wx.Frame(None, -1, "Spinwaves")
     dlg=FormDialog(parent=frame1,id=-1)
-    frome1.show()
-    result=dlg.ShowModal()
-    if result==wx.ID_OK:
-        dlg.Validate()
-        print "OK"
-        dlg.TransferDataFromWindow()
-        print dlg.data
-    else:
-        print "Cancel"
+    frame1.Show()
+    if 0:
+        frame1 = wx.Frame(None, -1, "Spinwaves")
+        dlg=FormDialog(parent=frame1,id=-1)
+        frame1.Show()
+        result=dlg.ShowModal()
+        if result==wx.ID_OK:
+            dlg.Validate()
+            print "OK"
+            dlg.TransferDataFromWindow()
+            print dlg.data
+        else:
+            print "Cancel"
+    
+        dlg.Destroy()
 
-    dlg.Destroy()
-
-
+    app.MainLoop()
