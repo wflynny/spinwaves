@@ -131,6 +131,7 @@ class RichTextFrame(wx.Frame):
 class FormDialog(sc.SizedPanel):
     def __init__(self, parent, id):
         self.parent = parent
+        
         #valstyle=wx.WS_EX_VALIDATE_RECURSIVELY
         sc.SizedPanel.__init__(self, parent, -1,
                         style= wx.RESIZE_BORDER)#| wx.WS_EX_VALIDATE_RECURSIVELY)
@@ -138,7 +139,7 @@ class FormDialog(sc.SizedPanel):
         pane = self
         pane.SetSizerType("vertical")
                
-        
+        print 'FormDialog called'
         FilePane = sc.SizedPanel(pane, -1)
         FilePane.SetSizerType("vertical")
         FilePane.SetSizerProps(expand=True)
