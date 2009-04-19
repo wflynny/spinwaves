@@ -998,7 +998,7 @@ class ParameterPanel(wx.Panel):
 
     def __set_properties(self):
         # begin wxGlade: ParameterPanel.__set_properties
-        self.tie_col_label.SetToolTipString("To tie parameters, click a parameter, then hold Ctrl and click other paramters to tie to.")
+        self.tie_col_label.SetToolTipString("To tie parameters, click a parameter, then hold Ctrl and click other parameters to tie to.")
         self.edit_col_label.SetToolTipString("Click a parameter to edit it.")
         #self.Type_of_Param_RadioBox.SetToolTipString("Is the value known(fixed), or would you like to solve for it?")
         #self.Type_of_Param_RadioBox.SetSelection(0)
@@ -1793,7 +1793,8 @@ class Frame(wx.Frame):
         loadSpinsMenuItem = monteCarloMenu.Append(wx.NewId(), "Load Spins from file")
 #        outputSnapshotsMenuItem = monteCarloMenu.Append(wx.NewId(), "Output snapshots")
         calculateSpinwavesMenuItem=monteCarloMenu.Append(wx.NewId(), "Perform Spinwave Calculation")
-        fitParametersMenuItem = monteCarloMenu.Append(wx.NewId(), "Fit Parameters")
+        #This is not yet working
+        #fitParametersMenuItem = monteCarloMenu.Append(wx.NewId(), "Fit Parameters")
         menuBar.Append(monteCarloMenu, "Monte Carlo")
         
         
@@ -1824,7 +1825,8 @@ class Frame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnSaveImage, saveImageMenuItem)
         self.Bind(wx.EVT_MENU, self.OnLaunchSim, runSimulationMenuItem)
         self.Bind(wx.EVT_MENU, self.OnLaunchSpinWave, calculateSpinwavesMenuItem)
-        self.Bind(wx.EVT_MENU, self.OnFitParameters, fitParametersMenuItem)
+        #Doesn't work yet
+#        self.Bind(wx.EVT_MENU, self.OnFitParameters, fitParametersMenuItem)
           
 #        self.Bind(wx.EVT_MENU, self.createMonteCarloVideo, outputSnapshotsMenuItem)
         
