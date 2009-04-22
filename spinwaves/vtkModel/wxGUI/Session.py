@@ -1,18 +1,18 @@
 import xml.dom.minidom
-import xml.dom.ext
+#import xml.dom.ext
 import wx.grid
 from wx.py.dispatcher import send
-import vtkModel.CifFile
+import spinwaves.vtkModel.CifFile
 #import vtkModel.CifFile as CifFile
-from vtkModel import SpaceGroups
-from vtkModel.CellClass import Cell
-from vtkModel.MagneticCellClass import MagneticCell
+from spinwaves.vtkModel import SpaceGroups
+from spinwaves.vtkModel.CellClass import Cell
+from spinwaves.vtkModel.MagneticCellClass import MagneticCell
 import numpy
 import time
 import datetime
-from vtkModel.BondClass import JParam
-from vtkModel.Parameter_Manager import ParamManager
-import vtkModel.CifFile as CifFile
+from spinwaves.vtkModel.BondClass import JParam
+from spinwaves.vtkModel.Parameter_Manager import ParamManager
+import spinwaves.vtkModel.CifFile as CifFile
 
 class Session():
     """Stores information about a user session
@@ -433,10 +433,14 @@ class Session():
             bondElement.appendChild(jMatrix)
             
         #Write to screen
-        xml.dom.ext.PrettyPrint(doc)
+        #xml.dom.ext.PrettyPrint(doc)
+        xmlStr = doc.toprettyxml("    ")
         
         #Write to the file
-        xml.dom.ext.PrettyPrint(doc, open(filename, 'w'))
+        #xml.dom.ext.PrettyPrint(doc, open(filename, 'w'))
+        xmlFile = open(filename, 'w')
+        xmlFile.write(xmlStr)
+        xmlFile.close()
         
        
        

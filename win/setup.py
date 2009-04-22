@@ -8,7 +8,9 @@ import matplotlib
 #In DOS prompt:
 #python setup.py py2exe
 
-python_dir = "C:\Program Files\Python(x,y)\Python"
+
+
+python_dir = "C:\Python25"
 #Matplotlib code taken from: http://www.py2exe.org/index.cgi/MatPlotLib
 
 # We need to exclude matplotlib backends not being used by this executable.  You may find
@@ -16,7 +18,7 @@ python_dir = "C:\Program Files\Python(x,y)\Python"
 # We also need to include include various numerix libraries that the other functions call.
 
 opts = {
-    'py2exe': { "includes" : ["sip", "PyQt4._qt", "matplotlib.backends",  "matplotlib.backends.backend_qt4agg",                                "matplotlib.figure","pylab", "numpy", "matplotlib.numerix.fft",
+    'py2exe': { "includes" : ["sip", "matplotlib.backends",  "matplotlib.backends.backend_qt4agg",                                "matplotlib.figure","pylab", "numpy", "matplotlib.numerix.fft",
                                "matplotlib.numerix.linear_algebra", "matplotlib.numerix.random_array",
                                "matplotlib.backends.backend_tkagg"],
                 'excludes': ['_gtkagg', '_tkagg', '_agg2', '_cairo', '_cocoaagg',
@@ -37,9 +39,7 @@ data_files = [(r'mpl-data', glob.glob(python_dir + r'\Lib\site-packages\matplotl
                   (r'mpl-data\fonts',glob.glob(python_dir + r'\Lib\site-packages\matplotlib\mpl-data\fonts\*.*'))]
 #for inno setup
 data_files.append("screen.ico")
+data_files.append("..\spinwaves\MonteCarlo\_monteCarlo.pyd")
 
-# for console program use 'console = [{"script" : "scriptname.py"}]
-setup(windows=[{"script" : "Spinwaves.py", "icon_resources": [(1, "screen.ico")]}],
+setup(windows=[{"script" : "Spinwaves.py", "icon_resources": [(0x0004, "screen.ico")]}], 
       options=opts,   data_files=data_files)
-
-

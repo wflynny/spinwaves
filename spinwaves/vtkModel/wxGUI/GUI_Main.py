@@ -15,22 +15,22 @@ import numpy
 
 from picker import Picker
 from wxVTKRenderWindowInteractor import *
-from vtkModel.SpaceGroups import *
-from vtkModel.VTKDrawer import *
-from vtkModel.MagneticCellClass import *
-from vtkModel.CellClass import *
+from spinwaves.vtkModel.SpaceGroups import *
+from spinwaves.vtkModel.VTKDrawer import *
+from spinwaves.vtkModel.MagneticCellClass import *
+from spinwaves.vtkModel.CellClass import *
 #import random
-import vtkModel.SpaceGroups
+import spinwaves.vtkModel.SpaceGroups
 from Session import Session
 
 #It could not find MonteCarlo package (import MonteCarlo.CSim)
 #sys.path.append(mainPath +"\\MonteCarlo")
-import MonteCarlo.CSim as CSim
-import spinwavecalc.spinwavepanel as spinwavepanel
-import spinwavecalc.spinwave_calc_file as spinwave_calc_file
+import spinwaves.MonteCarlo.CSim as CSim
+import spinwaves.spinwavecalc.spinwavepanel as spinwavepanel
+import spinwaves.spinwavecalc.spinwave_calc_file as spinwave_calc_file
 
-from vtkModel.BondClass import JParam
-from vtkModel.Parameter_Manager import Fitter
+from spinwaves.vtkModel.BondClass import JParam
+from spinwaves.vtkModel.Parameter_Manager import Fitter
 gc.enable()
 #Atom and cell info window
 

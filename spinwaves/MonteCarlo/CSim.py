@@ -22,6 +22,8 @@ elif sys.platform in ('win32','cygwin'):
 else:
     ext = '.so'
 dllpath=os.path.join(os.path.dirname(__file__),'_monteCarlo'+ext)
+#for py2exe, will look for the dll in the same folder as the executable
+#dllpath=os.path.join(os.path.dirname(sys.argv[0]),'_monteCarlo'+ext)
 monteCarloDll = ctypes.cdll[dllpath]
 
 
