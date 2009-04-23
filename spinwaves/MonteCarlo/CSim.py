@@ -21,10 +21,17 @@ elif sys.platform in ('win32','cygwin'):
     ext = '.pyd'
 else:
     ext = '.so'
+
+f=open('c:\\trace.txt','w')
 dllpath=os.path.join(os.path.dirname(__file__),'_monteCarlo'+ext)
+dllpath=os.path.join(os.path.dirname(sys.argv[0]),'_monteCarlo'+ext)
+f.write('dllpath '+dllpath)
+f.close()
+#dll'_monteCarlo'+ext
 #for py2exe, will look for the dll in the same folder as the executable
 #dllpath=os.path.join(os.path.dirname(sys.argv[0]),'_monteCarlo'+ext)
-monteCarloDll = ctypes.cdll[dllpath]
+#monteCarloDll = ctypes.cdll[dllpath]
+monteCarloDll = ctypes.CDLL(dllpath)
 
 
 
