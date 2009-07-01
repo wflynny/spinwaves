@@ -7,63 +7,10 @@ from sympy import I,pi,var,exp,oo,sqrt
 from sympy.physics.paulialgebra import delta
 from timeit import default_timer as clock
 
-sys.path.append('/WORK/cross_section/utilities')
 from list_manipulation import *
 from subin import sub_in
+#import spinwaves.spinwavecalc.readfiles
 
-sys.path.append('/WORK/spinwaves')
-import readfiles as rf
-
-
-#------------ CROSS SECTION CALC METHODS ---------------------------------------
-
-
-#class atom:
-#    def __init__(self,spinRmatrix=spm.Matrix([[1, 0, 0],
-#                                          [0, 1, 0],
-#                                          [0, 0, 1]]),
-#                    pos=[0,0,0],neighbors=None,interactions=None,label=0,Dx=0,Dy=0,Dz=0,cell=0,int_cell=[], orig_Index = None):
-#        self.spinRmatrix=spinRmatrix#found with findmat
-#        if neighbors==None:
-#            neighbors=[]
-#        if interactions==None:
-#            interactions=[]
-#        self.pos=pos
-#        self.neighbors=neighbors#Interacting atoms
-#        self.interactions=interactions#the matrices describing the interactions^
-#        self.label=label
-#        self.Dx=Dx
-#        self.Dy=Dy
-#        self.Dz=Dz
-#        self.cell=cell
-#        self.int_cell=[]
-#        #Indices change when reading in only specific atoms from the file
-#        self.origIndex = orig_Index
-
-#def generate_local_spins(N):
-#    "generate spins in local coordinate system, with Z as quantization axis"
-#    spin_local=[]
-#    S=sp.Symbol("S",real=True)
-#    for i in range(N):
-#        c = sp.Symbol('c%d'%(i,),commutative=False,real=True)
-#        cd = sp.Symbol('cd%d'%(i,),commutative=False,real=True)
-#        curr = spm.Matrix([sqrt(S/2.0)*(c+cd),sqrt(S/2.0)*(c-cd)/I,S-cd*c])
-#        spin_local.append(curr.reshape(3,1))
-#    print "local spins generated!"
-#    return spin_local
-#
-
-#def generate_global_spins(local,atom_list):
-#    """ Generates spins """
-#    spins_global=[]
-#    i=0
-#    for currS in local:
-#        tempS = atom_list[i].spinRmatrix*currS
-#        tempS = tempS.reshape(1,3)
-#        spins_global.append(tempS)
-#        i=i+1
-#    print "global spins generated!"
-#    return spins_global
 
 # Computes the inner product with a metric tensor
 def inner_prod(vect1,vect2,ten = spm.Matrix([[1,0,0],
@@ -75,6 +22,8 @@ def inner_prod(vect1,vect2,ten = spm.Matrix([[1,0,0],
     elif vect1.shape == vect2.shape == (1,3) == (1,ten.cols): return (vect1 * ten * vect2.T)[0]
     # Everything else
     else: return None
+
+#------------ CROSS SECTION CALC METHODS ---------------------------------------
 
 # Generates the atom lists
 def generate_atoms(N):
@@ -393,6 +342,41 @@ def generate_cross_section(N, arg, real_list, recip_list):
 
     print "Complete: Cross-section Calculation"
     return dif
+
+
+def run_cross_section(interactionfile, spinfile):
+    start = clock()
+
+    # Generate Inputs
+#    atom_list, jnums, jmats,N_atoms_uc=readfiles.readFiles(interactionfile,spinfile)
+#    N_atoms = N_atoms_uc
+    
+    
+    N_atoms = 2
+    # CAUTION!! DO NOT SET N_atoms > 15 as of 6/3/09
+    real, recip = generate_atoms(N_atoms)
+    (b,bd) = generate_b_bd_operators(N_atoms)
+    (a,ad) = generate_a_ad_operators(N_atoms, real, recip, b, bd)
+    (Sp,Sm) = generate_Sp_Sm_operators(N_atoms, a, ad)
+    (Sa,Sb,Sn) = generate_Sa_Sb_Sn_operators(N_atoms, Sp, Sm)
+    (Sx,Sy,Sz) = generate_Sx_Sy_Sz_operators(N_atoms, spm.eye(3), Sa, Sb, Sn)
+    print ''
+    
+    Ham = generate_Hamiltonian(N_atoms, b, bd)
+    ops = generate_possible_combinations(N_atoms, [Sx,Sy,Sz])
+#    list_print(ops)
+    ops = replace_bdb(N_atoms, ops)
+#    list_print(ops)
+    ops = apply_commutation(N_atoms, ops, 'ops')
+#    list_print(ops)
+    ops = reduce_options(N_atoms, ops)
+#    list_print(ops)
+    cross_sect = generate_cross_section(N_atoms, ops, real, recip)
+#    list_print(ops)
+    print '\n', cross_sect
+
+    end = clock()
+    print "\nFinished %i atoms in %.2f seconds" %(N_atoms,end-start)
 
 
 #---------------- MAIN --------------------------------------------------------- 
