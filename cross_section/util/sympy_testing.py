@@ -1,0 +1,2 @@
+import sympy
+sympy.test()
