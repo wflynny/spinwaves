@@ -1,0 +1,26 @@
+diff --git a/sympy/functions/special/tests/test_spec_polynomials.py b/c:/python25/lib/site-packages/sympy/functions/special/tests/test_spec_polynomials.py
+index feab07e..94d3900 100644
+--- a/sympy/functions/special/tests/test_spec_polynomials.py
++++ b/c:/python25/lib/site-packages/sympy/functions/special/tests/test_spec_polynomials.py
+@@ -1,6 +1,6 @@
+ from sympy import legendre, Symbol, hermite, chebyshevu, chebyshevt, \
+         chebyshevt_root, chebyshevu_root, assoc_legendre, Rational,  \
+-        roots, sympify, S
++        roots, sympify, S, simplify
+ 
+ x = Symbol('x')
+ 
+@@ -59,11 +59,11 @@ def test_chebyshev():
+     for n in range(1, 4):
+         for k in range(n):
+             z = chebyshevt_root(n, k)
+-            assert chebyshevt(n, z) == 0
++            assert simplify(chebyshevt(n, z)) == 0
+     for n in range(1, 4):
+         for k in range(n):
+             z = chebyshevu_root(n, k)
+-            assert chebyshevu(n, z) == 0
++            assert simplify(chebyshevu(n, z)) == 0
+ 
+ def test_hermite():
+     assert hermite(6, x) == 64*x**6 - 480*x**4 + 720*x**2 - 120
