@@ -22,6 +22,7 @@ from spinwaves.vtkModel.CellClass import *
 #import random
 import spinwaves.vtkModel.SpaceGroups
 from Session import Session
+from general_case import run_cross_section
 
 #It could not find MonteCarlo package (import MonteCarlo.CSim)
 #sys.path.append(mainPath +"\\MonteCarlo")
@@ -2068,6 +2069,7 @@ class Cross_Section(wx.Frame):
         self.interactionsFileBrowse = wx.Button(self, -1, "Browse")
         self.text_ctrl_2 = wx.TextCtrl(self, -1, "")
         self.button_1 = wx.Button(self, -1, "Browse")
+        self.launchButton = wx.Button(self, -1, "Launch")
 
         self.__set_properties()
         self.__do_layout()
@@ -2091,10 +2093,74 @@ class Cross_Section(wx.Frame):
         sizer_4.Add(self.text_ctrl_2, 0, 0, 0)
         sizer_4.Add(self.button_1, 0, 0, 0)
         sizer_2.Add(sizer_4, 1, wx.EXPAND, 0)
+        sizer_2.Add(self.launchButton, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
         self.SetSizer(sizer_2)
         sizer_2.Fit(self)
         self.Layout()
         # end wxGlade
+        self.Bind(wx.EVT_BUTTON, self.OnBrowseInteractions, self.interactionsFileBrowse)
+        self.Bind(wx.EVT_BUTTON, self.OnBrowseSpins, self.button_1)
+        self.Bind(wx.EVT_BUTTON, self.OnLaunch, self.launchButton)
+
+    def OnBrowseInteractions(self, evt):
+        confBase = wx.ConfigBase.Create()
+        confBase.SetStyle(wx.CONFIG_USE_LOCAL_FILE)
+        defaultDir=confBase.Get().GetPath()
+        wildcard="files (*.txt)|*.txt|All files (*.*)|*.*"
+        dlg = wx.FileDialog(
+            self, message="Choose an interaction file",
+            defaultDir=defaultDir,
+            defaultFile="",
+            wildcard=wildcard,
+            style=wx.OPEN | wx.CHANGE_DIR
+            )
+
+        # Show the dialog and retrieve the user response. If it is the OK response,
+        # process the data.
+        if dlg.ShowModal() == wx.ID_OK:
+            # This returns a Python list of files that were selected.
+            paths = dlg.GetPaths()
+            self.text_ctrl_1.SetValue(paths[0])
+            
+    
+    def OnBrowseSpins(self, evt):
+        confBase = wx.ConfigBase.Create()
+        confBase.SetStyle(wx.CONFIG_USE_LOCAL_FILE)
+        defaultDir=confBase.Get().GetPath()
+        wildcard="files (*.txt)|*.txt|All files (*.*)|*.*"
+        dlg = wx.FileDialog(
+            self, message="Choose a spin file",
+            defaultDir=defaultDir,
+            defaultFile="",
+            wildcard=wildcard,
+            style=wx.OPEN | wx.CHANGE_DIR
+            )
+
+        # Show the dialog and retrieve the user response. If it is the OK response,
+        # process the data.
+        if dlg.ShowModal() == wx.ID_OK:
+            # This returns a Python list of files that were selected.
+            paths = dlg.GetPaths()
+            self.text_ctrl_2.SetValue(paths[0])
+    
+    def OnLaunch(self, evt):
+        #check to see if the two files paths are openable files.
+        try:
+            f = open(self.text_ctrl_1.GetValue())
+        except:
+            wx.MessageBox("The interactions file cannot be opened.")
+            return
+        f.close();
+        
+        try:
+            f = open(self.text_ctrl_2.GetValue())
+        except:
+            wx.MessageBox("The spins file cannot be opened.")
+            return
+        f.close()
+        
+        run_cross_section(self.text_ctrl_1.GetValue(), self.text_ctrl_2.GetValue())
+    
 
 # end of class Cross_Section
 
