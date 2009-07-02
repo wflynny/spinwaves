@@ -1793,6 +1793,7 @@ class Frame(wx.Frame):
         loadSpinsMenuItem = monteCarloMenu.Append(wx.NewId(), "Load Spins from file")
 #        outputSnapshotsMenuItem = monteCarloMenu.Append(wx.NewId(), "Output snapshots")
         calculateSpinwavesMenuItem=monteCarloMenu.Append(wx.NewId(), "Perform Spinwave Calculation")
+        crossSectionMenuItem = monteCarloMenu.Append(wx.NewId(), "Perform Cross Section Calculation")
         #This is not yet working
         #fitParametersMenuItem = monteCarloMenu.Append(wx.NewId(), "Fit Parameters")
         menuBar.Append(monteCarloMenu, "Monte Carlo")
@@ -1825,6 +1826,7 @@ class Frame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnSaveImage, saveImageMenuItem)
         self.Bind(wx.EVT_MENU, self.OnLaunchSim, runSimulationMenuItem)
         self.Bind(wx.EVT_MENU, self.OnLaunchSpinWave, calculateSpinwavesMenuItem)
+        self.Bind(wx.EVT_MENU, self.OnLaunchCrossSection, crossSectionMenuItem)
         #Doesn't work yet
 #        self.Bind(wx.EVT_MENU, self.OnFitParameters, fitParametersMenuItem)
           
@@ -1997,6 +1999,10 @@ class Frame(wx.Frame):
         
         frame1.Show()
         frame1.Refresh()
+        
+    def OnLaunchCrossSection(self, evt):
+        frame_1 = Cross_Section(self, -1, "")
+        frame_1.Show()
     
     def OnSaveImage(self, evt):
         """Saves an image of the current rendering.  Currently only .tiff
@@ -2049,6 +2055,48 @@ class Frame(wx.Frame):
             self.session.loadSpinFile(openDialog.GetPath())
         openDialog.Destroy()
 
+
+
+class Cross_Section(wx.Frame):
+    def __init__(self, *args, **kwds):
+        # begin wxGlade: Cross_Section.__init__
+        kwds["style"] = wx.DEFAULT_FRAME_STYLE
+        wx.Frame.__init__(self, *args, **kwds)
+        self.sizer_4_staticbox = wx.StaticBox(self, -1, "Spins File")
+        self.sizer_5_staticbox = wx.StaticBox(self, -1, "Interactions File")
+        self.text_ctrl_1 = wx.TextCtrl(self, -1, "")
+        self.interactionsFileBrowse = wx.Button(self, -1, "Browse")
+        self.text_ctrl_2 = wx.TextCtrl(self, -1, "")
+        self.button_1 = wx.Button(self, -1, "Browse")
+
+        self.__set_properties()
+        self.__do_layout()
+        # end wxGlade
+
+    def __set_properties(self):
+        # begin wxGlade: Cross_Section.__set_properties
+        self.SetTitle("frame_1")
+        self.text_ctrl_1.SetMinSize((160, 27))
+        self.text_ctrl_2.SetMinSize((160, 27))
+        # end wxGlade
+
+    def __do_layout(self):
+        # begin wxGlade: Cross_Section.__do_layout
+        sizer_2 = wx.BoxSizer(wx.VERTICAL)
+        sizer_4 = wx.StaticBoxSizer(self.sizer_4_staticbox, wx.HORIZONTAL)
+        sizer_5 = wx.StaticBoxSizer(self.sizer_5_staticbox, wx.HORIZONTAL)
+        sizer_5.Add(self.text_ctrl_1, 0, 0, 0)
+        sizer_5.Add(self.interactionsFileBrowse, 0, 0, 0)
+        sizer_2.Add(sizer_5, 1, wx.EXPAND, 0)
+        sizer_4.Add(self.text_ctrl_2, 0, 0, 0)
+        sizer_4.Add(self.button_1, 0, 0, 0)
+        sizer_2.Add(sizer_4, 1, wx.EXPAND, 0)
+        self.SetSizer(sizer_2)
+        sizer_2.Fit(self)
+        self.Layout()
+        # end wxGlade
+
+# end of class Cross_Section
 
 
 
