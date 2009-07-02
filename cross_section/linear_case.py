@@ -4,7 +4,7 @@ from sympy import I,pi,var,exp,oo
 from sympy.physics.paulialgebra import delta
 from sympy.matrices import Matrix as spMatrix
 #from sympy.matrices import matrix_multiply as spmat_mult
-from sub_in import sub_in
+from subin import sub_in
 
 #-------------------------------------------------------------------------------
 
@@ -361,9 +361,11 @@ if __name__=='__main__':
     
     Ham = generate_Hamiltonian(N_atoms,b,bd)
     ops = generate_possible_combinations(N_atoms,[Sx,Sy,Sz])
+    list_print(ops)    
     ops = replace_bdb(ops,N_atoms)
     ops = apply_commutation(ops,'ops',N_atoms)
     ops = reduce_options(ops,N_atoms)
+    list_print(ops)
     cross_sect = generate_cross_section(N_atoms,ops,atom)   
     print ''
     

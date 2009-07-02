@@ -88,9 +88,9 @@ def generate_a_ad_operators(N, real_list, recip_list, b_list, bd_list):
 def generate_Sp_Sm_operators(N, atom_list, a_list, ad_list):
     """Generates S+ and S- operators"""
     Sp_list = []; Sm_list = []
-#    S = sp.Symbol('S', commutative = True)
+    S = sp.Symbol('S', commutative = True)
     for i in range(N):
-        S = atom_list[i].spin
+#        S = atom_list[i].spin
         Sp = sp.sqrt(2*S) * a_list[i]
         Sm = sp.sqrt(2*S) * ad_list[i]
         Sp_list.append(Sp); Sm_list.append(Sm)
@@ -100,9 +100,9 @@ def generate_Sp_Sm_operators(N, atom_list, a_list, ad_list):
 def generate_Sa_Sb_Sn_operators(N, atom_list, Sp_list, Sm_list):
     """Generates Sa, Sb, Sn operators"""
     Sa_list = []; Sb_list = []; Sn_list = []
-#    S = sp.Symbol('S', commutative = True)
+    S = sp.Symbol('S', commutative = True)
     for i in range(N):
-        S = atom_list[i].spin
+#        S = atom_list[i].spin
         Sa = ((1/2)*(Sp_list[i]+Sm_list[i])).expand()
         Sb = ((1/2)*(1/I)*(Sp_list[i]-Sm_list[i])).expand()
         Sn = (S - sp.Pow(2*S,-1) * Sm_list[i].expand() * Sp_list[i].expand()).expand()
@@ -115,10 +115,10 @@ def generate_Sa_Sb_Sn_operators(N, atom_list, Sp_list, Sm_list):
 def generate_Sx_Sy_Sz_operators(N, atom_list, Sa_list, Sb_list, Sn_list):
     """Generates Sx, Sy and Sz operators"""
     Sx_list = []; Sy_list = []; Sz_list = []
-#    S = sp.Symbol('S', commutative = True)
+    S = sp.Symbol('S', commutative = True)
     rotmat = spm.eye(3)
     for i in range(N):
-        S = atom_list[i].spin
+#        S = atom_list[i].spin
         rotmat = sp.Matrix(atom_list[i].spinRmatrix)
         loc_vect = spm.Matrix([Sa_list[i],Sb_list[i],Sn_list[i]])
         loc_vect = loc_vect.reshape(3,1)
@@ -194,15 +194,12 @@ def generate_possible_combinations(N, alist):
         for j in range(len(alist)):
             vect1 = alist[i][-1]
             vect2 = alist[j][-1]
-            testlist = (alista[i][0].expand() * alist[j][0].expand()).expand()
-            
-            (b1,b2) = b_scanner(testlist)
-            if b1 == b2:
-                allzerolist = [alista[i][0] for k in range(len(alista[i])-1)] + [delta(vect1,vect2)-vect1*vect2]
-                otherlist = [alist[j][k] for k in range(len(alist[j])-1)] + [1]
 
-                append_list = list_mult(allzerolist,otherlist)
-                op_list.append(append_list)
+            allzerolist = [alista[i][0] for k in range(len(alista[i])-1)] + [delta(vect1,vect2)-vect1*vect2]
+            otherlist = [alist[j][k] for k in range(len(alist[j])-1)] + [1]
+
+            append_list = list_mult(allzerolist,otherlist)
+            op_list.append(append_list)
     print "Generated: Possible Operator Combinations"
     return op_list
 
@@ -228,13 +225,13 @@ def reduce_options(N, arg):
     return new
 
 # Apply Commutation Relation
-def apply_commutation(N, arg, title):
+def apply_commutation(N, arg):
     """Applies the commutation relation of [b_i, bd_j] = kronecker delta _ ij"""
     # [bi,bdj] = delta_ij
     # Thus commutator = 0 (THEY COMMUTE) for i != j
     # Thus commutator = 1 for i == j
         # Then just put '+1' after commutation
-    # NOTE: This method will take bd*b*bd*b and take it to bd*(bd*d+1)*d so
+    # NOTE: This method will take bd*b*bd*b to bd*(bd*b+1)*b so
     # I have replace bd_b called first but implement it inside this method too.
     if type(arg) == type([]):
         for k in range(len(arg)):
@@ -263,7 +260,7 @@ def apply_commutation(N, arg, title):
                         arg[k][i] = (arg[k][i].subs((bj*bg), 0)).expand()
                         arg[k][i] = (arg[k][i].subs((bdg*nj), 0)).expand()
                         arg[k][i] = (arg[k][i].subs((bg*nj), 0)).expand()
-        print "Applied: Commutation on %r!"%title
+        print "Applied: Commutation"
         return arg
 
 # Replaces expressions arranged by apply_commutation
@@ -293,6 +290,23 @@ def replace_bdb(N, arg):
                     arg[k][i] = (arg[k][i].subs((bdg*nj), 0)).expand()
                     arg[k][i] = (arg[k][i].subs((bg*nj), 0)).expand()
     print "Applied: bdq*bq Replacement"
+    return arg
+
+# 
+def clean_up(N, arg, atom_list):
+    S = sp.Symbol('S', commutative = True)
+    for k in range(len(arg)):
+        for i in range(N):
+            S2coeff = coeff(arg[k][i], S**2)
+            Scoeff = coeff(arg[k][i], S)
+            if S2coeff != None and Scoeff != None:
+                arg[k][i] = S2coeff*S**2 + Scoeff*S
+            elif S2coeff != None and Scoeff == None:
+                arg[k][i] = S2coeff*S**2
+            elif S2coeff == None and Scoeff != None:
+                arg[k][i] = Scoeff*S
+            else: arg[k][i] == 0
+    print "Applied: Final Clean up"
     return arg
 
 # Inelastic Cross Section Equation
@@ -367,15 +381,18 @@ def run_cross_section(interactionfile, spinfile):
     atom_list, jnums, jmats,N_atoms_uc=rf.readFiles(interactionfile,spinfile)
     N_atoms = N_atoms_uc
 
-    print N_atoms_uc
-    print atom_list
-
     real, recip = generate_atoms(N_atoms)
     (b,bd) = generate_b_bd_operators(N_atoms)
     (a,ad) = generate_a_ad_operators(N_atoms, real, recip, b, bd)
     (Sp,Sm) = generate_Sp_Sm_operators(N_atoms, atom_list, a, ad)
     (Sa,Sb,Sn) = generate_Sa_Sb_Sn_operators(N_atoms, atom_list, Sp, Sm)
+    list_print(Sa)
+    list_print(Sb)
+    list_print(Sn)    
     (Sx,Sy,Sz) = generate_Sx_Sy_Sz_operators(N_atoms, atom_list, Sa, Sb, Sn)
+    list_print(Sx)
+    list_print(Sy)
+    list_print(Sz)
     print ''
     
     Ham = generate_Hamiltonian(N_atoms, b, bd)
@@ -383,7 +400,9 @@ def run_cross_section(interactionfile, spinfile):
 #    list_print(ops)
     ops = replace_bdb(N_atoms, ops)
 #    list_print(ops)
-    ops = apply_commutation(N_atoms, ops, 'ops')
+    ops = apply_commutation(N_atoms, ops)
+#    list_print(ops)
+    ops = clean_up(N_atoms, ops, atom_list)
 #    list_print(ops)
     ops = reduce_options(N_atoms, ops)
 #    list_print(ops)
@@ -396,44 +415,6 @@ def run_cross_section(interactionfile, spinfile):
     end = clock()
     print "\nFinished %i atoms in %.2f seconds" %(N_atoms,end-start)
 
-
-#---------------- MAIN --------------------------------------------------------- 
-
-# Will get rid of contents of main after integration is complete and I can run run_cross_section method
-if __name__=='__main__':
-    
-    interfile = 'c:\monte.txt'
-    spinfile = 'c:\spins.txt'
-    
-    run_cross_section(interfile,spinfile)
-    
-#    start = clock()
-#
-#    # Call Methods
-#    atom_list = []
-#    N_atoms = 2
-#    
-#    real, recip = generate_atoms(N_atoms)
-#    (b,bd) = generate_b_bd_operators(N_atoms)
-#    (a,ad) = generate_a_ad_operators(N_atoms, real, recip, b, bd)
-#    (Sp,Sm) = generate_Sp_Sm_operators(N_atoms, atom_list, a, ad)
-#    (Sa,Sb,Sn) = generate_Sa_Sb_Sn_operators(N_atoms, atom_list, Sp, Sm)
-#    (Sx,Sy,Sz) = generate_Sx_Sy_Sz_operators(N_atoms, atom_list, Sa, Sb, Sn)
-#    print ''
-#    
-#    Ham = generate_Hamiltonian(N_atoms, b, bd)
-#    ops = generate_possible_combinations(N_atoms, [Sx,Sy,Sz])
-##    list_print(ops)
-#    ops = replace_bdb(N_atoms, ops)
-##    list_print(ops)
-#    ops = apply_commutation(N_atoms, ops, 'ops')
-##    list_print(ops)
-#    ops = reduce_options(N_atoms, ops)
-##    list_print(ops)
-#    cross_sect = generate_cross_section(N_atoms, ops, real, recip)
-##    list_print(ops)
-#    print '\n', cross_sect
-#
 ##    fig = plt.figure(figsize = (10,7),facecolor = 'w')
 ##    str = repr(cross_sect)
 ##    str = str.replace('**','^').replace('DiracDelta','\delta').replace('I','\imath').replace('*',' ')#.split('+')
@@ -449,6 +430,18 @@ if __name__=='__main__':
 #    print "\nFinished %i atoms in %.2f seconds" %(N_atoms,end-start)
 #
 ##    plt.show()
+
+
+#---------------- MAIN --------------------------------------------------------- 
+
+# Will get rid of contents of main after integration is complete and I can run run_cross_section method
+if __name__=='__main__':
+    
+    interfile = 'c:\montecarlo.txt'
+    spinfile = 'c:\Spins.txt'
+    
+    run_cross_section(interfile,spinfile)
+
 
     ### THINGS LEFT TO DO
     # - optimize for N_atoms > 2
