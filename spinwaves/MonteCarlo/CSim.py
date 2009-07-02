@@ -24,7 +24,7 @@ else:
 
 f=open('c:\\trace.txt','w')
 dllpath=os.path.join(os.path.dirname(__file__),'_monteCarlo'+ext)
-dllpath=os.path.join(os.path.dirname(sys.argv[0]),'_monteCarlo'+ext)
+#dllpath=os.path.join(os.path.dirname(sys.argv[0]),'_monteCarlo'+ext)
 f.write('dllpath '+dllpath)
 f.close()
 #dll'_monteCarlo'+ext

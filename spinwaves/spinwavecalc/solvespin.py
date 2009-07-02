@@ -2,7 +2,7 @@ import numpy as N
 import scipy
 import math
 import scipy.optimize
-from utilities.anneal import anneal
+from spinwaves.utilities.anneal import anneal
 
 
 
