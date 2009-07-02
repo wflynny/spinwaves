@@ -471,7 +471,18 @@ class atomPanel(wx.Panel):
                 attr.SetBackgroundColour(bgColor)
                 self.atomList.SetAttr(row, 7, attr)
                 failed = True
-            
+                
+            spinMag = None
+            try:
+                spinMag = float(self.atomList.GetCellValue(row, 8))
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour("white")
+                self.atomList.SetAttr(row, 8, attr)
+            except:
+                attr = wx.grid.GridCellAttr()
+                attr.SetBackgroundColour(bgColor)
+                self.atomList.SetAttr(row, 8, attr)
+                failed = True
             
             name = self.atomList.GetCellValue(row, 0)
             
@@ -480,7 +491,7 @@ class atomPanel(wx.Panel):
             #this rerenders the cells to they show the color change
             
             
-            data.append([name, atomicNum, numXCoord, numYCoord, numZCoord, numDx, numDy, numDz])
+            data.append([name, atomicNum, numXCoord, numYCoord, numZCoord, numDx, numDy, numDz, spinMag])
         
         return failed, numA, numB, numC, numAlpha, numBeta, numGamma, numMagNa, numMagNb, numMagNc, numCutNa, numCutNb, numCutNc, data
          

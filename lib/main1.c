@@ -3,12 +3,7 @@
 #include <time.h>
 #include <math.h>
 #include "dSFMT.h"
-/*
-float randf()
-{
-    return rand()/(((float)RAND_MAX)+1);  //Since RAND_MAX is only 32000 this only gives that many unique values
-}
-*/
+
 typedef float Spin[3];
 typedef float Anisotropy[3];
 typedef float InteractionMatrix[3][3];
@@ -36,24 +31,9 @@ void initializeRandState()
 {
      dsfmt_init_gen_rand(&dsfmt_state, time(NULL));
 }
-/*
-void randSpin(Spin spin)
-{
-     float random = randf();
-     if(random < 0.5)
-     {
-      spin[2] = -1;
-     }
-     else
-     {
-         spin[2] = 1;
-     }
-//     printf("Spin: %f\n", spin[2]);
-}
-*/
 
 
-void randSpin(Spin spin)
+void randSpin(Spin spin, float magnitude)
 {
        //Marsaglia Method
        float Sx, Sy, Sz;
@@ -75,10 +55,9 @@ void randSpin(Spin spin)
            }
        }
             
-       spin[0] = Sx;
-       spin[1] = Sy;
-       spin[2] = Sz;
-//       printf("Spin: (%f, %f, %f) ", Sx, Sy, Sz);
+       spin[0] = Sx * magnitude;
+       spin[1] = Sy * magnitude;
+       spin[2] = Sz * magnitude;
        return;
 }
 
@@ -90,6 +69,7 @@ typedef struct
 //        float *spin;
         Spin spin;
         Anisotropy anisotropy;
+        float spinMag;
 } Atom;
         
 void del_jMat(InteractionMatrix *m)
@@ -168,85 +148,32 @@ Atom* new_atom_list(int n, int *success)
 }
 
 
-void set_atom(Atom *p, int k, Anisotropy anisotropy, int *mat, int* neighbors, int numInteractions, Spin spin)
+void set_atom(Atom *p, int k, Anisotropy anisotropy, int *mat, int* neighbors, int numInteractions, Spin spin, float spinMag)
 {
-//     printf("spin: (%f, %f, %f) ", spin[0],spin[1], spin[2]);
-//     printf("%d) %x  %x  %x\n", k, p, p + k, p + k + 1);
-       int i;
-/*       printf("(%d)\n", k);
-       for(i =0; i < numInteractions;  i++)
-       {
-             printf("%d)(%d, %d)\n",i, neighbors[i], mat[i]);
-       }
-*/
-//       system("PAUSE");
+
+     int i;
+
      p[k].interaction_matrix = mat;
      p[k].nbr_list = neighbors;
-//     printf("here1\n");
      p[k].spin[0] = spin[0];
-//     printf("here2\n");
      p[k].spin[1] = spin[1];
-//     printf("here3\n");
      p[k].spin[2] = spin[2];
      p[k].anisotropy[0] = anisotropy[0];
      p[k].anisotropy[1] = anisotropy[1];
      p[k].anisotropy[2] = anisotropy[2];
-//     printf("anisotropy: (%f, %f, %f)\n", anisotropy[0], anisotropy[1], anisotropy[2]);
-//     system("PAUSE");
-//     printf("here4\n");
      p[k].numInteractions = numInteractions;
+     p[k].spinMag = spinMag;
      
-/*     printf("%d)", k);
-     int i;
-     for(i = 0; i < numInteractions; i++)
-     {
-           printf("%d %d\n", mat[i], neighbors[i]);
-     }
-     system("PAUSE");*/
-     
-/*     int i, j;
-     printf("K = %d\n", k);
-     for(i = 0; i < k+1; i++)
-     {
-           printf("\n%d) spin: (%f, %f, %f)", i, p[i].spin[0], p[i].spin[1], p[i].spin[2]);
-           for(j = 0; j < p[i].numInteractions; j++)
-           {
-                 printf("(%d, %d) ", p[i].nbr_list[j], p[i].interaction_matrix[j]);
-           }
-           system("PAuSE");
-     }*/
-     
-     //test
-//     printf("mat* = %d   mat[0],[1],[2] = (%d,%d,%d)   p[k].mat* = %d p[k].mat[0],[1],[2] = (%d,%d, %d)\n", mat, mat[0], mat[1], mat[2], p[k].interaction_matrix, p[k].interaction_matrix[0],p[k].interaction_matrix[1], p[k].interaction_matrix[2]);
 }
 
 void getSpin(Atom *p, int index, Spin spin)
 {
-//       printf("(%f, %f, %f)\n", p[index].spin[0], p[index].spin[1], p[index].spin[2]);
        spin[0] = p[index].spin[0];
        spin[1] = p[index].spin[1];
        spin[2] = p[index].spin[2];
        return;
 }
-/* implemented in python instead
-float getMagnetization(Atom *atoms, int numAtoms)
-{
-      //Returns the length of the sum of all the spins
-      float avgMag = 0;
-      float Xsum = 0;
-      float Ysum = 0;
-      float Zsum = 0;
-      int i;
-      for(i = 0; i < numAtoms; i++)
-      {
-            Xsum += atoms[i].spin[0];
-            Ysum += atoms[i].spin[1];
-            Zsum += atoms[i].spin[2];
-      }
-      avgMag = sqrt(pow(Xsum,2) + pow(Ysum,2) + pow(Zsum,2));
-      return avgMag;
-}
-*/
+
 void atomTest(Atom *p, int num)
 {
      int i;
@@ -264,7 +191,6 @@ void atomTest(Atom *p, int num)
                  printf("%d ", p[i].interaction_matrix[j]);
            }
            printf(")\n");
-//     system("PAUSE");
      }
 }
 
@@ -277,29 +203,11 @@ void matrixTest(InteractionMatrix *m, int num)
      }
 }
 
-/*
-struct interaction
-{
-       int otherAtomIndex;  //may need to be long if the list gets big
-       int jMatrixIndex;
-};
 
-struct atom
-{
-//       float s[3];   //this notation is cuasing problems when i try to assign it a value for some reason
-//       float pos[3];
-       int numInteractions;
-//       struct interaction interactions[];
-         float *s;
-         float *pos;
-         struct interaction* interactions;
-};
-*/
 
 float matCalc(float *s1, InteractionMatrix jMat, float s2[3])
 {
- //     printf("%f, %f, %f\n", s1[0], s1[1], s1[2]);
-//      system("PAUSE");
+
       //multiply s1 by jMat
       float x1 = (jMat[0][0] * s1[0]) + (jMat[0][1] * s1[1]) + (jMat[0][2] * s1[2]);
       float y1 = (jMat[1][0] * s1[0]) + (jMat[1][1] * s1[1]) + (jMat[1][2] * s1[2]);
@@ -354,17 +262,13 @@ void flipSpins(Atom *atoms, int numAtoms, InteractionMatrix *jMatrices, float T,
      int index;
      float oldE, newE;
      Spin newS;
-//     printf("flipping spins");
      for(index = 0; index < numAtoms; index++)
      {
-//             printf("atom %d) s = (%f,%f,%f) \n", index, atoms[index].spin[0], atoms[index].spin[1], atoms[index].spin[2]);
-             randSpin(newS);
+             randSpin(newS, atoms[index].spinMag);
              oldE = Energy(atoms, atoms+index, atoms[index].spin, jMatrices);
-//             printf("oldE : %f\n", oldE);
 
-//             printf("news = (%f, %f, %f)\n", newS[0], newS[1], newS[2]);
              newE = Energy(atoms, atoms+index, newS, jMatrices);
-//             printf("newE : %f\n", newE);
+
              if(newE < oldE)
              {
                      //atoms[index].spin = newS;
@@ -412,14 +316,7 @@ void simulate(Atom *atoms, int numAtoms, InteractionMatrix *jMatrices, int k, fl
      for(i = 0; i < numAtoms; i++)
      {
            printf("Anisotropy: (%f, %f, %f)\n", atoms[i].anisotropy[0], atoms[i].anisotropy[1], atoms[i].anisotropy[2]);
-     }
-     
-/*     printf("C side interaction matrix list %d\n", jMatrices);
-     for (i=0; i<3; i++)
-     for (j=0; j<3; j++){
-         printf("%d %d Jij=%f\n",i,j,jMatrices[0][i][j]);
-         }
-*/    
+     }   
      
      
      printf("\nnumAtoms = %d\n", numAtoms);
@@ -439,123 +336,9 @@ void simulate(Atom *atoms, int numAtoms, InteractionMatrix *jMatrices, int k, fl
              T = T*tFactor;
      }
  
-
-
-     
-     //for test purposes
-     float avgMag = 0;
-     for(i = 0; i < numAtoms; i++)
-     {
-           avgMag += atoms[i].spin[2];
-//           printf("%d) %f (%f, %f, %f)\n", i, avgMag, atoms[i].spin[0], atoms[i].spin[1], atoms[i].spin[2]);
-     }
-     avgMag = avgMag/numAtoms;
-     printf("average Magnetization: %f\n",avgMag);
-
      return;
 }
 
-
-
-//test
-/*struct atomArray
-{
-       struct atom atomArr[];
-}
-
-*/
-
-/*
-typedef struct {
-  double *Spp, *Smm, *Spm, *Smp ;
-  double *Epp, *Emm, *Epm, *Emp ;
-  double *R ;
-} PBoutdata ;
-*/
-
-/*
-typedef struct
-{
-       int num;
-       int ints[];
-} testStruct;
-
-int basicTest(testStruct  *struc)
-{
-    int i;
-    printf("%d\n", struc->num);
-    for( i = 0; i < struc->num; i++)
-    { 
-        printf("i=%d struc.ints=%d\n",i, struc->ints[i]);
-    }
-    return struc->num + 1;
-}
-
-typedef struct
-{
-        int num;
-        testStruct *structs[];
-}ArrayStruct;
-
-void test2(ArrayStruct *struc)
-{
-     int i;
-     int j;
-     for( j = 0; j < struc->num; j++)
-     {
-              for( i = 0; i < struc->structs[j]->num; i++)
-              { 
-                printf("i=%d struc.ints=%d\n",i, struc->structs[j]->ints[i]);
-              }
-     }
-}
-
-int test(struct atom atoms[], int numAtoms)
-{
-//    struct atom *atoms = atomArray.atomArr;
-    int i = 0;
-    int j;
-    struct atom a;
-    for(i = 0; i < numAtoms; i++)
-    {
-      a = atoms[i];
-      printf("%d) NumInteractions: %d\n",i,a.numInteractions);
-      printf("%d) s[0]: %d\n",i,a.s[0]);
-      printf("%d) s[1]: %d\n",i,a.s[1]);
-      printf("%d) s[2]: %d\n",i,a.s[2]);
-      printf("%d) pos[0]: %d\n",i,a.pos[0]);
-      printf("%d) pos[1]: %d\n",i,a.pos[1]);
-      printf("%d) pos[2]: %d\n",i,a.pos[2]);
-      for(j = 0; j < a.numInteractions; j++)
-      {
-            printf("%d,%d) NumInteractions: %d\n",i,j, a.interactions[j].jMatrixIndex);
-            printf("%d,%d) NumInteractions: %d\n",i,j, a.interactions[j].otherAtomIndex);
-      }
-    }
-    
-    return 0;
-}
-
-*/
-/*
-typedef struct
-{
-        int length;
-        int interactions[];
-}interactionsStruct;
-
-typedef struct
-{
-        int number;
-        float sArray[][3][3];
-        interactionsStruct interactionsArray[];
-}atomArrayStruct;  
-
-void test3(int k , float tMax, float tMin, float tFactor, atomArrayStruct atoms)
-{
-     return
-}
-*/
 
 
 int main(int argc, char *argv[])

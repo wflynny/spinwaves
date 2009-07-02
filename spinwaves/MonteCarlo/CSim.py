@@ -31,6 +31,7 @@ f.close()
 #for py2exe, will look for the dll in the same folder as the executable
 #dllpath=os.path.join(os.path.dirname(sys.argv[0]),'_monteCarlo'+ext)
 #monteCarloDll = ctypes.cdll[dllpath]
+print dllpath
 monteCarloDll = ctypes.CDLL(dllpath)
 
 
@@ -290,8 +291,10 @@ def Sim_Aux(k, tMax, tMin, tFactor, atoms, jMatrices):
         #to keep pointers
         matListList.append(matList)
         nbr_ListList.append(neighbors)
+        
+        spinMag = c_float(atom.getSpinMagnitude())
 
-        monteCarloDll.set_atom(atomListPointer, c_int(i), anisotropy, matList, neighbors, c_int(numInteractions), s1)
+        monteCarloDll.set_atom(atomListPointer, c_int(i), anisotropy, matList, neighbors, c_int(numInteractions), s1, spinMag)
     
     print "atoms added"
     #timer.printTime()

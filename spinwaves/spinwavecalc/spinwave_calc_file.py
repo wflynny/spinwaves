@@ -106,7 +106,6 @@ def generate_sabnt(N_atoms,t=''):
 
 
 
-
 def generate_hdef(atom_list,Jij,Sxyz,N_atoms_uc,N_atoms):
     "generate the hamiltonian for a set of interacting spins defined by Sxyz"
     N_atoms=len(atom_list)

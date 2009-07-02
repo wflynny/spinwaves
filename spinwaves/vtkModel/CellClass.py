@@ -108,7 +108,7 @@ class Cell():
     def getAtomIndex(self, atom):
         return self.Atoms.index(atom)
     
-    def generateAtoms(self, position, description, anisotropy = (0,0,0), radius = .05):
+    def generateAtoms(self, position, description, anisotropy = (0,0,0), spinMagnitude = 1, radius = .05):
         """Given the information of one atom and the space group associated with
         this Cell object, this method creates all the symmetry equivalent atoms
         and adds them to the list."""
@@ -122,7 +122,7 @@ class Cell():
         g = random.uniform(0,1)
         b = random.uniform(0,1)
         for coord in locations:
-            atom = Atom(self, coord[0], coord[1], coord[2], description, radius, r,g,b, anisotropy = anisotropy)
+            atom = Atom(self, coord[0], coord[1], coord[2], description, radius, r,g,b, anisotropy = anisotropy, spinMagnitude = spinMagnitude)
             self.addAtom(atom)
 
     def getA(self):

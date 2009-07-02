@@ -277,7 +277,7 @@ class Session():
                 print "Anisotropy not included!"
             if anisotropy == None:
                 anisotropy = (0,0,0)#Can't be None
-            unitcell.generateAtoms((float(atomData[i][2]), float(atomData[i][3]), float(atomData[i][4])), atomData[i][0], anisotropy = anisotropy)
+            unitcell.generateAtoms((float(atomData[i][2]), float(atomData[i][3]), float(atomData[i][4])), atomData[i][0], anisotropy = anisotropy, spinMagnitude = atomData[i][8])
         
         #Create a Magnetic Cell
         #self.MagCell = MagneticCell(unitcell, magNa, magNb, magNc, spaceGroup)
@@ -728,11 +728,12 @@ class Session():
         
         
         #print out the simple atom list
-        file.write("#AtomNumber InFirstInteractionCell AtomPosition(X Y Z) Anisotropy(X Y Z) OtherIndex Jmatrix OtherIndex Jmatrix...\n")
+        file.write("#AtomNumber InFirstInteractionCell AtomPosition(X Y Z) Anisotropy(X Y Z) SpinMagnitude OtherIndex Jmatrix OtherIndex Jmatrix...\n")
         for atomIndex in range(len(allAtoms)):
             atom = allAtoms[atomIndex]
             atomStr = str(atomIndex) + " " + inInteractionCellStr(allAtoms, atom) + " " + str(atom.pos[0]) + " " + str(atom.pos[1]) + " " + str(atom.pos[2])
             atomStr += " " + str(atom.anisotropy[0]) + " " + str(atom.anisotropy[1]) + " " + str(atom.anisotropy[2])
+            atomStr += " " + str(atom.get)
             for interaction in atom.interactions:
                 otherAtom = interaction[0]
                 jMat = interaction[1]
@@ -756,12 +757,14 @@ class Session():
         been moved to this function, so that the simulation can be run without
         files."""
         class SimpleBond():
-            def __init__(self, pos1, pos2, jMatrix, anisotropy1 = None, anisotropy2 = None):
+            def __init__(self, pos1, pos2, jMatrix, anisotropy1, anisotropy2, spinMag1, spinMag2):
                 self.pos1 = pos1
                 self.anisotropy1 = anisotropy1
                 self.pos2 = pos2
                 self.anisotropy2 = anisotropy2
                 self.jMatrix = jMatrix
+                self.spinMag1 = spinMag1
+                self.spinMag2 = spinMag2
                 
             def sameBond(self, bond2):
                 if self.pos1 == bond2.pos1 or self.pos1 == bond2.pos2:
@@ -774,7 +777,7 @@ class Session():
         Nc = self.getCutoffCell().getNc()
         
         class SimpleAtom():
-            def __init__(self, pos, anisotropy):
+            def __init__(self, pos, anisotropy, spinMag):
                 self.anisotropy = anisotropy
                 self.pos = pos
 #                self.cellPos = []
@@ -784,6 +787,7 @@ class Session():
                 self.interactions = []
                 self.interCellInteractions = []#these must be translated with different logic and therefore must be kept separate
                 #self.interactions[position of other atom] = j number
+                self.spinMag = spinMag
                 
             #might want to change this to position later when all atoms wont be created in same list
             def addInteraction(self, atom2, jMat):
@@ -877,13 +881,15 @@ class Session():
         for bond in self.getCutoffCell().getBonds():
             pos1 = bond.getAtom1().getPosition()
             anisotropy1 = bond.getAtom1().getAnisotropy()
+            spin1 = bond.getAtom1().getSpinMagnitude()
 #            print anisotropy1
             pos2 = bond.getAtom2().getPosition()
             anisotropy2 = bond.getAtom2().getAnisotropy()
+            spin2 = bond.getAtom2().getSpinMagnitude()
 #            print anisotropy2
 #            time.sleep(.1)
             jMat = bond.getJMatrix()
-            newBond = SimpleBond(pos1, pos2, indexOf(matrices,jMat), anisotropy1, anisotropy2)
+            newBond = SimpleBond(pos1, pos2, indexOf(matrices,jMat), anisotropy1, anisotropy2, spinMag1, spinMag2)
             simpleCellBonds.append(newBond)
         
         
@@ -928,10 +934,10 @@ class Session():
                                         if PosInFirstCutoff(newPos1) and PosInFirstCutoff(newPos2):
                                             #Both are in first cutoff
                                             #Add the atoms to the list of atoms within the first cell
-                                            newAtom1 = SimpleAtom(newPos1, anisotropy1)
+                                            newAtom1 = SimpleAtom(newPos1, anisotropy1, bond.spinMag1)
                                             if not atomListContains(cellAtoms, newAtom1):
                                                 cellAtoms.append(newAtom1)
-                                            newAtom2 = SimpleAtom(newPos2, anisotropy2)
+                                            newAtom2 = SimpleAtom(newPos2, anisotropy2, spinMag2)
                                             if not atomListContains(cellAtoms, newAtom2):
                                                 cellAtoms.append(newAtom2)
                                             #Add the bond to bonds within the cell
@@ -947,8 +953,8 @@ class Session():
                                             transPos1 = translateToFirstCutoffCell(newPos1)
                                             transPos2 = translateToFirstCutoffCell(newPos2)
                                             
-                                            newAtom1 = SimpleAtom(transPos1, anisotropy1)
-                                            newAtom2 = SimpleAtom(transPos2, anisotropy2)
+                                            newAtom1 = SimpleAtom(transPos1, anisotropy1, bond.spinMag1)
+                                            newAtom2 = SimpleAtom(transPos2, anisotropy2, bond.spinMag2)
                                             if not atomListContains(cellAtoms, newAtom1):
                                                 cellAtoms.append(newAtom1)
                                             if not atomListContains(cellAtoms, newAtom2):
@@ -970,7 +976,7 @@ class Session():
                         x = pos[0] + (Na * i)
                         y = pos[1] + (Nb * j)
                         z = pos[2] + (Nc * k)
-                        newAtom = SimpleAtom((x,y,z), anisotropy)
+                        newAtom = SimpleAtom((x,y,z), anisotropy, cellAtoms[index].spinMag)
 #                        print (len(allAtoms)%numAtomsPerCell == index)#just a check, should always be true
                         allAtoms.append(newAtom)
 
@@ -1244,11 +1250,11 @@ class atomTable(wx.grid.PyGridTableBase):
     what is in this table."""
     def __init__(self):
         wx.grid.PyGridTableBase.__init__(self)
-        self.colLabels = ['   Name   ', 'Atomic Number','   x   ', '   y   ','   z   ', '  Dx  ', '  Dy  ', '  Dz  ']
+        self.colLabels = ['   Name   ', 'Atomic Number','   x   ', '   y   ','   z   ', '  Dx  ', '  Dy  ', '  Dz  ', 'Spin Magnitude']
         self.rowLabels=['Atom 1']
         
         self.data = [
-                     ['','','','','', 0.0, 0.0, 0.0]#Row 1
+                     ['','','','','', 0.0, 0.0, 0.0, '']#Row 1
                      ]
     
     def GetNumberRows(self):

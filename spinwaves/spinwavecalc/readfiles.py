@@ -4,7 +4,7 @@ import sympy
 import copy
 
 class atom:
-    def __init__(self,spinRmatrix=N.matrix([[1, 0, 0],
+    def __init__(self,spinRmatrix=sympy.Matrix([[1, 0, 0],
                                             [0, 1, 0],
                                             [0, 0, 1]]),
                     pos=[0,0,0],neighbors=None,interactions=None,label=0,Dx=0,Dy=0,Dz=0,cell=0,int_cell=[], orig_Index = None):
