@@ -7,14 +7,14 @@ import sympy.matrices as spm
 from sympy import I,pi,var,exp,oo,sqrt
 from sympy.physics.paulialgebra import delta
 from timeit import default_timer as clock
+
 import matplotlib as mpl
 mpl.use('WxAgg')
 import matplotlib.pyplot as plt
 
-
 from list_manipulation import *
 from subin import sub_in
-#import spinwaves.spinwavecalc.readfiles
+import spinwaves.spinwavecalc.readfiles as rf
 
 
 # Computes the inner product with a metric tensor
@@ -88,9 +88,9 @@ def generate_a_ad_operators(N, real_list, recip_list, b_list, bd_list):
 def generate_Sp_Sm_operators(N, atom_list, a_list, ad_list):
     """Generates S+ and S- operators"""
     Sp_list = []; Sm_list = []
-    S = sp.Symbol('S', commutative = True)
+#    S = sp.Symbol('S', commutative = True)
     for i in range(N):
-#        S = atom_list[i].spin
+        S = atom_list[i].spin
         Sp = sp.sqrt(2*S) * a_list[i]
         Sm = sp.sqrt(2*S) * ad_list[i]
         Sp_list.append(Sp); Sm_list.append(Sm)
@@ -100,9 +100,9 @@ def generate_Sp_Sm_operators(N, atom_list, a_list, ad_list):
 def generate_Sa_Sb_Sn_operators(N, atom_list, Sp_list, Sm_list):
     """Generates Sa, Sb, Sn operators"""
     Sa_list = []; Sb_list = []; Sn_list = []
-    S = sp.Symbol('S', commutative = True)
+#    S = sp.Symbol('S', commutative = True)
     for i in range(N):
-#        S = atom_list[i].spin
+        S = atom_list[i].spin
         Sa = ((1/2)*(Sp_list[i]+Sm_list[i])).expand()
         Sb = ((1/2)*(1/I)*(Sp_list[i]-Sm_list[i])).expand()
         Sn = (S - sp.Pow(2*S,-1) * Sm_list[i].expand() * Sp_list[i].expand()).expand()
@@ -112,12 +112,14 @@ def generate_Sa_Sb_Sn_operators(N, atom_list, Sp_list, Sm_list):
     return (Sa_list, Sb_list, Sn_list)
 
 # Generates the Sx, Sy and Sz operators
-def generate_Sx_Sy_Sz_operators(N, atom_list, rotmat, Sa_list, Sb_list, Sn_list):
+def generate_Sx_Sy_Sz_operators(N, atom_list, Sa_list, Sb_list, Sn_list):
     """Generates Sx, Sy and Sz operators"""
     Sx_list = []; Sy_list = []; Sz_list = []
-    S = sp.Symbol('S', commutative = True)
+#    S = sp.Symbol('S', commutative = True)
+    rotmat = spm.eye(3)
     for i in range(N):
-#        S = atom_list[i].spin
+        S = atom_list[i].spin
+        rotmat = sp.Matrix(atom_list[i].spinRmatrix)
         loc_vect = spm.Matrix([Sa_list[i],Sb_list[i],Sn_list[i]])
         loc_vect = loc_vect.reshape(3,1)
         glo_vect = rotmat * loc_vect
@@ -346,7 +348,7 @@ def generate_cross_section(N, arg, real_list, recip_list):
     print "Applied: Delta Function Conversion"                                                              # |
     for i in range(len(temp3)):                                                                             # |
         temp4.append(unit_vect[i] * temp3[i])                                                               # V
-    dif = front_func**2 * front_constant * vanderwaals * ((sp.simplify(sum(temp4).expand())))#.expand()     # _
+    dif = front_func**2 * front_constant * vanderwaals * sum(temp4)#((sp.simplify(sum(temp4).expand())))#.expand()     # _
 
     print "Complete: Cross-section Calculation"
     return dif
@@ -362,18 +364,18 @@ def run_cross_section(interactionfile, spinfile):
     start = clock()
 
     # Generate Inputs
-#    atom_list, jnums, jmats,N_atoms_uc=readfiles.readFiles(interactionfile,spinfile)
-#    N_atoms = N_atoms_uc
+    atom_list, jnums, jmats,N_atoms_uc=rf.readFiles(interactionfile,spinfile)
+    N_atoms = N_atoms_uc
 
-    atom_list = []
-    N_atoms = 2
+    print N_atoms_uc
+    print atom_list
 
     real, recip = generate_atoms(N_atoms)
     (b,bd) = generate_b_bd_operators(N_atoms)
     (a,ad) = generate_a_ad_operators(N_atoms, real, recip, b, bd)
     (Sp,Sm) = generate_Sp_Sm_operators(N_atoms, atom_list, a, ad)
     (Sa,Sb,Sn) = generate_Sa_Sb_Sn_operators(N_atoms, atom_list, Sp, Sm)
-    (Sx,Sy,Sz) = generate_Sx_Sy_Sz_operators(N_atoms, atom_list, spm.eye(3), Sa, Sb, Sn)
+    (Sx,Sy,Sz) = generate_Sx_Sy_Sz_operators(N_atoms, atom_list, Sa, Sb, Sn)
     print ''
     
     Ham = generate_Hamiltonian(N_atoms, b, bd)
@@ -387,8 +389,9 @@ def run_cross_section(interactionfile, spinfile):
 #    list_print(ops)
     cross_sect = generate_cross_section(N_atoms, ops, real, recip)
 #    list_print(ops)
-    cross_sect = eval_cross_section(cross_section, 0, 0, 0, 0)
     print '\n', cross_sect
+    cross_sect = eval_cross_section(cross_sect, 0, 0, 0, 0)
+
 
     end = clock()
     print "\nFinished %i atoms in %.2f seconds" %(N_atoms,end-start)
@@ -398,48 +401,54 @@ def run_cross_section(interactionfile, spinfile):
 
 # Will get rid of contents of main after integration is complete and I can run run_cross_section method
 if __name__=='__main__':
-    start = clock()
-
-    # Call Methods
-    atom_list = []
-    N_atoms = 2
     
-    real, recip = generate_atoms(N_atoms)
-    (b,bd) = generate_b_bd_operators(N_atoms)
-    (a,ad) = generate_a_ad_operators(N_atoms, real, recip, b, bd)
-    (Sp,Sm) = generate_Sp_Sm_operators(N_atoms, atom_list, a, ad)
-    (Sa,Sb,Sn) = generate_Sa_Sb_Sn_operators(N_atoms, atom_list, Sp, Sm)
-    (Sx,Sy,Sz) = generate_Sx_Sy_Sz_operators(N_atoms, atom_list, spm.eye(3), Sa, Sb, Sn)
-    print ''
+    interfile = 'c:\monte.txt'
+    spinfile = 'c:\spins.txt'
     
-    Ham = generate_Hamiltonian(N_atoms, b, bd)
-    ops = generate_possible_combinations(N_atoms, [Sx,Sy,Sz])
-#    list_print(ops)
-    ops = replace_bdb(N_atoms, ops)
-#    list_print(ops)
-    ops = apply_commutation(N_atoms, ops, 'ops')
-#    list_print(ops)
-    ops = reduce_options(N_atoms, ops)
-#    list_print(ops)
-    cross_sect = generate_cross_section(N_atoms, ops, real, recip)
-#    list_print(ops)
-    print '\n', cross_sect
-
-    fig = plt.figure(figsize = (10,7),facecolor = 'w')
-#    str = repr(cross_sect)
-#    str = str.replace('**','^').replace('DiracDelta','\delta').replace('I','\imath').replace('*',' ')#.split('+')
-#    print str
-#    #plt.title(str)
-##    for s in str: s+'+\n'
-##    fig.suptitle('$'+sum(str)+'$')
-#    fig.suptitle('$'+str+'$')
-#    #fig.savefig('test.pdf')
+    run_cross_section(interfile,spinfile)
     
-
-    end = clock()
-    print "\nFinished %i atoms in %.2f seconds" %(N_atoms,end-start)
-
-#    plt.show()
+#    start = clock()
+#
+#    # Call Methods
+#    atom_list = []
+#    N_atoms = 2
+#    
+#    real, recip = generate_atoms(N_atoms)
+#    (b,bd) = generate_b_bd_operators(N_atoms)
+#    (a,ad) = generate_a_ad_operators(N_atoms, real, recip, b, bd)
+#    (Sp,Sm) = generate_Sp_Sm_operators(N_atoms, atom_list, a, ad)
+#    (Sa,Sb,Sn) = generate_Sa_Sb_Sn_operators(N_atoms, atom_list, Sp, Sm)
+#    (Sx,Sy,Sz) = generate_Sx_Sy_Sz_operators(N_atoms, atom_list, Sa, Sb, Sn)
+#    print ''
+#    
+#    Ham = generate_Hamiltonian(N_atoms, b, bd)
+#    ops = generate_possible_combinations(N_atoms, [Sx,Sy,Sz])
+##    list_print(ops)
+#    ops = replace_bdb(N_atoms, ops)
+##    list_print(ops)
+#    ops = apply_commutation(N_atoms, ops, 'ops')
+##    list_print(ops)
+#    ops = reduce_options(N_atoms, ops)
+##    list_print(ops)
+#    cross_sect = generate_cross_section(N_atoms, ops, real, recip)
+##    list_print(ops)
+#    print '\n', cross_sect
+#
+##    fig = plt.figure(figsize = (10,7),facecolor = 'w')
+##    str = repr(cross_sect)
+##    str = str.replace('**','^').replace('DiracDelta','\delta').replace('I','\imath').replace('*',' ')#.split('+')
+##    print str
+##    #plt.title(str)
+###    for s in str: s+'+\n'
+###    fig.suptitle('$'+sum(str)+'$')
+##    fig.suptitle('$'+str+'$')
+##    #fig.savefig('test.pdf')
+#    
+#
+#    end = clock()
+#    print "\nFinished %i atoms in %.2f seconds" %(N_atoms,end-start)
+#
+##    plt.show()
 
     ### THINGS LEFT TO DO
     # - optimize for N_atoms > 2
