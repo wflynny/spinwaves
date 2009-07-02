@@ -397,6 +397,7 @@ def run_cross_section(interactionfile, spinfile):
     
     Ham = generate_Hamiltonian(N_atoms, b, bd)
     ops = generate_possible_combinations(N_atoms, [Sx,Sy,Sz])
+    
 #    list_print(ops)
     ops = replace_bdb(N_atoms, ops)
 #    list_print(ops)
