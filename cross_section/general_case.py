@@ -91,7 +91,9 @@ def generate_Sp_Sm_operators(N, atom_list, a_list, ad_list):
     Sp_list = []; Sm_list = []
     S = sp.Symbol('S', commutative = True)
     for i in range(N):
-#        S = atom_list[i].spin
+#        Dx = atom_list[i].Dx; Dy = atom_list[i].Dy; Dz = atom_list[i].Dz
+#        S = sp.sqrt(Dx**2+Dy**2+Dz**2)
+
         Sp = sp.sqrt(2*S) * a_list[i]
         Sm = sp.sqrt(2*S) * ad_list[i]
         Sp_list.append(Sp); Sm_list.append(Sm)
@@ -103,7 +105,9 @@ def generate_Sa_Sb_Sn_operators(N, atom_list, Sp_list, Sm_list):
     Sa_list = []; Sb_list = []; Sn_list = []
     S = sp.Symbol('S', commutative = True)
     for i in range(N):
-#        S = atom_list[i].spin
+#        Dx = atom_list[i].Dx; Dy = atom_list[i].Dy; Dz = atom_list[i].Dz
+#        S = sp.sqrt(Dx**2+Dy**2+Dz**2)
+
         Sa = ((1/2)*(Sp_list[i]+Sm_list[i])).expand()
         Sb = ((1/2)*(1/I)*(Sp_list[i]-Sm_list[i])).expand()
         Sn = (S - sp.Pow(2*S,-1) * Sm_list[i].expand() * Sp_list[i].expand()).expand()
@@ -117,9 +121,11 @@ def generate_Sx_Sy_Sz_operators(N, atom_list, Sa_list, Sb_list, Sn_list):
     """Generates Sx, Sy and Sz operators"""
     Sx_list = []; Sy_list = []; Sz_list = []
     S = sp.Symbol('S', commutative = True)
-    rotmat = spm.eye(3)
+#    rotmat = spm.eye(3)
     for i in range(N):
-#        S = atom_list[i].spin
+#        Dx = atom_list[i].Dx; Dy = atom_list[i].Dy; Dz = atom_list[i].Dz
+#        S = sp.sqrt(Dx**2+Dy**2+Dz**2)
+
         rotmat = sp.Matrix(atom_list[i].spinRmatrix)
         loc_vect = spm.Matrix([Sa_list[i],Sb_list[i],Sn_list[i]])
         loc_vect = loc_vect.reshape(3,1)
@@ -141,7 +147,7 @@ def generate_Sx_Sy_Sz_operators(N, atom_list, Sa_list, Sb_list, Sn_list):
     return (Sx_list,Sy_list,Sz_list)
 
 # Generate Hamiltonian
-def generate_Hamiltonian(N, b_list, bd_list):
+def generate_Hamiltonian(N, atom_list, b_list, bd_list):
     """Generates the Hamiltonian operator"""
     # Ham = Ham0 + sum over q of hbar*omega_q * bdq * bq
     # Ham0 = - S^2 N sum over rho of J(rho)
@@ -151,6 +157,7 @@ def generate_Hamiltonian(N, b_list, bd_list):
     # cJ(q) = cJ(0)*exp(I*q*(l-lp))
 
     S = sp.Symbol('S', commutative = True)
+
     J = sp.Function('J')
     q = sp.Symbol('q', commutative = True)
     l = sp.Symbol('l', commutative = True)
@@ -211,14 +218,17 @@ def clean_up(N, arg, atom_list):
     for k in range(len(arg)):
         temp = []
         for i in range(N):
+            Dx = atom_list[i].Dx; Dy = atom_list[i].Dy; Dz = atom_list[i].Dz
+            Snew = sp.sqrt(Dx**2+Dy**2+Dz**2)
+
             S2coeff = coeff(arg[k][i], S**2)
             Scoeff = coeff(arg[k][i], S)
             if S2coeff != None and Scoeff != None:
-                temp.append(S2coeff*S**2 + Scoeff*S)
+                temp.append((S2coeff*S**2 + Scoeff*S).subs(S,Snew))
             elif S2coeff != None and Scoeff == None:
-                temp.append(S2coeff*S**2)
+                temp.append((S2coeff*S**2).subs(S,Snew))
             elif S2coeff == None and Scoeff != None:
-                temp.append(Scoeff*S)
+                temp.append((Scoeff*S).subs(S,Snew))
         if temp != []:
             temp.append(arg[k][-1])
             new.append(temp)
@@ -375,7 +385,7 @@ def generate_cross_section(N, arg, q, tt, real_list, recip_list):
 
     for k in range(len(arg)):
         temp4.append(arg[k][q])
-    dif = (front_func**2 * front_constant * vanderwaals * sp.simplify(sum(temp4))).expand()
+    dif = (front_func**2 * front_constant * vanderwaals * sum(temp4)).expand()#sp.simplify(sum(temp4))).expand()
 
     print "Complete: Cross-section Calculation"
     return dif
@@ -391,8 +401,8 @@ def run_cross_section(interactionfile, spinfile):
     start = clock()
 
     # Generate Inputs
-    #atom_list, jnums, jmats,N_atoms_uc=rf.readFiles(interactionfile,spinfile)
-    atom_list,N_atoms_uc = ([rf.atom(),rf.atom()],2)
+    atom_list, jnums, jmats,N_atoms_uc=rf.readFiles(interactionfile,spinfile)
+    #atom_list,N_atoms_uc = ([rf.atom(),rf.atom()],2)
     N_atoms = N_atoms_uc
 
     real, recip = generate_atoms(N_atoms)
@@ -403,7 +413,7 @@ def run_cross_section(interactionfile, spinfile):
     (Sx,Sy,Sz) = generate_Sx_Sy_Sz_operators(N_atoms, atom_list, Sa, Sb, Sn)
     print ''
     
-    #Ham = generate_Hamiltonian(N_atoms, b, bd)
+    #Ham = generate_Hamiltonian(N_atoms, atom_list, b, bd)
     ops = generate_possible_combinations(N_atoms, [Sx,Sy,Sz])
     ops = clean_up(N_atoms, ops, atom_list)
     ops = replace_bdb(N_atoms, ops)

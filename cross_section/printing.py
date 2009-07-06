@@ -14,7 +14,8 @@ def generate_output(output, out = ".dvi"):
     tex = ".tex"; pdf = ".pdf"; dvi = ".dvi"; ps = ".ps"
     begin = ["\documentclass[12pt]{article}\n",
                 "\usepackage{palatino,url}\n",
-                "\\begin{document}\n\n"]
+                "\\begin{document}\n",
+                "\section*{Cross-Section}\n\n"]
     end = ["\end{document}"]
     
     if not isinstance(output, str): 
