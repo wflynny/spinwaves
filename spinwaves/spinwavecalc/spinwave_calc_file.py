@@ -655,6 +655,7 @@ def driver(spinfile,interactionfile,direction,steps, kMin, kMax):
     #                                     [0, 1, 0],
     #                                     [0,0,-1]],'Float64')
     
+    
     N_atoms=len(atom_list)
     #N_atoms_uc=1
     print 'N_atoms',N_atoms,'Natoms_uc',N_atoms_uc

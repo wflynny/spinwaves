@@ -2,7 +2,8 @@
 import sys
 if sys.platform=='win32':
 	print 'building on windows'
-	SharedLibrary('monteCarlo.dll', ['main1.c', 'dSFMT.c']) #good
+	env = Environment(tools = ['mingw'])
+	env.SharedLibrary('monteCarlo.dll', ['main1.c', 'dSFMT.c']) #good
 elif sys.platform=='mac':
 	print 'I do not know how to build on Macs yet'
 else:

@@ -22,9 +22,10 @@ class Timer():
     
 
 class simpleAtom():
-    def __init__(self, pos, anisotropy):
+    def __init__(self, pos, anisotropy, spinMag):
         self.pos = pos
         self.anisotropy = anisotropy
+        self.spinMag = spinMag
         self.s = numpy.array([0,0,random.uniform(-1,1)])
         self.interactions = []
 
@@ -63,10 +64,10 @@ def readFile(filename):
         if not line.startswith('#'):
             values = line.split()
             #skip the atom index and Whether it is n the first interaction cell or not
-            newAtom = simpleAtom((float(values[2]), float(values[3]), float(values[4])), (float(values[5]), float(values[6]), float(values[7])) )
+            newAtom = simpleAtom((float(values[2]), float(values[3]), float(values[4])), (float(values[5]), float(values[6]), float(values[7])), float(values[8]))
 #            print "atom pos:", newAtom.pos
 #            time.sleep(5)
-            i = 8
+            i = 9
             while i < len(values):
                 otherAtomIndex = int(values[i])
    #format changed to no longer include position of other atom
@@ -87,7 +88,8 @@ def readFile(filename):
 #            print "newAtom:", newAtom.pos, newAtom.interactions
 #            time.sleep(5)
     file.close()
-            
+    
+
     return atoms, jMatrices
   
 

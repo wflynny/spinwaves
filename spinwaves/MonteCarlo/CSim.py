@@ -292,7 +292,7 @@ def Sim_Aux(k, tMax, tMin, tFactor, atoms, jMatrices):
         matListList.append(matList)
         nbr_ListList.append(neighbors)
         
-        spinMag = c_float(atom.getSpinMagnitude())
+        spinMag = c_float(atom.spinMag)
 
         monteCarloDll.set_atom(atomListPointer, c_int(i), anisotropy, matList, neighbors, c_int(numInteractions), s1, spinMag)
     

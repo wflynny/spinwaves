@@ -60,7 +60,7 @@ class Atom():
         return self.unit_Cell
     
     def __str__(self):
-        return self.getDescription().rstrip() + " at " + str(self.getPosition()) + " in " + self.unit_Cell.__str__() + "  Spin = " + str(self.spin)
+        return self.getDescription().rstrip() + " at " + str(self.getPosition()) + " in " + self.unit_Cell.__str__() + "  Spin = " + str(self.spinMagnitude)
     
     def getIndexNumber(self):
         """Returns the Atom's Index Number in the Unit Cell

@@ -75,15 +75,15 @@ typedef struct
 void del_jMat(InteractionMatrix *m)
 {
      printf("%x %d", m, m);
-      int i, j;
-      printf("deleting\n");
-      for(i = 0; i < 3; i++)
-      {
-            for(j = 0; j < 3; j++)
-            {
-                  printf("%d %d %f \n", i,j,m[0][i][j]);
-                  }
-                  }
+     int i, j;
+     printf("deleting\n");
+     for(i = 0; i < 3; i++)
+     {
+           for(j = 0; j < 3; j++)
+           {
+                 printf("%d %d %f \n", i,j,m[0][i][j]);
+           }
+     }
      free(m);
 }
 

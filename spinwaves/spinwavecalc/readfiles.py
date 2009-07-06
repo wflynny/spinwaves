@@ -1,3 +1,4 @@
+from math import sqrt
 import numpy as N
 import solvespin
 import sympy
@@ -7,7 +8,7 @@ class atom:
     def __init__(self,spinRmatrix=sympy.Matrix([[1, 0, 0],
                                             [0, 1, 0],
                                             [0, 0, 1]]),
-                    pos=[0,0,0],neighbors=None,interactions=None,label=0,Dx=0,Dy=0,Dz=0,cell=0,int_cell=[], orig_Index = None):
+                spinMag = 1, pos=[0,0,0],neighbors=None,interactions=None,label=0,Dx=0,Dy=0,Dz=0,cell=0,int_cell=[], orig_Index = None):
         self.spinRmatrix=spinRmatrix#found with findmat
         if neighbors==None:
             neighbors=[]
@@ -24,6 +25,7 @@ class atom:
         self.int_cell=[]
         #Indices change when reading in only specific atoms from the file
         self.origIndex = orig_Index
+        self.spinMagnitude = spinMag
 
 
 
@@ -96,11 +98,12 @@ def readFiles(interactionFileStr,spinFileStr):
                                 numcell += 1
                             Dx,Dy,Dz=float(tokenized[5]),float(tokenized[6]),float(tokenized[7])
                             #spin0=N.matrix([[1,0,0],[0,1,0],[0,0,1]],'float64')
+                            spinMagnitude = float(tokenized[8])
                             pos0=[x,y,z]
-                            atom0=atom(pos=pos0,Dx=Dx,Dy=Dy,Dz=Dz, orig_Index = atom_num)
+                            atom0=atom(spinMag=spinMagnitude, pos=pos0,Dx=Dx,Dy=Dy,Dz=Dz, orig_Index = atom_num)
                             neighbors=[]
                             interactions=[]
-                            for i in range(8,len(tokenized),2):
+                            for i in range(9,len(tokenized),2):
                                 interacting_spin=int(tokenized[i])
                                 #index number in export list not necessarily the same as index
                                 #in list of atoms in first interacting 'cell'
@@ -160,6 +163,8 @@ def readFiles(interactionFileStr,spinFileStr):
                     #spin=[float(tokenized_line[4]),float(tokenized_line[5]),float(tokenized_line[6])]
                     rmat = findmat(spin)
                     atom1.spinRmatrix = rmat
+                    #Add magnitude as well
+                    #atom1.spinMagnitude = sqrt(spin[0]*spin[0] + spin[1]*spin[1] + spin[2]*spin[2])
                     break
         else:
             raise Exception()

@@ -9,3 +9,9 @@
 - menu names could be changed/reogranized.
 
 - Code could be reogranized to 1) fit MVC 2)organize GUI Main into several files.
+
+-minor, but in Session file, line ~951, it seems that translating the atom back to the first cuttoff cell should
+be unneccessary since it must exist as an internal-cellular bond to have translated to an intercellular bond.
+
+-inter-cellular bonds are not generated for the monte carlo if the original cut-off cell does not include them,
+ie. if the cutoff cell has one or more dimensions of just one unit cell.

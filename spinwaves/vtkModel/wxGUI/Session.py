@@ -18,7 +18,7 @@ class Session():
     """Stores information about a user session
 
     This class stores and manipulates the model (magnetic or Cuttof Cell).The
-    GUI stores the instance of Session that is in use, but to comunicate with
+    GUI stores the instance of Session that is in use, but to communicate with
     the GUI, Session sends messages.(The GUI is aware of Session, but Session
     is not aware of the GUI.)"""
     def __init__(self):
@@ -733,7 +733,7 @@ class Session():
             atom = allAtoms[atomIndex]
             atomStr = str(atomIndex) + " " + inInteractionCellStr(allAtoms, atom) + " " + str(atom.pos[0]) + " " + str(atom.pos[1]) + " " + str(atom.pos[2])
             atomStr += " " + str(atom.anisotropy[0]) + " " + str(atom.anisotropy[1]) + " " + str(atom.anisotropy[2])
-            atomStr += " " + str(atom.get)
+            atomStr += " " + str(atom.spinMag)
             for interaction in atom.interactions:
                 otherAtom = interaction[0]
                 jMat = interaction[1]
@@ -889,7 +889,7 @@ class Session():
 #            print anisotropy2
 #            time.sleep(.1)
             jMat = bond.getJMatrix()
-            newBond = SimpleBond(pos1, pos2, indexOf(matrices,jMat), anisotropy1, anisotropy2, spinMag1, spinMag2)
+            newBond = SimpleBond(pos1, pos2, indexOf(matrices,jMat), anisotropy1, anisotropy2, spin1, spin2)
             simpleCellBonds.append(newBond)
         
         
@@ -906,6 +906,8 @@ class Session():
             anisotropy1 = bond.anisotropy1
             pos2 = bond.pos2
             anisotropy2 = bond.anisotropy2
+            spin1 = bond.spinMag1
+            spin2 = bond.spinMag2
             jMatInt = bond.jMatrix
             for i in range(2):
                 for j in range(2):
@@ -934,17 +936,17 @@ class Session():
                                         if PosInFirstCutoff(newPos1) and PosInFirstCutoff(newPos2):
                                             #Both are in first cutoff
                                             #Add the atoms to the list of atoms within the first cell
-                                            newAtom1 = SimpleAtom(newPos1, anisotropy1, bond.spinMag1)
+                                            newAtom1 = SimpleAtom(newPos1, anisotropy1, spin1)
                                             if not atomListContains(cellAtoms, newAtom1):
                                                 cellAtoms.append(newAtom1)
-                                            newAtom2 = SimpleAtom(newPos2, anisotropy2, spinMag2)
+                                            newAtom2 = SimpleAtom(newPos2, anisotropy2, spin2)
                                             if not atomListContains(cellAtoms, newAtom2):
                                                 cellAtoms.append(newAtom2)
                                             #Add the bond to bonds within the cell
-                                            bond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMatInt )
+                                            bond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMatInt , None, None, None, None)
                                             cellBonds.addBond(bond)
                                         else:#It is an inter-cellular bond
-                                            bond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMatInt )
+                                            bond = SimpleBond( (x1,y1,z1), (x2,y2,z2), jMatInt, None, None, None, None)
                                             interCellBonds.addBond(bond)
                                             #If the atom is in the first cutoff cell then it must be added and
                                             #translating the position will do nothing.  If it is not in the first cutoff
@@ -953,8 +955,8 @@ class Session():
                                             transPos1 = translateToFirstCutoffCell(newPos1)
                                             transPos2 = translateToFirstCutoffCell(newPos2)
                                             
-                                            newAtom1 = SimpleAtom(transPos1, anisotropy1, bond.spinMag1)
-                                            newAtom2 = SimpleAtom(transPos2, anisotropy2, bond.spinMag2)
+                                            newAtom1 = SimpleAtom(transPos1, anisotropy1, spin1)
+                                            newAtom2 = SimpleAtom(transPos2, anisotropy2, spin2)
                                             if not atomListContains(cellAtoms, newAtom1):
                                                 cellAtoms.append(newAtom1)
                                             if not atomListContains(cellAtoms, newAtom2):
