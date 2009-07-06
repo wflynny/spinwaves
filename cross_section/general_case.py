@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 
 from list_manipulation import *
 from subin import sub_in
+from printing import *
 import spinwaves.spinwavecalc.readfiles as rf
 
 
@@ -203,6 +204,27 @@ def generate_possible_combinations(N, alist):
     print "Generated: Possible Operator Combinations"
     return op_list
 
+# 
+def clean_up(N, arg, atom_list):
+    new = []
+    S = sp.Symbol('S', commutative = True)
+    for k in range(len(arg)):
+        temp = []
+        for i in range(N):
+            S2coeff = coeff(arg[k][i], S**2)
+            Scoeff = coeff(arg[k][i], S)
+            if S2coeff != None and Scoeff != None:
+                temp.append(S2coeff*S**2 + Scoeff*S)
+            elif S2coeff != None and Scoeff == None:
+                temp.append(S2coeff*S**2)
+            elif S2coeff == None and Scoeff != None:
+                temp.append(Scoeff*S)
+        if temp != []:
+            temp.append(arg[k][-1])
+            new.append(temp)
+    print "Applied: Clean up"
+    return new
+
 def reduce_options(N, arg):
     """
     Further reduces possible operator combinations by removing combinations if
@@ -216,6 +238,9 @@ def reduce_options(N, arg):
             new.append(element)
 
     for elementa in new:
+        if elementa == 0:
+            new.remove(elementa)
+            break
         for elementb in new:
             if elementa[0].expand() == (-1*elementb[0]).expand():
                 new.remove(elementa)
@@ -292,28 +317,11 @@ def replace_bdb(N, arg):
     print "Applied: bdq*bq Replacement"
     return arg
 
-# 
-def clean_up(N, arg, atom_list):
-    S = sp.Symbol('S', commutative = True)
-    for k in range(len(arg)):
-        for i in range(N):
-            S2coeff = coeff(arg[k][i], S**2)
-            Scoeff = coeff(arg[k][i], S)
-            if S2coeff != None and Scoeff != None:
-                arg[k][i] = S2coeff*S**2 + Scoeff*S
-            elif S2coeff != None and Scoeff == None:
-                arg[k][i] = S2coeff*S**2
-            elif S2coeff == None and Scoeff != None:
-                arg[k][i] = Scoeff*S
-            else: arg[k][i] == 0
-    print "Applied: Final Clean up"
-    return arg
-
 # Inelastic Cross Section Equation
 # (gamma r_0)^2 / 2 pi hbar * k'/k * N * {1/2 g F(kappa)}^2 sum over alpha,beta (delta_alpha,beta - kappa_alpha*kappa_beta)
 #    * sum over l exp(i*kappa*l) X integral -oo to oo <exp{-i * kappa . u_0(0)} * exp{i * kappa . u_l(t)}>
 #    <S^alpha_0(0) * S^beta_l(t)> * exp(-i omega t) dt
-def generate_cross_section(N, arg, real_list, recip_list):
+def generate_cross_section(N, arg, q, tt, real_list, recip_list):
     """Generates the Cross-Section Formula for the one magnon case"""
     gam = sp.Symbol('gamma', commutative = True)
     r = sp.Symbol('r0', commutative = True)
@@ -321,6 +329,7 @@ def generate_cross_section(N, arg, real_list, recip_list):
     k = sp.Symbol('k', commutative = True)
     kp = sp.Symbol('kp', commutative = True)
     g = sp.Symbol('g', commutative = True)
+    F = sp.Function('F')
     def FF(arg):
         F = sp.Function('F')
         if arg.shape == (3,1) or arg.shape == (1,3):
@@ -329,13 +338,12 @@ def generate_cross_section(N, arg, real_list, recip_list):
     t = sp.Symbol('t', commutative = True)
     w = sp.Symbol('w', commutative = True)
     W = sp.Symbol('W', commutative = False)
-    dif = sp.Symbol('diff', commutative = False)
 
     # Wilds for sub_in method
     A = sp.Wild('A',exclude = [0]); B = sp.Wild('B',exclude = [0]); C = sp.Wild('C',exclude = [0]); D = sp.Wild('D',exclude = [0])
 
     front_constant = (gam*r)**2/(2*pi*h)*(kp/k)*N
-    front_func = (1./2.)*g*FF(kap)
+    front_func = (1./2.)*g#*F(k)
     vanderwaals = exp(-2*W)
 
     temp2 = []
@@ -349,20 +357,25 @@ def generate_cross_section(N, arg, real_list, recip_list):
 
     # This is were the heart of the calculation comes in.
     # First the exponentials are turned into delta functions:
-    #   exp(I(wq*t - w*t)) ---> delta(wq-w)
-    #   exp(I(wq*t - w*t)+I*(q-qp)*l) ---> delta(wq*t-w*t+q*l-qp*l) ---> delta(wq-w)*delta(q*l-qp*l)        # NEEDS REVIEW
-    for i in range(len(arg)):                                                                               # _
-        for j in range(N):                                                                                  # ^
-            arg[i][j] = (arg[i][j] * exp(-I*w*t)).expand()                                                  # |
-            arg[i][j] = sub_in(arg[i][j],exp(A*I*t + B*I*t),sp.DiracDelta(A + B))                           # |
-            arg[i][j] = sub_in(arg[i][j],exp(I*t*A + I*t*B + C),sp.DiracDelta(A*t + B*t + C))               # |
-            arg[i][j] = sub_in(arg[i][j],sp.DiracDelta(A*t + B*t + C),sp.DiracDelta(A + B)*sp.DiracDelta(C))# |
-            temp2.append(arg[i][j])                                                                         # |
-        temp3.append(sum(temp2))                                                                            # |
-    print "Applied: Delta Function Conversion"                                                              # |
-    for i in range(len(temp3)):                                                                             # |
-        temp4.append(unit_vect[i] * temp3[i])                                                               # V
-    dif = front_func**2 * front_constant * vanderwaals * sum(temp4)#((sp.simplify(sum(temp4).expand())))#.expand()     # _
+    for i in range(len(arg)):
+        for j in range(N):
+            arg[i][j] = (arg[i][j] * exp(-I*w*t)).expand()
+            arg[i][j] = sub_in(arg[i][j],exp(A*I*t + B*I*t),sp.DiracDelta(A + B))
+            arg[i][j] = sub_in(arg[i][j],exp(I*t*A + I*t*B + C),sp.DiracDelta(A*t + B*t + C))
+            arg[i][j] = sub_in(arg[i][j],sp.DiracDelta(A*t + B*t + C),sp.DiracDelta(A + B)*sp.DiracDelta(C))
+    print "Applied: Delta Function Conversion"
+    
+#    for ele in arg:
+#        for subele in ele:
+#            temp2.append(subele)
+#        temp3.append(sum(temp2))
+#    
+#    for i in range(len(temp3)):
+#        temp4.append(unit_vect[i] * temp3[i])
+
+    for k in range(len(arg)):
+        temp4.append(arg[k][q])
+    dif = (front_func**2 * front_constant * vanderwaals * sp.simplify(sum(temp4))).expand()
 
     print "Complete: Cross-section Calculation"
     return dif
@@ -378,7 +391,8 @@ def run_cross_section(interactionfile, spinfile):
     start = clock()
 
     # Generate Inputs
-    atom_list, jnums, jmats,N_atoms_uc=rf.readFiles(interactionfile,spinfile)
+    #atom_list, jnums, jmats,N_atoms_uc=rf.readFiles(interactionfile,spinfile)
+    atom_list,N_atoms_uc = ([rf.atom(),rf.atom()],2)
     N_atoms = N_atoms_uc
 
     real, recip = generate_atoms(N_atoms)
@@ -386,56 +400,29 @@ def run_cross_section(interactionfile, spinfile):
     (a,ad) = generate_a_ad_operators(N_atoms, real, recip, b, bd)
     (Sp,Sm) = generate_Sp_Sm_operators(N_atoms, atom_list, a, ad)
     (Sa,Sb,Sn) = generate_Sa_Sb_Sn_operators(N_atoms, atom_list, Sp, Sm)
-    list_print(Sa)
-    list_print(Sb)
-    list_print(Sn)    
     (Sx,Sy,Sz) = generate_Sx_Sy_Sz_operators(N_atoms, atom_list, Sa, Sb, Sn)
-    list_print(Sx)
-    list_print(Sy)
-    list_print(Sz)
     print ''
     
-    Ham = generate_Hamiltonian(N_atoms, b, bd)
+    #Ham = generate_Hamiltonian(N_atoms, b, bd)
     ops = generate_possible_combinations(N_atoms, [Sx,Sy,Sz])
-    
-#    list_print(ops)
-    ops = replace_bdb(N_atoms, ops)
-#    list_print(ops)
-    ops = apply_commutation(N_atoms, ops)
-#    list_print(ops)
     ops = clean_up(N_atoms, ops, atom_list)
-#    list_print(ops)
+    ops = replace_bdb(N_atoms, ops)
+    ops = apply_commutation(N_atoms, ops)
     ops = reduce_options(N_atoms, ops)
-#    list_print(ops)
-    cross_sect = generate_cross_section(N_atoms, ops, real, recip)
-#    list_print(ops)
+    cross_sect = generate_cross_section(N_atoms, ops, 1, 0, real, recip)
     print '\n', cross_sect
-    cross_sect = eval_cross_section(cross_sect, 0, 0, 0, 0)
-
+    
+    #cross_sect = eval_cross_section(cross_sect, 0, 0, 0, 0)
 
     end = clock()
     print "\nFinished %i atoms in %.2f seconds" %(N_atoms,end-start)
-
-##    fig = plt.figure(figsize = (10,7),facecolor = 'w')
-##    str = repr(cross_sect)
-##    str = str.replace('**','^').replace('DiracDelta','\delta').replace('I','\imath').replace('*',' ')#.split('+')
-##    print str
-##    #plt.title(str)
-###    for s in str: s+'+\n'
-###    fig.suptitle('$'+sum(str)+'$')
-##    fig.suptitle('$'+str+'$')
-##    #fig.savefig('test.pdf')
-#    
-#
-#    end = clock()
-#    print "\nFinished %i atoms in %.2f seconds" %(N_atoms,end-start)
-#
-##    plt.show()
+    
+    generate_output(cross_sect)
 
 
 #---------------- MAIN --------------------------------------------------------- 
 
-# Will get rid of contents of main after integration is complete and I can run run_cross_section method
+
 if __name__=='__main__':
     
     interfile = 'c:\montecarlo.txt'
