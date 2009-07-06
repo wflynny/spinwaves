@@ -106,9 +106,10 @@ class Session():
             Dx = atomNodes[i].getAttribute('SIA_Dx')
             Dy = atomNodes[i].getAttribute('SIA_Dy')
             Dz = atomNodes[i].getAttribute('SIA_Dz')
+            spinMag = atomNodes[i].getAttribute('spin_magnitude')
             
             atomData.append([name, int(atomicNum), float(x),float(y),float(z),
-                             float(Dx), float(Dy), float(Dz)])
+                             float(Dx), float(Dy), float(Dz), spinMag])
             
             self.atomTable.SetValue(i, 0, name)
             self.atomTable.SetValue(i, 1, atomicNum)
@@ -393,6 +394,7 @@ class Session():
             atomElement.setAttribute('SIA_Dx', str(self.atomTable.GetValue(i, 5)))
             atomElement.setAttribute('SIA_Dy', str(self.atomTable.GetValue(i, 6)))
             atomElement.setAttribute('SIA_Dz', str(self.atomTable.GetValue(i, 7)))
+            atomElement.setAttribute('spin_magnitude', str(self.atomTable.GetValue(i, 8)))
             atomsElement.appendChild(atomElement)
             
           
