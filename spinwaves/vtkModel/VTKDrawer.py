@@ -25,7 +25,7 @@ class vtkDrawer():
     
     def drawAtom(self, atom):
         """Adds a sphere actor to the renderer with the color and radius of the
-        atom object.  Also if the atom has a spin, an arow is created to represent
+        atom object.  Also if the atom has a spin, an arrow is created to represent
         the spin."""
         #sphere geometry
         sphere_Source = vtkSphereSource()
@@ -236,13 +236,13 @@ class vtkDrawer():
     
     def labelAtoms(self, magneticCell):
         """Creates number labels on the +x side of the sphere.
-        The labels are the atom indeces within the crystallographic unit cell."""
+        The labels are the atom indices within the crystallographic unit cell."""
         for cell in magneticCell.getAllUnitCells():
             AtomList = cell.getAtoms()
             for index in range(0, len(AtomList)):
                 atom = AtomList[index]
                 label = vtkVectorText()
-                label.SetText(str(index + 1))
+                label.SetText(atom.description + " " + str(index + 1))
                 labelMapper = vtkPolyDataMapper()
                 labelMapper.SetInputConnection(label.GetOutputPort())
                 labelActor = vtkFollower()
