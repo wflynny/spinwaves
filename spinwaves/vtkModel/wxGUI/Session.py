@@ -965,6 +965,71 @@ class Session():
                                                 cellAtoms.append(newAtom2)
                                     
         
+        #symmetry equivalent bonds between unit cells will not be represented in
+        #the cutoff cell if the cutoff cell is only one unit cell wide in any
+        #dimension which would include these inter-cellular bonds
+        if size > 1 and (Na == 1 or Nb == 1 or Nc == 1):
+            for bond in simpleCellBonds:
+                xyz = bond.pos1
+                xyz2 = bond.pos2
+                
+                #one of the two atoms should be in the first unit cell
+                if(xyz[0] < 1 and xyz[1] < 1 and xyz[2] < 1) or (xyz2[0] < 1 and xyz2[1] < 1 and xyz2[2] < 1):
+                
+                    for symop in self.MagCell.space_Group.iter_symops():
+                    # operate on coordinates in non-shifted spacegroup
+                        pos1 = symop(xyz)
+                        pos2 = symop(xyz2)
+                        
+                        mask1 = numpy.logical_or(pos1 < 0.0, pos1 >= 1.0)
+                        translation = numpy.floor(pos1[mask1])  #translates the first atom back to cell at (0,0,0)
+                        pos1[mask1] -= translation
+                        pos2[mask1] -= translation  #Uses same translation to translate other atom
+                             
+                        
+                        #translate new Bond by 1 cell in each direction so all
+                        #translations of intercellular bonds are represented.
+                        
+    
+                        #iterate through eachtranslation and check if there are atoms there that could
+                        #be bonded; if so, add the bond
+                        for i in range(0, 2): #translate in x direction (Na - Cell X position) times
+                            for j in range(0, 2): #translate in y direction (Nb - Cell Y position) times
+                                for k in range(0, 2): #translate in z direction (Nc - Cell Z position) times
+                                    translatedPos1 = [i + pos1[0],j + pos1[1],k + pos1[2]]
+                                    translatedPos2 = [i + pos2[0],j + pos2[1],k + pos2[2]]
+                                    
+                                    
+                                    #Check if the bond crosses the border(s) of the dimension of only one unit cell.
+                                    #Check if the bond exists in intercellular bonds, and if not, add it? redundant ^?
+                                    #Then check if the aotm that is in the cutoff cell is represented in cellAtoms, and
+                                    #if not, add it.
+                                    
+                                    #If the bond crosses a dimension of size 1 unit cell
+                                    if ((Na == 1) and (int(translatedPos1[0]) != int(translatedPos2[0]) or translatedPos2[0] < 0)) or ((Nb == 1) and (int(translatedPos1[1]) != int(translatedPos2[1]) or translatedPos2[1] < 0)) or ((Nc == 1) and (int(translatedPos1[2]) != int(translatedPos2[2]) or translatedPos2[2] < 0)):
+                                        
+                                        #Add the atom in the cutoff Cell and add the bond to intercellular bonds
+                                        print translatedPos1, translatedPos2
+                                        atomObj1 = self.MagCell.atomAtPosition(translatedPos1)
+                                        atomObj2 = self.MagCell.atomAtPosition(translatedPos2)
+                                        if(atomObj1 != None):#Add the atom if it is in the cutoff cell
+                                            newAtom1 = SimpleAtom(translatedPos1, atomObj1.anisotropy, atomObj1.spinMagnitude)
+                                        #Add atom if there is not already an atom at that position
+                                        if not atomListContains(cellAtoms, newAtom1):
+                                            cellAtoms.append(newAtom1)
+                                        
+                                        if(atomObj2 != None):#Add the atom if it is in the cutoff cell
+                                            newAtom1 = SimpleAtom(translatedPos2, atomObj2.anisotropy, atomObj2.spinMagnitude)
+                                        #Add atom if there is not already an atom at that position
+                                        if not atomListContains(cellAtoms, newAtom2):
+                                            cellAtoms.append(newAtom2)
+                                            
+                                        #If one of the atoms are in the cutoff cell and both have positive coordinates, add the bond
+                                        if(atomObj1 != None) or atomObj2 != None:
+                                            if(translatedPos1[0] >= 0 and translatedPos1[1] >= 0 and translatedPos1[2] >= 0 and translatedPos2[0] >= 0 and translatedPos2[1] >= 0 and translatedPos2[2] >= 0):
+                                                interCellBonds.addBond(SimpleBond(translatedPos1, translatedPos2, bond.jMatrix, None, None, None, None))
+                                        
+                                        
         
         allAtoms = []
         numAtomsPerCell = len(cellAtoms)
