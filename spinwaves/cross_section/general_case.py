@@ -214,8 +214,7 @@ def clean_up(N, arg, atom_list):
     for k in range(len(arg)):
         temp = []
         for i in range(N):
-            Dx = atom_list[i].Dx; Dy = atom_list[i].Dy; Dz = atom_list[i].Dz
-            Snew = sp.sqrt(Dx**2+Dy**2+Dz**2)
+            Snew = atom_list[i].spinMagnitude
 
             S2coeff = coeff(arg[k][i], S**2)
             Scoeff = coeff(arg[k][i], S)
