@@ -8,10 +8,6 @@ from sympy import I,pi,var,exp,oo,sqrt
 from sympy.physics.paulialgebra import delta
 from timeit import default_timer as clock
 
-import matplotlib as mpl
-mpl.use('WxAgg')
-import matplotlib.pyplot as plt
-
 from list_manipulation import *
 from subin import sub_in
 from printing import *
