@@ -2029,8 +2029,11 @@ class Frame(wx.Frame):
     def OnExport(self, evt):
         """Exports the interactions to a file for use in the monte carlo
         simulation to find the ground state."""
-        #Maximum size is set to 25 right now, becuase that is the largest size that this computer seems to be able to reasonably handle with the current algorithm
-        size = wx.GetNumberFromUser("How many times would you like to translate the cutoff cell in the a,b, and c directions?", prompt = "size:", caption = "Monte Carlo Simulation Size", value = 2, min = 1, max=25, parent = self)
+        #Maximum size is set to 25 right now, becuase that is the largest size 
+        #that this computer seems to be able to reasonably handle with the current algorithm
+        #The minimum size has been set to 3, so that a completely surrounded
+        #Interaction cell can always be selected for hte spinwave calculation
+        size = wx.GetNumberFromUser("How many times would you like to translate the cutoff cell in the a,b, and c directions?", prompt = "size:", caption = "Monte Carlo Simulation Size", value = 3, min = 3, max=25, parent = self)
         if size != None:
             saveDialog = wx.FileDialog(self, "Save File", style = wx.SAVE, wildcard = "*.txt")
             if saveDialog.ShowModal() == wx.ID_OK:
