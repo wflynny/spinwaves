@@ -22,7 +22,7 @@ from spinwaves.vtkModel.CellClass import *
 #import random
 import spinwaves.vtkModel.SpaceGroups
 from Session import Session
-from general_case import run_cross_section
+from spinwaves.cross_section.general_case import run_cross_section
 
 #It could not find MonteCarlo package (import MonteCarlo.CSim)
 #sys.path.append(mainPath +"\\MonteCarlo")
