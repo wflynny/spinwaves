@@ -431,7 +431,7 @@ def run_cross_section(interactionfile, spinfile):
 if __name__=='__main__':
     
     interfile = 'c:\montecarlo.txt'
-    spinfile = 'c:\Spins.txt'
+    spinfile = 'c:\Spins.txt'    
     
     run_cross_section(interfile,spinfile)
 
