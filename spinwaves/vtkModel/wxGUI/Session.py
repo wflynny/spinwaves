@@ -356,7 +356,7 @@ class Session():
         main_element = doc.createElement('Spinwaves_Session')
         doc.appendChild(main_element)
         
-        #Currently this will save cell info from the last tme the 
+        #Currently this will save cell info from the last time the 
         #generate button was pressed, but atom and bond info that is
         #currently displayed in the tables
         
@@ -687,29 +687,53 @@ class Session():
         
         file = open(filename, 'w')
         
+        Na = self.getCutoffCell().getNa()
+        Nb = self.getCutoffCell().getNb()
+        Nc = self.getCutoffCell().getNc()
+            
         #Can add flag in here if the coordinates are <= Na, Nb, Nc
         #(if it's in the cutoff cell) for the spinwave calculation
         def inInteractionCellStr(atoms, atom):
             """Used for output to create an "X" if the atom is in the first interaction
             Cell or "O" if not.  This is the actual smallest interaction cell, not the
             cutoff cell created by the user.  An atom is in the first cutoff cell if it
-            is either in crystollographic unit cell (0,0,0) or if it bonds with an atom
-            that is."""
+            is either in the first crystallographic unit cell or if it bonds with an atom
+            that is.  The 'first crystallographic unit cell' will not be the cell
+            at (0,0,0), but rather the corresponding cell in the cutoff cell at
+            (1,1,1) (measured in cutoff cells, not unit cells).  The desired
+            crystallographic cell is therefore at (Na, Nb, Nc).  This is to ensure
+            that the cell is completely surrounded and therefore no interactions
+            will be left out.  If the cell at (0,0,0) were used, interactions
+            in the negative direction would not be included."""
+            
+            def inDesiredCell(atom):
+                if atom.pos[0] >= Na and atom.pos[0] < (Na + 1):
+                    if atom.pos[1] >= Nb and atom.pos[1] < (Nb + 1):
+                        if atom.pos[2] >= Nc and atom.pos[2] < (Nc + 1):
+                            return True
+                return False
+            
             #First check if the atom is in the first crystallographic cell
-            if atom.pos[0] < 1.0 and atom.pos[1] < 1.0 and atom.pos[2] < 1.0:
+            if inDesiredCell(atom):
                 return "X"
             #If not, check if it bonds to an atom that is
             for i in range(len(atom.interactions)):
-                if atoms[atom.interactions[i][0]].pos[0]<1.0 and atoms[atom.interactions[i][0]].pos[1]<1.0 and atoms[atom.interactions[i][0]].pos[2]<1.0:
+                if inDesiredCell(atoms[atom.interactions[i][0]]):
                     return "X"
             
             for interaction in atom.interCellInteractions:
                 interactingAtom = atoms[interaction[0]]
-                if interactingAtom.pos[0]<1.0 and interactingAtom.pos[1]<1.0 and interactingAtom.pos[2]<1.0:
+                if inDesiredCell(interactingAtom):
                     return "X"
             
             return "O"
         
+        
+        #print the size of the cutoff(interaction) cell
+        #This is necessary now that the first unit cell is not at (0,0,0), but
+        #at (Na, Nb, Nc)
+        file.write("#Interaction Cell Dimensions\n#Na Nb Nc\n")
+        file.write(str(Na) + " " + str(Nb) + " " + str(Nc) + "\n")
         
         #Write the matrix list to the file
         file.write("#J Matrices\n#Number J11 J12 J13 J21 J22 J23 J31 J32 J33\n")
@@ -727,6 +751,7 @@ class Session():
             jStr += " " + str(jMat[2][1].default) 
             jStr += " " + str(jMat[2][2].default)
             file.write(jStr + "\n")
+        
         
         
         #print out the simple atom list
