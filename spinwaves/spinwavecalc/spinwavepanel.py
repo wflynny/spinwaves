@@ -4,7 +4,7 @@ import  wx.lib.intctrl
 import  wx.grid as  gridlib
 import numpy as N
 import sys,os
-import spinwave_calc_file
+import spinwave_calc_file_old2 as spinwave_calc_file
 import wx.richtext
 from sympy import pi
 

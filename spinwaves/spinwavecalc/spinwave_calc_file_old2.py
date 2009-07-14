@@ -721,6 +721,9 @@ if __name__=='__main__':
         spinfile=r'c:\spins_sc_afm.txt'
         interactionfile=r'c:\montecarlo_sc_afm.txt'
         
+        spinfile=r'C:\Documents and Settings\tsarvey\Desktop\spins.txt'
+        interactionfile=r'C:\Documents and Settings\tsarvey\Desktop\export.txt'
+        
         steps=100
         data={}
         data['kx']=1.
