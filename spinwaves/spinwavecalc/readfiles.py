@@ -94,7 +94,7 @@ def readFiles(interactionFileStr,spinFileStr):
                         if tokenized[1] == 'x':  #If it is in the first interaction cell
                             print "atom in first interaction cell"
                             x,y,z=float(tokenized[2]),float(tokenized[3]),float(tokenized[4])
-                            if x < 1 and y < 1 and z < 1:
+                            if N.abs(x) < 1 and N.abs(y) < 1 and N.abs(z) < 1:
                                 numcell += 1
                             Dx,Dy,Dz=float(tokenized[5]),float(tokenized[6]),float(tokenized[7])
                             #spin0=N.matrix([[1,0,0],[0,1,0],[0,0,1]],'float64')
