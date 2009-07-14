@@ -41,8 +41,15 @@ def readFile(filename):
     #This will use a huge amount of memory
     atoms = []
     lines = file.readlines()#memory problem with huge files?
+    
     #Read in J matrices
-    index = 2  #relies on 2 commented lines (probably should change this)
+    index = 0
+    while(lines[index] != "#Number J11 J12 J13 J21 J22 J23 J31 J32 J33\n"):
+        print lines[index]
+        index += 1
+        print index
+    index += 1 #now at line after "#Number J11 J12 J13 J21 J22 J23 J31 J32 J33"
+    
     line = lines[index]
     jMatrices = []
     #This would stop reading if it hits a comment, rather than continuing past it
@@ -191,17 +198,6 @@ if __name__ == '__main__':
     #    savefig('secondfig.png')
 #    pylab.show()
         
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
     
     
     
