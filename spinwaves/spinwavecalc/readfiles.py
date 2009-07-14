@@ -52,6 +52,7 @@ def readFiles(interactionFileStr,spinFileStr):
     jnums=[]
     atomlist=[]
     numcell=0
+    Na, Nb, Nc = 0,0,0
     #print "here"
     while myFlag:
         tokenized=get_tokenized_line(interactionFile,returnline=returnline)
@@ -61,6 +62,13 @@ def readFiles(interactionFileStr,spinFileStr):
         #print tokenized
         if tokenized==[]:
             break
+        
+        if tokenized[0] == "#na":
+            tokenized=get_tokenized_line(interactionFile,returnline=returnline)
+            Na = int(tokenized[0])
+            Nb = int(tokenized[1])
+            Nc = int(tokenized[2])
+            
         if tokenized[0]=='#number':
             while 1:
                 tokenized=get_tokenized_line(interactionFile,returnline=returnline)
@@ -94,8 +102,7 @@ def readFiles(interactionFileStr,spinFileStr):
                         if tokenized[1] == 'x':  #If it is in the first interaction cell
                             print "atom in first interaction cell"
                             x,y,z=float(tokenized[2]),float(tokenized[3]),float(tokenized[4])
-                            if N.abs(x) < 1 and N.abs(y) < 1 and N.abs(z) < 1:
-                                numcell += 1
+
                             Dx,Dy,Dz=float(tokenized[5]),float(tokenized[6]),float(tokenized[7])
                             #spin0=N.matrix([[1,0,0],[0,1,0],[0,0,1]],'float64')
                             spinMagnitude = float(tokenized[8])
@@ -117,6 +124,32 @@ def readFiles(interactionFileStr,spinFileStr):
                             atomlist.append(atom0)
     interactionFile.close()
     
+    
+        
+#    print "Na Nb Nc", Na, Nb, Nc
+#    for atom1 in atomlist:
+#        print atom1.pos, atom1.neighbors
+    
+    def inDesiredCell(atom):
+        if atom.pos[0] >= Na and atom.pos[0] < (Na + 1):
+            if atom.pos[1] >= Nb and atom.pos[1] < (Nb + 1):
+                if atom.pos[2] >= Nc and atom.pos[2] < (Nc + 1):
+                    return True
+        return False
+        
+    #Add atoms in desired cell to the beginning of the new list
+    newAtomList = []
+    for i in range(len(atomlist)):
+        if inDesiredCell(atomlist[i]):
+            numcell += 1
+            newAtomList.append(atomlist.pop(i))
+    
+    #Add remaining atoms to the new list
+    for i in range(len(atomlist)):
+        newAtomList.append(atomlist[i])
+    atomlist = newAtomList
+    
+       
     #interactions should contain the indices of interaction atoms in atomlist, but
     #the index they currently contain is the index from the file, which may have
     #changed.  Switch to new indices:
@@ -143,7 +176,10 @@ def readFiles(interactionFileStr,spinFileStr):
                 neighborList.pop(i)
                 a.interactions.pop(i)
             
-
+    for atom1 in atomlist:
+        print atom1.pos, atom1.neighbors
+    
+    
     #Match spin rotation matrices to atoms
     #print "here3"
    
@@ -393,4 +429,4 @@ if __name__=="__main__":
         print jmats
         print atomlist[0].interactions
         print atomlist[1].neighbors
-        #print N.linalg.det(atomlist[0].spin)
+        print N.linalg.det(atomlist[0].spin)
