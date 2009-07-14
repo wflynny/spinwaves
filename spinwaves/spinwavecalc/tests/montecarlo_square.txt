@@ -1,0 +1,9 @@
+#J Matrices
+#Number J11 J12 J13 J21 J22 J23 J31 J32 J33
+0 1.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 1.0
+#AtomNumber InFirstInteractionCell AtomPosition(X Y Z) Anisotropy(X Y Z) SpinMagnitude OtherIndex Jmatrix OtherIndex Jmatrix...
+0 X 0.0 0.0 0.0 0.0 0.0 0.0 1.0 1 0 2 0 3 0 4 0
+1 X 1.0 0.0 0.0 0.0 0.0 0.0 1.0 
+2 X -1.0 0.0 0.0 0.0 0.0 0.0 1.0 
+3 X 0.0 -1.0 0.0 0.0 0.0 0.0 1.0 
+4 X 0.0 1.0 0.0 0.0 0.0 0.0 1.0 
