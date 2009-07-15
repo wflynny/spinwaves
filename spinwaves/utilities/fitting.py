@@ -26,14 +26,21 @@ def fitting(session, spinwave_domain = [], size=2, k = 100, tFactor = .95):
     # Set parinfo with the limits and such. Probably don't need
     parbase={'value':0., 'limited':[0,0], 'limits':[0.,0.]}
     parinfo=[]
+    p0 = fit.fitlist
     for i in range(len(p0)):
         parinfo.append(copy.deepcopy(parbase))
     for i in range(len(p0)):
 #        parinfo[i]['value']=x[i]
-        parinfo[i]['limits'][0]=fit.min_range_list[i]
-        parinfo[i]['limits'][1]=fit.max_range_list[i]
-#        parinfo[i]['limited'][0]=fit.min_range_list[i]
-#        parinfo[i]['limited'][1]=fit.min_range_list[i]
+        if(fit.min_range_list[i] != np.NINF):
+            parinfo[i]['limits'][0]=fit.min_range_list[i]
+            parinfo[i]['limited'][0] = 1
+        else:
+            parinfo[i]['limited'][0] = 0
+        if fit.max_range_list[i] != np.PINF:
+            parinfo[i]['limits'][1] = fit.max_range_list[i]
+            parinfo[i]['limited'][1] = 1
+        else:
+            parinfo[i]['limited'][1] = 0
 
     # Run mpfit on fitlist with all the jazz. 
     m = mpfit(myfunc, fit.fitlist, parinfo=parinfo, functkw = fa)
