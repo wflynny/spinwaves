@@ -161,6 +161,7 @@ class Fitter():
         self.tMin = .01
         self.tMax = 10
         self._tFactor = tFactor
+        self._interactionCellDimensions = (session.MagCell.Na, session.MagCell.Nb, session.MagCell.Nc)
         #matrices is a list of 2D numpy arrays of JParam objects
         #allAtoms is a list of simpleAtoms as defined in the method Export_Aux
         self._matrices, allAtoms = session.Export_Aux(size)
@@ -246,14 +247,30 @@ class Fitter():
         
         
         
+        def inUnitCell(atom):
+            """Returns true of the atom is in the unit cell at Na, Nb, Nc, where
+            those are the dimensions of the interaction cell.  That cell is being
+            used to ensure that it is completely surrounded and no interactions
+            are left out.  Handles simpleAtom type"""
+            if atom.pos[0] >= self._interactionCellDimensions[0] and atom.pos[0] < (self._interactionCellDimensions[0] + 1):
+                if atom.pos[1] >= self._interactionCellDimensions[1] and atom.pos[1] < (self._interactionCellDimensions[1] + 1):
+                    if atom.pos[2] >= self._interactionCellDimensions[2] and atom.pos[2] < (self._interactionCellDimensions[2] + 1):
+                        return True
+            return False
+            
+        
         def inInteractionCell(atoms, atom):
             """Handles simpleAtom type."""
             #First check if the atom is in the first crystallographic cell
-            if atom.pos[0] < 1.0 and atom.pos[1] < 1.0 and atom.pos[2] < 1.0:
+#            if atom.pos[0] < 1.0 and atom.pos[1] < 1.0 and atom.pos[2] < 1.0:
+#                return True
+#Now the crystallographic unit cell being used is at Na, Nb, Nc, not 0,0,0
+            if inUnitCell(atom):
                 return True
+                        
             #If not, check if it bonds to an atom that is
             for i in range(len(atom.interactions)):
-                if atoms[atom.interactions[i][0]].pos[0]<1.0 and atoms[atom.interactions[i][0]].pos[1]<1.0 and atoms[atom.interactions[i][0]].pos[2]<1.0:
+                if inUnitCell(atoms[atom.interactions[i][0]]):
                     return True
             return False
         
@@ -275,9 +292,20 @@ class Fitter():
                     spinwave_atom.neighbors.append(interaction[0])
                     spinwave_atom.interactions.append(interaction[1])
                 spinwave_atoms.append(spinwave_atom)
-                x,y,z = spinwave_atom.pos
-                if x<1 and y<1 and z<1:
-                    first_cell_atoms +=1
+                #x,y,z = spinwave_atom.pos
+                #if x<1 and y<1 and z<1:
+                #    first_cell_atoms +=1
+        
+        #Find atoms in desired cell and organize list so they come first
+        tmp = []
+        for i in range(len(spinwave_atoms)):
+            if inUnitCell(spinwave_atoms[1]):
+                first_cell_atoms +=1
+                tmp.append(spinwave_atoms.pop(i))
+        for a in spinwave_atoms:
+            tmp.append(a)
+        spinwave_atoms = tmp       
+        
         #change interaction indices to match indices in new list
         for a in spinwave_atoms:
             neighborList = a.neighbors
