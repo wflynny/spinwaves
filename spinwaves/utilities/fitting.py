@@ -17,8 +17,18 @@ def fitting(session, spinwave_domain = [], size=2, k = 100, tFactor = .95):
         status = 0
         return [status, (y-model)/err]
 
-    # Function Keywords 
-    x = fit.spinwave_domain
+    # Function Keywords
+    
+    #spinwave_domain is a list of 3D lists:
+    #-[(x1,y1,z1),(x2,y2,z2),...]
+    #x must be a 1D numpy array:
+    #[x1,y1,z1,x2,t2,z2,...]
+    xList = []
+    for point in fit.spinwave_domain:
+        xList.append(point[0])
+        yList.append(point[1])
+        zList.append(point[2])
+    x = np.array(xList)
     y = myfunc(fit)
     err = 0.01*y
     fa = {'x':x, 'y':y, 'err':err}

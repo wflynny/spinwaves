@@ -32,6 +32,7 @@ import spinwaves.spinwavecalc.spinwave_calc_file as spinwave_calc_file
 
 from spinwaves.vtkModel.BondClass import JParam
 from spinwaves.vtkModel.Parameter_Manager import Fitter
+from spinwaves.utilities.fitting import fitting
 gc.enable()
 #Atom and cell info window
 
@@ -1893,91 +1894,92 @@ class Frame(wx.Frame):
             
     
     def OnFitParameters(self, evt):
-        #domain = []
-        #test case
-        domain = [(0,0,0,),
-                  (0,0,.25*pi),
-                  (0,0,.5*pi),
-                  (0,0,.75 *pi),
-                  (0,0, pi),
-                  (0,0,1.25 *pi),
-                  (0,0,1.5 *pi),
-                  (0,0,1.75 * pi)]
-        err = [1e-1]*8
-        
-        fitter = Fitter(self.session, domain)
-        #ans = fmin(chi_sq, fitter.fit_list,args=(fitter,err,domain),maxiter=30,ftol=.01,maxfun=30)
-        #lower=fitter.min_range_list
-        #upper=fitter.max_range_list
-        #lower[0]=0.8
-        #upper[0]=1.2
-        #ans=scipy.optimize.anneal(chi_sq,fitter.fit_list,args=(fitter,err,domain),
-        #                          lower=lower,upper=upper)
-        def Anneal(func, guess, min_list, max_list):
-            k = 20
-            tMax = 50
-            tMin = .01
-            tFactor = .95
-            T = tMax
-            domain = guess
-            result = func(guess)
-            while T > tMin:
-                numSwitched = 0
-                randGen = random.Random()
-                for i in range(k):
-                    #Create a new domain
-                    newVals = []
-                    for index in range(len(domain)):
-                        newVals.append(randGen.uniform(min_list[index],
-                                                       max_list[index]))
-                    newResult=func(newVals)
-                    if newResult < result:
-                        result = newResult
-                        domain = newVals
-                        numSwitched += 1
-                    else:
-                        deltE = newResult - result
-                        probChange = math.exp(-deltE/T)
-                        if randGen.random() < probChange:
-                            result = newResult
-                            domain = newVals
-                            numSwitched += 1
-                time.sleep(5)
-                T = T*tFactor
-                #print "Temp: ", T, " %flipped: ", (float(numSwitched*100)/k),"%\n"
-                #break#Temp
-            
-            return domain
-        
-        def chi_sq(x):
-            chi = 0
-            fitter.fit_list = x
-            calc_vals = fitter.GetResult()
-            print "\neigen values = ", calc_vals
-            for i in range(len(fitter.fit_list)):
-                diff = calc_vals[i] - (4 - 4*cos(domain[i][2]))
-                diff=diff.evalf()#test
-                print diff
-                num = diff**2
-                den = err[i]**2
-                print den
-                chi += num#/den
-            print "\nChi^2 = ", chi
-            return chi
-        
-        ans = Anneal(chi_sq, fitter.fit_list, fitter.min_range_list, fitter.max_range_list)
-        #ans=ans[0]
-        print ans
-        wrange=[]
-        qrange = []
-        for a in domain:
-            qrange.append(a[2])
-        wrange=(fitter.GetResult())
-        print numpy.__dict__
-        #datavals=(4 - 4*numpy.cos(numpy.array(qrange)))
-        #pylab.plot(qrange,datavals,'s')
-        pylab.plot(qrange,wrange)
-        pylab.show()
+        fitting(self.session, )
+#        #domain = []
+#        #test case
+#        domain = [(0,0,0,),
+#                  (0,0,.25*pi),
+#                  (0,0,.5*pi),
+#                  (0,0,.75 *pi),
+#                  (0,0, pi),
+#                  (0,0,1.25 *pi),
+#                  (0,0,1.5 *pi),
+#                  (0,0,1.75 * pi)]
+#        err = [1e-1]*8
+#        
+#        fitter = Fitter(self.session, domain)
+#        #ans = fmin(chi_sq, fitter.fit_list,args=(fitter,err,domain),maxiter=30,ftol=.01,maxfun=30)
+#        #lower=fitter.min_range_list
+#        #upper=fitter.max_range_list
+#        #lower[0]=0.8
+#        #upper[0]=1.2
+#        #ans=scipy.optimize.anneal(chi_sq,fitter.fit_list,args=(fitter,err,domain),
+#        #                          lower=lower,upper=upper)
+#        def Anneal(func, guess, min_list, max_list):
+#            k = 20
+#            tMax = 50
+#            tMin = .01
+#            tFactor = .95
+#            T = tMax
+#            domain = guess
+#            result = func(guess)
+#            while T > tMin:
+#                numSwitched = 0
+#                randGen = random.Random()
+#                for i in range(k):
+#                    #Create a new domain
+#                    newVals = []
+#                    for index in range(len(domain)):
+#                        newVals.append(randGen.uniform(min_list[index],
+#                                                       max_list[index]))
+#                    newResult=func(newVals)
+#                    if newResult < result:
+#                        result = newResult
+#                        domain = newVals
+#                        numSwitched += 1
+#                    else:
+#                        deltE = newResult - result
+#                        probChange = math.exp(-deltE/T)
+#                        if randGen.random() < probChange:
+#                            result = newResult
+#                            domain = newVals
+#                            numSwitched += 1
+#                time.sleep(5)
+#                T = T*tFactor
+#                #print "Temp: ", T, " %flipped: ", (float(numSwitched*100)/k),"%\n"
+#                #break#Temp
+#            
+#            return domain
+#        
+#        def chi_sq(x):
+#            chi = 0
+#            fitter.fit_list = x
+#            calc_vals = fitter.GetResult()
+#            print "\neigen values = ", calc_vals
+#            for i in range(len(fitter.fit_list)):
+#                diff = calc_vals[i] - (4 - 4*cos(domain[i][2]))
+#                diff=diff.evalf()#test
+#                print diff
+#                num = diff**2
+#                den = err[i]**2
+#                print den
+#                chi += num#/den
+#            print "\nChi^2 = ", chi
+#            return chi
+#        
+#        ans = Anneal(chi_sq, fitter.fit_list, fitter.min_range_list, fitter.max_range_list)
+#        #ans=ans[0]
+#        print ans
+#        wrange=[]
+#        qrange = []
+#        for a in domain:
+#            qrange.append(a[2])
+#        wrange=(fitter.GetResult())
+#        print numpy.__dict__
+#        #datavals=(4 - 4*numpy.cos(numpy.array(qrange)))
+#        #pylab.plot(qrange,datavals,'s')
+#        pylab.plot(qrange,wrange)
+#        pylab.show()
                 
                 
     
