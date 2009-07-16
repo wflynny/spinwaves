@@ -6,10 +6,10 @@ matplotlib.use('WXAgg')
 import pylab
 from sympy import pi
 from numpy import PINF, NINF
-from MonteCarlo.simple import simpleAtom
-from MonteCarlo.CSim import Sim_Aux
-from spinwavecalc.readfiles import findmat, atom as SpinwaveAtom
-from spinwavecalc.spinwave_calc_file import calculate_dispersion, calc_eigs
+from spinwaves.MonteCarlo.simple import simpleAtom
+from spinwaves.MonteCarlo.CSim import Sim_Aux
+from spinwaves.spinwavecalc.readfiles import findmat, atom as SpinwaveAtom
+from spinwaves.spinwavecalc.spinwave_calc_file import calculate_dispersion, calc_eigs
 
 class ParamManager():
     def __init__(self):
@@ -149,7 +149,7 @@ class ParamManager():
 
 
 class Fitter():
-    def __init__(self, session, spinwave_domain = [], size=2, k = 100,
+    def __init__(self, session, spinwave_domain = [], size=3, k = 100,
                  tFactor = .95):
         """The optimizer will read min_range_list, max_range_list, and change
         fit_list values to be between the minimum and maximum values at the
@@ -168,7 +168,7 @@ class Fitter():
         #convert to the form used by the monteCarlo simulation
         self._simpleAtoms = []
         for atom in allAtoms:
-            new_atom = simpleAtom(atom.pos, atom.anisotropy)
+            new_atom = simpleAtom(atom.pos, atom.anisotropy, atom.spinMag)
             new_atom.interactions = atom.interactions
             new_atom.interactions.extend(atom.interCellInteractions)
             self._simpleAtoms.append(new_atom)
@@ -239,8 +239,11 @@ class Fitter():
                     jSum += val
             jAvg += jSum/9
         
-        self._tMax = jAvg*10
-        self._tMin = jAvg/600
+        self._tMax = jAvg*12
+        self._tMin = jAvg/1000000000
+        self._tMax = 10
+        self._tMin = 1E-12
+        
         
         spins = Sim_Aux(self._k, self._tMax, self._tMin, self._tFactor,
                         self._simpleAtoms, monteCarloMats)
@@ -299,8 +302,8 @@ class Fitter():
         #Find atoms in desired cell and organize list so they come first
         tmp = []
         for i in range(len(spinwave_atoms)):
-            if inUnitCell(spinwave_atoms[1]):
-                first_cell_atoms +=1
+            if inUnitCell(spinwave_atoms[i]):
+                first_cell_atoms += 1
                 tmp.append(spinwave_atoms.pop(i))
         for a in spinwave_atoms:
             tmp.append(a)

@@ -10,31 +10,33 @@ import wx
 
 from simple import readFile, Timer, simpleAtom
 
-#dllpath=r'C:\mytripleaxisproject\trunk\eclipse\src\spinwaves\C code'
-#dllpath=r'C:\tom winter\code\C code'#NIST
-#linux_so_path = r'/home/tom/Desktop/workCode/C code'#home laptop
-#dllpath=r'C:\Users\Tom\Documents\spinwaves\C code\monteCarlo.dll'
+def loadLib():
+    #dllpath=r'C:\mytripleaxisproject\trunk\eclipse\src\spinwaves\C code'
+    #dllpath=r'C:\tom winter\code\C code'#NIST
+    #linux_so_path = r'/home/tom/Desktop/workCode/C code'#home laptop
+    #dllpath=r'C:\Users\Tom\Documents\spinwaves\C code\monteCarlo.dll'
+    
+    if sys.platform in ('darwin'):
+        ext = '.dylib'
+    elif sys.platform in ('win32','cygwin'):
+        ext = '.pyd'
+    else:
+        ext = '.so'
+    
+    f=open('c:\\trace.txt','w')
+    dllpath=os.path.join(os.path.dirname(__file__),'_monteCarlo'+ext)
+    #dllpath=os.path.join(os.path.dirname(sys.argv[0]),'_monteCarlo'+ext)
+    f.write('dllpath '+dllpath)
+    f.close()
+    #dll'_monteCarlo'+ext
+    #for py2exe, will look for the dll in the same folder as the executable
+    #dllpath=os.path.join(os.path.dirname(sys.argv[0]),'_monteCarlo'+ext)
+    #monteCarloDll = ctypes.cdll[dllpath]
+    print dllpath
+    monteCarloDll = ctypes.CDLL(dllpath)
+    return monteCarloDll
 
-if sys.platform in ('darwin'):
-    ext = '.dylib'
-elif sys.platform in ('win32','cygwin'):
-    ext = '.pyd'
-else:
-    ext = '.so'
-
-f=open('c:\\trace.txt','w')
-dllpath=os.path.join(os.path.dirname(__file__),'_monteCarlo'+ext)
-#dllpath=os.path.join(os.path.dirname(sys.argv[0]),'_monteCarlo'+ext)
-f.write('dllpath '+dllpath)
-f.close()
-#dll'_monteCarlo'+ext
-#for py2exe, will look for the dll in the same folder as the executable
-#dllpath=os.path.join(os.path.dirname(sys.argv[0]),'_monteCarlo'+ext)
-#monteCarloDll = ctypes.cdll[dllpath]
-print dllpath
-monteCarloDll = ctypes.CDLL(dllpath)
-
-
+monteCarloDll = loadLib()
 
 def createVideo(spinsToImageFunction, outFilePath, inFilePath):
     """This method is used to create snapshots of the monte carlo simulation.
@@ -248,16 +250,16 @@ def simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath):
     
     timer.printTime()
     print "simulation done"
-
-def Sim_Aux(k, tMax, tMin, tFactor, atoms, jMatrices):
-    """The simulation has been separated (into this method) from the file
-    reading and writing so that it can be run without files."""
-    #Create the atom list in C
+      
+def passAtoms(atoms):
+    """Pass the list of atoms to the C Library so that the ground state can be
+    found."""
+    monteCarloDll = loadLib()
     successCode = c_int(0)
     atomListPointer = monteCarloDll.new_atom_list(c_int(len(atoms)), ctypes.byref(successCode))
 #    print "Success Code: ", successCode
     if successCode.value != 1:
-        raise Exception("Problem Allocating memory, simulation size may be too large")
+        raise Exception("Problem allocating memory, simulation size may be too large")
 
     #to keep pointers
     matListList = []
@@ -295,11 +297,12 @@ def Sim_Aux(k, tMax, tMin, tFactor, atoms, jMatrices):
         spinMag = c_float(atom.spinMag)
 
         monteCarloDll.set_atom(atomListPointer, c_int(i), anisotropy, matList, neighbors, c_int(numInteractions), s1, spinMag)
-    
-    print "atoms added"
-    #timer.printTime()
+        
+    return atomListPointer, matListList, nbr_ListList
 
-    #Create JMatrix List in C
+def passMatrices(jMatrices):
+    """Pass the J-matrix values to the C library."""
+    successCode = c_int(0)
     matPointer = monteCarloDll.new_jMatrix_list(c_int(len(jMatrices)), ctypes.byref(successCode))
 #    print "Matrix Success Code: ", successCode
 #   time.sleep(5)
@@ -318,13 +321,23 @@ def Sim_Aux(k, tMax, tMin, tFactor, atoms, jMatrices):
         j32 = c_float(j[2][1])
         j33 = c_float(j[2][2])
         monteCarloDll.add_matrix(matPointer, c_int(i),j11, j12, j13, j21, j22, j23, j31, j32, j33)
-    
+    return matPointer
+
+def Sim_Aux(k, tMax, tMin, tFactor, atoms, jMatrices):
+    """The simulation has been separated (into this method) from the file
+    reading and writing so that it can be run without files."""
+    #Create the atom list in C
+    atomListPointer, matListList, nbr_ListList = passAtoms(atoms)
+
+    #Create JMatrix List in C
+    matPointer = passMatrices(jMatrices)
 
     #Run the simulation
     monteCarloDll.simulate(atomListPointer, c_int(len(atoms)), matPointer, c_int(k), c_float(tMax), c_float(tMin), c_float(tFactor))
 
     #Get the spins from the C code
     spins = []
+    s1Class = c_float * 3
     for i in range(len(atoms)):
         spin = s1Class()
         monteCarloDll.getSpin(atomListPointer, c_int(i), ctypes.byref(spin))

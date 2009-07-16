@@ -667,7 +667,7 @@ def driver(spinfile,interactionfile,direction,steps, kMin, kMax):
         print atom.interactions
     
     Hsave=calculate_dispersion(atom_list,N_atoms_uc,N_atoms,jmats,showEigs=True)
-    sys.exit()
+#    sys.exit()
     qrange = []
     wrange = []
     for q in N.arange(kMin,kMax,kMax/steps):
@@ -679,6 +679,8 @@ def driver(spinfile,interactionfile,direction,steps, kMin, kMax):
     wrange=N.real(wrange.T)
     
     for wrange1 in wrange:
+        print '\nq:\n', qrange
+        print '\nw:\n', wrange1
         pylab.plot(qrange,wrange1,'s')
     
     

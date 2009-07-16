@@ -113,7 +113,8 @@ def generate_hdef(atom_list,Jij,Sxyz,N_atoms_uc,N_atoms):
     print 'Jij',Jij,len(Jij)
 
     
-    
+    print atom_list
+    print 'N_atoms_uc', N_atoms_uc
     #for i in range(N_atoms):
     for i in range(N_atoms_uc): #correct
         N_int=len(atom_list[i].interactions)

@@ -109,7 +109,7 @@ class Session():
             spinMag = atomNodes[i].getAttribute('spin_magnitude')
             
             atomData.append([name, int(atomicNum), float(x),float(y),float(z),
-                             float(Dx), float(Dy), float(Dz), spinMag])
+                             float(Dx), float(Dy), float(Dz), float(spinMag)])
             
             self.atomTable.SetValue(i, 0, name)
             self.atomTable.SetValue(i, 1, atomicNum)

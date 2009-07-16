@@ -1894,7 +1894,7 @@ class Frame(wx.Frame):
             
     
     def OnFitParameters(self, evt):
-        fitting(self.session, )
+        print ''
 #        #domain = []
 #        #test case
 #        domain = [(0,0,0,),

@@ -257,6 +257,29 @@ float Energy(Atom *atoms, Atom *a, float s1[3], InteractionMatrix* jMatrices)
       return E;
 }
 
+float totalE(Atom *atoms, int numAtoms, InteractionMatrix* jMatrices)
+{
+	//Calculate the sum of the energies over the whole lattice.  This is for local optimization
+	//becuase I cannot control which parameters the optimizer changes, and thereforemust 
+	//calculate the energy of the who lattice.
+	int i;
+	float totalE = 0;
+	for(i = 0; i < numAtoms; i++)
+	{
+		totalE += Energy(atoms, atoms + i, atoms[i].spin, jMatrices);
+	}
+	return totalE;
+}
+
+float setSpin(Atom *atoms, int index, float spinX, float spinY, float spinZ)
+{
+	//This is used by the local optimizer to easilly change spins
+	atoms[index].spin[0] = spinX;
+	atoms[index].spin[1] = spinY;
+	atoms[index].spin[2] = spinZ;
+}
+
+
 void flipSpins(Atom *atoms, int numAtoms, InteractionMatrix *jMatrices, float T, int *flipped)
 {
      int index;
