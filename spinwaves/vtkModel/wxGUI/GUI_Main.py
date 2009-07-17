@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-"""This contains the visual elements of the GUI."""
 
 import time
 import gc
@@ -386,7 +385,7 @@ class atomPanel(wx.Panel):
             
             atomicNum = None
             try:
-                atomicNum = float(self.atomList.GetCellValue(row, 1))
+                atomicNum = int(self.atomList.GetCellValue(row, 1))
                 attr = wx.grid.GridCellAttr()
                 attr.SetBackgroundColour("white")
                 self.atomList.SetAttr(row, 1, attr)
@@ -396,93 +395,95 @@ class atomPanel(wx.Panel):
                 self.atomList.SetAttr(row, 1, attr)
                 failed = True
             
+            #Valence at 2
+            valence = self.atomList.GetCellValue(row, 2)
             
             numXCoord = None
             try:
-                numXCoord = float(self.atomList.GetCellValue(row, 2))
+                numXCoord = float(self.atomList.GetCellValue(row, 3))
                 attr = wx.grid.GridCellAttr()
                 attr.SetBackgroundColour("white")
-                self.atomList.SetAttr(row, 2, attr)
+                self.atomList.SetAttr(row, 3, attr)
             except:
                 attr = wx.grid.GridCellAttr()
                 attr.SetBackgroundColour(bgColor)
-                self.atomList.SetAttr(row, 2, attr)
+                self.atomList.SetAttr(row, 3, attr)
                 failed = True
         
             numYCoord = None
             try:
-                numYCoord = float(self.atomList.GetCellValue(row, 3))
+                numYCoord = float(self.atomList.GetCellValue(row, 4))
                 attr = wx.grid.GridCellAttr()
                 attr.SetBackgroundColour("white")
-                self.atomList.SetAttr(row, 3, attr)
+                self.atomList.SetAttr(row, 4, attr)
             except:
                 attr = wx.grid.GridCellAttr()
                 attr.SetBackgroundColour(bgColor)
-                self.atomList.SetAttr(row, 3, attr)
+                self.atomList.SetAttr(row, 4, attr)
                 failed = True
         
         
             numZCoord = None
             try:
-                numZCoord = float(self.atomList.GetCellValue(row, 4))
+                numZCoord = float(self.atomList.GetCellValue(row, 5))
                 attr = wx.grid.GridCellAttr()
                 attr.SetBackgroundColour("white")
-                self.atomList.SetAttr(row, 4, attr)
+                self.atomList.SetAttr(row, 5, attr)
             except:
                 attr = wx.grid.GridCellAttr()
                 attr.SetBackgroundColour(bgColor)
-                self.atomList.SetAttr(row, 4, attr)
+                self.atomList.SetAttr(row, 5, attr)
                 failed = True
                 
             
             numDx = None
             try:
-                numDx = float(self.atomList.GetCellValue(row,5))
+                numDx = float(self.atomList.GetCellValue(row,6))
                 attr = wx.grid.GridCellAttr()
                 attr.SetBackgroundColour("white")
-                self.atomList.SetAttr(row, 5, attr)
+                self.atomList.SetAttr(row, 6, attr)
             except:
                 attr = wx.grid.GridCellAttr()
                 attr.SetBackgroundColour(bgColor)
-                self.atomList.SetAttr(row, 5, attr)
+                self.atomList.SetAttr(row, 6, attr)
                 failed = True
                 
             
             numDy = None
             try:
-                numDy = float(self.atomList.GetCellValue(row,6))
+                numDy = float(self.atomList.GetCellValue(row,7))
                 attr = wx.grid.GridCellAttr()
                 attr.SetBackgroundColour("white")
-                self.atomList.SetAttr(row, 6, attr)
+                self.atomList.SetAttr(row, 7, attr)
             except:
                 attr = wx.grid.GridCellAttr()
                 attr.SetBackgroundColour(bgColor)
-                self.atomList.SetAttr(row, 6, attr)
+                self.atomList.SetAttr(row, 7, attr)
                 failed = True
                 
             
             numDz = None
             try:
-                numDz = float(self.atomList.GetCellValue(row,7))
+                numDz = float(self.atomList.GetCellValue(row,8))
                 attr = wx.grid.GridCellAttr()
                 attr.SetBackgroundColour("white")
-                self.atomList.SetAttr(row, 7, attr)
+                self.atomList.SetAttr(row, 8, attr)
             except:
                 attr = wx.grid.GridCellAttr()
                 attr.SetBackgroundColour(bgColor)
-                self.atomList.SetAttr(row, 7, attr)
+                self.atomList.SetAttr(row, 8, attr)
                 failed = True
                 
             spinMag = None
             try:
-                spinMag = float(self.atomList.GetCellValue(row, 8))
+                spinMag = float(self.atomList.GetCellValue(row, 9))
                 attr = wx.grid.GridCellAttr()
                 attr.SetBackgroundColour("white")
-                self.atomList.SetAttr(row, 8, attr)
+                self.atomList.SetAttr(row, 9, attr)
             except:
                 attr = wx.grid.GridCellAttr()
                 attr.SetBackgroundColour(bgColor)
-                self.atomList.SetAttr(row, 8, attr)
+                self.atomList.SetAttr(row, 9, attr)
                 failed = True
             
             name = self.atomList.GetCellValue(row, 0)
@@ -492,7 +493,7 @@ class atomPanel(wx.Panel):
             #this rerenders the cells to they show the color change
             
             
-            data.append([name, atomicNum, numXCoord, numYCoord, numZCoord, numDx, numDy, numDz, spinMag])
+            data.append([name, atomicNum, numXCoord, numYCoord, numZCoord, numDx, numDy, numDz, spinMag, valence])
         
         return failed, numA, numB, numC, numAlpha, numBeta, numGamma, numMagNa, numMagNb, numMagNc, numCutNa, numCutNb, numCutNc, data
          

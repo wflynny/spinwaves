@@ -45,9 +45,7 @@ def readFile(filename):
     #Read in J matrices
     index = 0
     while(lines[index] != "#Number J11 J12 J13 J21 J22 J23 J31 J32 J33\n"):
-        print lines[index]
         index += 1
-        print index
     index += 1 #now at line after "#Number J11 J12 J13 J21 J22 J23 J31 J32 J33"
     
     line = lines[index]
@@ -71,10 +69,11 @@ def readFile(filename):
         if not line.startswith('#'):
             values = line.split()
             #skip the atom index and Whether it is n the first interaction cell or not
-            newAtom = simpleAtom((float(values[2]), float(values[3]), float(values[4])), (float(values[5]), float(values[6]), float(values[7])), float(values[8]))
+            #--also skip label, valence, cellnum, and atomic num
+            newAtom = simpleAtom((float(values[6]), float(values[7]), float(values[8])), (float(values[9]), float(values[10]), float(values[11])), float(values[12]))
 #            print "atom pos:", newAtom.pos
 #            time.sleep(5)
-            i = 9
+            i = 13
             while i < len(values):
                 otherAtomIndex = int(values[i])
    #format changed to no longer include position of other atom
@@ -198,10 +197,6 @@ if __name__ == '__main__':
     #    savefig('secondfig.png')
 #    pylab.show()
         
-    
-    
-    
-    
     
     def checkBalanced(atoms):  
         def atomBalanced(atom):

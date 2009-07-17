@@ -1,3 +1,4 @@
+import string
 import xml.dom.minidom
 #import xml.dom.ext
 import wx.grid
@@ -107,9 +108,11 @@ class Session():
             Dy = atomNodes[i].getAttribute('SIA_Dy')
             Dz = atomNodes[i].getAttribute('SIA_Dz')
             spinMag = atomNodes[i].getAttribute('spin_magnitude')
+            valence = atomNodes[i].getAttribute('valence')
             
             atomData.append([name, int(atomicNum), float(x),float(y),float(z),
-                             float(Dx), float(Dy), float(Dz), float(spinMag)])
+                             float(Dx), float(Dy), float(Dz), float(spinMag),
+                             valence])
             
             self.atomTable.SetValue(i, 0, name)
             self.atomTable.SetValue(i, 1, atomicNum)
@@ -278,7 +281,7 @@ class Session():
                 print "Anisotropy not included!"
             if anisotropy == None:
                 anisotropy = (0,0,0)#Can't be None
-            unitcell.generateAtoms((float(atomData[i][2]), float(atomData[i][3]), float(atomData[i][4])), atomData[i][0], anisotropy = anisotropy, spinMagnitude = atomData[i][8])
+            unitcell.generateAtoms((float(atomData[i][2]), float(atomData[i][3]), float(atomData[i][4])), atomData[i][0], atomData[i][1], atomData[i][9], anisotropy = anisotropy, spinMagnitude = atomData[i][8])
         
         #Create a Magnetic Cell
         #self.MagCell = MagneticCell(unitcell, magNa, magNb, magNc, spaceGroup)
@@ -319,7 +322,16 @@ class Session():
         atoms = [] #for the cell window
         for i in range(len(atomLabels)):
             unitcell.generateAtoms((float(xPositions[i]), float(yPositions[i]), float(zPositions[i])), atomLabels[i])
-            atoms.append([atomLabels[i], 0, float(xPositions[i]), float(yPositions[i]), float(zPositions[i])])
+            aData = [atomLabels[i], 0, float(xPositions[i]), float(yPositions[i]), float(zPositions[i])]
+            #--Added to atomData: single ion anisotropy, spin magnitude, valence
+            aData.append(0.0)#Dx
+            aData.append(0.0)#Dy
+            aData.append(0.0)#Dz
+            aData.append(1)#Spin Magnitude
+            aData.append('')#valence
+            #-------------------------------------------------------------------
+            atoms.append(aData)
+            
             self.atomTable.SetValue(i, 0, atomLabels[i])
             self.atomTable.SetValue(i, 2, xPositions[i])
             self.atomTable.SetValue(i, 3, yPositions[i])
@@ -388,13 +400,14 @@ class Session():
             atomElement = doc.createElement('atom')
             atomElement.setAttribute('Name', str(self.atomTable.GetValue(i, 0)))
             atomElement.setAttribute('Atomic_Number', str(self.atomTable.GetValue(i, 1)))
-            atomElement.setAttribute('x', str(self.atomTable.GetValue(i, 2)))
-            atomElement.setAttribute('y', str(self.atomTable.GetValue(i, 3)))
-            atomElement.setAttribute('z', str(self.atomTable.GetValue(i, 4)))
-            atomElement.setAttribute('SIA_Dx', str(self.atomTable.GetValue(i, 5)))
-            atomElement.setAttribute('SIA_Dy', str(self.atomTable.GetValue(i, 6)))
-            atomElement.setAttribute('SIA_Dz', str(self.atomTable.GetValue(i, 7)))
-            atomElement.setAttribute('spin_magnitude', str(self.atomTable.GetValue(i, 8)))
+            atomElement.setAttribute('valence', self.atomTable.GetValue(i, 2))
+            atomElement.setAttribute('x', str(self.atomTable.GetValue(i, 3)))
+            atomElement.setAttribute('y', str(self.atomTable.GetValue(i, 4)))
+            atomElement.setAttribute('z', str(self.atomTable.GetValue(i, 5)))
+            atomElement.setAttribute('SIA_Dx', str(self.atomTable.GetValue(i, 6)))
+            atomElement.setAttribute('SIA_Dy', str(self.atomTable.GetValue(i, 7)))
+            atomElement.setAttribute('SIA_Dz', str(self.atomTable.GetValue(i, 8)))
+            atomElement.setAttribute('spin_magnitude', str(self.atomTable.GetValue(i, 9)))
             atomsElement.appendChild(atomElement)
             
           
@@ -755,10 +768,13 @@ class Session():
         
         
         #print out the simple atom list
-        file.write("#AtomNumber InFirstInteractionCell AtomPosition(X Y Z) Anisotropy(X Y Z) SpinMagnitude OtherIndex Jmatrix OtherIndex Jmatrix...\n")
+        file.write("#AtomNumber Label CellNumber AtomicNumber  Valence InFirstInteractionCell AtomPosition(X Y Z) Anisotropy(X Y Z) SpinMagnitude OtherIndex Jmatrix OtherIndex Jmatrix...\n")
         for atomIndex in range(len(allAtoms)):
             atom = allAtoms[atomIndex]
-            atomStr = str(atomIndex) + " " + inInteractionCellStr(allAtoms, atom) + " " + str(atom.pos[0]) + " " + str(atom.pos[1]) + " " + str(atom.pos[2])
+            atomStr = str(atomIndex) + " " + str(atom.label) + " " + str(atom.cellNum)
+            atomStr += " " + str(atom.atomicNum) + " " + str(atom.valence)
+            atomStr += " " + inInteractionCellStr(allAtoms, atom)
+            atomStr += " " + str(atom.pos[0]) + " " + str(atom.pos[1]) + " " + str(atom.pos[2])
             atomStr += " " + str(atom.anisotropy[0]) + " " + str(atom.anisotropy[1]) + " " + str(atom.anisotropy[2])
             atomStr += " " + str(atom.spinMag)
             for interaction in atom.interactions:
@@ -804,7 +820,7 @@ class Session():
         Nc = self.getCutoffCell().getNc()
         
         class SimpleAtom():
-            def __init__(self, pos, anisotropy, spinMag):
+            def __init__(self, pos, anisotropy, spinMag, label, atomicNum, cellNum, valence):
                 self.anisotropy = anisotropy
                 self.pos = pos
 #                self.cellPos = []
@@ -815,6 +831,10 @@ class Session():
                 self.interCellInteractions = []#these must be translated with different logic and therefore must be kept separate
                 #self.interactions[position of other atom] = j number
                 self.spinMag = spinMag
+                self.label = label
+                self.atomicNum = atomicNum
+                self.cellNum = cellNum
+                self.valence = string.join(valence.split(), "")#just in case, get rid of whitespace
                 
             #might want to change this to position later when all atoms wont be created in same list
             def addInteraction(self, atom2, jMat):
@@ -935,6 +955,18 @@ class Session():
             anisotropy2 = bond.anisotropy2
             spin1 = bond.spinMag1
             spin2 = bond.spinMag2
+            #--Adding labels, cell number, valence, and atomic number----
+            a1 = self.MagCell.atomAtPosition(pos1)
+            a2 = self.MagCell.atomAtPosition(pos2)
+            label1 = a1.description
+            label2 = a2.description
+            cellNum1 = a1.getIndexNumber()
+            cellNum2 = a2.getIndexNumber()
+            atomicNum1 = a1.atomicNumber
+            atomicNum2 = a2.atomicNumber
+            valence1 = a1.valence
+            valence2 = a2.valence
+            #---------------------------------------------------
             jMatInt = bond.jMatrix
             for i in range(2):
                 for j in range(2):
@@ -963,10 +995,10 @@ class Session():
                                         if PosInFirstCutoff(newPos1) and PosInFirstCutoff(newPos2):
                                             #Both are in first cutoff
                                             #Add the atoms to the list of atoms within the first cell
-                                            newAtom1 = SimpleAtom(newPos1, anisotropy1, spin1)
+                                            newAtom1 = SimpleAtom(newPos1, anisotropy1, spin1, label1, atomicNum1, cellNum1, valence1)
                                             if not atomListContains(cellAtoms, newAtom1):
                                                 cellAtoms.append(newAtom1)
-                                            newAtom2 = SimpleAtom(newPos2, anisotropy2, spin2)
+                                            newAtom2 = SimpleAtom(newPos2, anisotropy2, spin2, label2, atomicNum2, cellNum2, valence2)
                                             if not atomListContains(cellAtoms, newAtom2):
                                                 cellAtoms.append(newAtom2)
                                             #Add the bond to bonds within the cell
@@ -982,8 +1014,8 @@ class Session():
                                             transPos1 = translateToFirstCutoffCell(newPos1)
                                             transPos2 = translateToFirstCutoffCell(newPos2)
                                             
-                                            newAtom1 = SimpleAtom(transPos1, anisotropy1, spin1)
-                                            newAtom2 = SimpleAtom(transPos2, anisotropy2, spin2)
+                                            newAtom1 = SimpleAtom(transPos1, anisotropy1, spin1, label1, atomicNum1, cellNum1, valence1)
+                                            newAtom2 = SimpleAtom(transPos2, anisotropy2, spin2, label2, atomicNum2, cellNum2, valence2)
                                             if not atomListContains(cellAtoms, newAtom1):
                                                 cellAtoms.append(newAtom1)
                                             if not atomListContains(cellAtoms, newAtom2):
@@ -1038,13 +1070,13 @@ class Session():
                                         atomObj1 = self.MagCell.atomAtPosition(translatedPos1)
                                         atomObj2 = self.MagCell.atomAtPosition(translatedPos2)
                                         if(atomObj1 != None):#Add the atom if it is in the cutoff cell
-                                            newAtom1 = SimpleAtom(translatedPos1, atomObj1.anisotropy, atomObj1.spinMagnitude)
+                                            newAtom1 = SimpleAtom(translatedPos1, atomObj1.anisotropy, atomObj1.spinMagnitude, atomObj1.description, atomObj1.atomicNumber, atomObj1.getIndexNumber(), atomObj1.valence)
                                         #Add atom if there is not already an atom at that position
                                         if not atomListContains(cellAtoms, newAtom1):
                                             cellAtoms.append(newAtom1)
                                         
                                         if(atomObj2 != None):#Add the atom if it is in the cutoff cell
-                                            newAtom1 = SimpleAtom(translatedPos2, atomObj2.anisotropy, atomObj2.spinMagnitude)
+                                            newAtom1 = SimpleAtom(translatedPos2, atomObj2.anisotropy, atomObj2.spinMagnitude, atomObj2.description, atomObj2.atomicNumber, atomObj2.getIndexNumber(), atomObj2.valence)
                                         #Add atom if there is not already an atom at that position
                                         if not atomListContains(cellAtoms, newAtom2):
                                             cellAtoms.append(newAtom2)
@@ -1070,7 +1102,7 @@ class Session():
                         x = pos[0] + (Na * i)
                         y = pos[1] + (Nb * j)
                         z = pos[2] + (Nc * k)
-                        newAtom = SimpleAtom((x,y,z), anisotropy, cellAtoms[index].spinMag)
+                        newAtom = SimpleAtom((x,y,z), anisotropy, cellAtoms[index].spinMag, cellAtoms[index].label, cellAtoms[index].atomicNum, cellAtoms[index].cellNum, cellAtoms[index].valence)
 #                        print (len(allAtoms)%numAtomsPerCell == index)#just a check, should always be true
                         allAtoms.append(newAtom)
 
@@ -1319,9 +1351,6 @@ class Session():
         
                 
             
-        
-        
-
 
 
 class Timer():
@@ -1344,11 +1373,11 @@ class atomTable(wx.grid.PyGridTableBase):
     what is in this table."""
     def __init__(self):
         wx.grid.PyGridTableBase.__init__(self)
-        self.colLabels = ['   Name   ', 'Atomic Number','   x   ', '   y   ','   z   ', '  Dx  ', '  Dy  ', '  Dz  ', 'Spin Magnitude']
+        self.colLabels = ['   Name   ', 'Atomic Number','Valence', '   x   ', '   y   ','   z   ', '  Dx  ', '  Dy  ', '  Dz  ', 'Spin Magnitude']
         self.rowLabels=['Atom 1']
         
         self.data = [
-                     ['','','','','', 0.0, 0.0, 0.0, '']#Row 1
+                     ['','','','','', '', 0.0, 0.0, 0.0, '']#Row 1
                      ]
     
     def GetNumberRows(self):
@@ -1389,9 +1418,9 @@ class atomTable(wx.grid.PyGridTableBase):
     def AppendRow(self):
             self.data.append([''] * self.GetNumberCols())
             self.rowLabels.append('Atom ' + str(self.GetNumberRows()))
-            self.SetValue(self.GetNumberRows() - 1, 5, 0.0)
             self.SetValue(self.GetNumberRows() - 1, 6, 0.0)
             self.SetValue(self.GetNumberRows() - 1, 7, 0.0)
+            self.SetValue(self.GetNumberRows() - 1, 8, 0.0)
 
             # tell the grid we've added a row
             msg = wx.grid.GridTableMessage(self,            # The table

@@ -95,7 +95,7 @@ class Cell():
         for atomn in self.Atoms:  #should preserve order of Atoms
             position = atomn.getPosition()
             color = atomn.getColor()
-            new_cell.addAtom(Atom(new_cell, position[0], position[1], position[2], atomn.getDescription(), atomn.getRadius(), color[0], color[1], color[2], anisotropy = atomn.getAnisotropy(), spinMagnitude = atomn.spinMagnitude))
+            new_cell.addAtom(Atom(new_cell, position[0], position[1], position[2], atomn.atomicNumber, atomn.getDescription(), atomn.valence, atomn.getRadius(), color[0], color[1], color[2], anisotropy = atomn.getAnisotropy(), spinMagnitude = atomn.spinMagnitude))
         
         return new_cell
 
@@ -108,7 +108,7 @@ class Cell():
     def getAtomIndex(self, atom):
         return self.Atoms.index(atom)
     
-    def generateAtoms(self, position, description, anisotropy = (0,0,0), spinMagnitude = 1, radius = .05):
+    def generateAtoms(self, position, description, atomicNumber, valence, anisotropy = (0,0,0), spinMagnitude = 1, radius = .05):
         """Given the information of one atom and the space group associated with
         this Cell object, this method creates all the symmetry equivalent atoms
         and adds them to the list."""
@@ -122,7 +122,15 @@ class Cell():
         g = random.uniform(0,1)
         b = random.uniform(0,1)
         for coord in locations:
-            atom = Atom(self, coord[0], coord[1], coord[2], description, radius, r,g,b, anisotropy = anisotropy, spinMagnitude = spinMagnitude)
+#===============================================================================
+#            print 'unit_cell:', self
+#            print 'x,y,z:', coord
+#            print 'atomicNum:', atomicNumber
+#            print 'description:', description
+#            print 'radius:', radius
+#===============================================================================
+            print 'here'
+            atom = Atom(self, coord[0], coord[1], coord[2], atomicNumber, description, valence, radius, r,g,b, anisotropy = anisotropy, spinMagnitude = spinMagnitude)
             self.addAtom(atom)
 
     def getA(self):

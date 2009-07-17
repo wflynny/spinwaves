@@ -1,6 +1,7 @@
 class Atom():
-    def __init__(self, unit_Cell, x,y,z, description = "", radius=.05,r = 1,g=0,b = 0,
-                 spin = None, anisotropy = (0,0,0), spinMagnitude = 1):
+    def __init__(self, unit_Cell, x,y,z, atomicNum, description = "", valence = "", 
+                 radius=.05,r = 1,g=0,b = 0, spin = None, anisotropy = (0,0,0),
+                 spinMagnitude = 1):
         """
         x,y,z are fractional coordinates in the unit cell
         unit_Cell is the unit cell containing the atom (instance of Cell class)
@@ -10,12 +11,25 @@ class Atom():
         anisotropy is the single ion anisotropy of the atom (Dx, Dy, Dz)
         description is string describing the atom such as a name.
         """
+#===============================================================================
+#        print '\n\nunit_cell:', unit_Cell
+#        print 'x,y,z:', x,y,z
+#        print 'atomicNum:', atomicNum
+#        print 'description:', description
+#        print 'radius:', radius
+#        print 'r,g,b:', r,g,b
+#        print 'spin:' , spin
+#        print 'anisotropy: ', anisotropy
+#        print 'spinMag: ', spinMagnitude
+#===============================================================================
         self.anisotropy = anisotropy
         self.description = description
         self.radius = radius
         self.color = (r,g,b)
         self.spin = spin
         self.spinMagnitude = spinMagnitude
+        self.atomicNumber = atomicNum
+        self.valence = valence
         
         if x<1 and y<1 and z<1: 
             #coordinates  (within cell) - Actor will contain world coordinates in vtk renderer

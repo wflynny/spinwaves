@@ -242,6 +242,7 @@ class vtkDrawer():
             for index in range(0, len(AtomList)):
                 atom = AtomList[index]
                 label = vtkVectorText()
+                #print 'description: ', atom.description
                 label.SetText(atom.description + " " + str(index + 1))
                 labelMapper = vtkPolyDataMapper()
                 labelMapper.SetInputConnection(label.GetOutputPort())

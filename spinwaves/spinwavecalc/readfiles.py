@@ -8,7 +8,9 @@ class atom:
     def __init__(self,spinRmatrix=sympy.Matrix([[1, 0, 0],
                                             [0, 1, 0],
                                             [0, 0, 1]]),
-                spinMag = 1, pos=[0,0,0],neighbors=None,interactions=None,label=0,Dx=0,Dy=0,Dz=0,cell=0,int_cell=[], orig_Index = None):
+                spinMag = 1, pos=[0,0,0],neighbors=None,interactions=None,
+                label=0,Dx=0,Dy=0,Dz=0,cell=0,int_cell=[], orig_Index = None,
+                valence = '', atomicNum = 0):
         self.spinRmatrix=spinRmatrix#found with findmat
         if neighbors==None:
             neighbors=[]
@@ -26,6 +28,8 @@ class atom:
         #Indices change when reading in only specific atoms from the file
         self.origIndex = orig_Index
         self.spinMagnitude = spinMag
+        self.valence = valence
+        self.atomicNum = atomicNum
 
 
 
@@ -39,10 +43,11 @@ def get_tokenized_line(myfile,returnline=['']):
 
 
 def readFiles(interactionFileStr,spinFileStr):
-    """modified from read_interactions.  Originally this(read_interactions) read in the
-    atoms from the interaction file and matched the spin rotation matrices with the
-    appropriate atoms based on indices.  Now it takes the interaction and spin file strings,
-    reads in the atom information and matches it with spin rotation matrices based on coordinates"""
+    """modified from read_interactions.  Originally this(read_interactions) read
+    in the atoms from the interaction file and matched the spin rotation
+    matrices with the appropriate atoms based on indices.  Now it takes the
+    interaction and spin file strings, reads in the atom information and matches
+    it with spin rotation matrices based on coordinates"""
     #print interactionFileStr
     interactionFile = open(interactionFileStr, 'r')
     myFlag=True
@@ -99,18 +104,20 @@ def readFiles(interactionFileStr,spinFileStr):
                             break
                         #print tokenized
                         atom_num=int(tokenized[0])
-                        if tokenized[1] == 'x':  #If it is in the first interaction cell
+                        if tokenized[5] == 'x':  #If it is in the first interaction cell
                             print "atom in first interaction cell"
-                            x,y,z=float(tokenized[2]),float(tokenized[3]),float(tokenized[4])
+                            x,y,z=float(tokenized[6]),float(tokenized[7]),float(tokenized[8])
 
-                            Dx,Dy,Dz=float(tokenized[5]),float(tokenized[6]),float(tokenized[7])
+                            Dx,Dy,Dz=float(tokenized[9]),float(tokenized[10]),float(tokenized[11])
                             #spin0=N.matrix([[1,0,0],[0,1,0],[0,0,1]],'float64')
-                            spinMagnitude = float(tokenized[8])
+                            spinMagnitude = float(tokenized[12])
+                            valence = tokenized[4]
+                            atomicNum = tokenized[3]
                             pos0=[x,y,z]
-                            atom0=atom(spinMag=spinMagnitude, pos=pos0,Dx=Dx,Dy=Dy,Dz=Dz, orig_Index = atom_num)
+                            atom0=atom(spinMag=spinMagnitude, pos=pos0,Dx=Dx,Dy=Dy,Dz=Dz, orig_Index = atom_num, valence = valence, atomicNum = atomicNum)
                             neighbors=[]
                             interactions=[]
-                            for i in range(9,len(tokenized),2):
+                            for i in range(13,len(tokenized),2):
                                 interacting_spin=int(tokenized[i])
                                 #index number in export list not necessarily the same as index
                                 #in list of atoms in first interacting 'cell'
