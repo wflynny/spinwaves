@@ -39,7 +39,7 @@ def sub_in(expression, pattern, replacement, match = True):
 def _walk_it(expression, pattern, replacement, check):
     """ Helper method for sub_in """
     # Grab the operation of the expression
-    expression = expression.expand()
+    expression = expression
     op = expression.__class__
 
     """ If the length of the expression and pattern are the same, then

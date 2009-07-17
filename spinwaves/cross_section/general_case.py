@@ -11,8 +11,8 @@ from timeit import default_timer as clock
 from list_manipulation import *
 from subin import sub_in
 from printing import *
-import spinwaves.spinwavecalc.readfiles as rf
-
+from spinwaves.spinwavecalc.readfiles import atom, readFiles
+from spinwaves.spinwavecalc.spinwave_calc_file import calculate_dispersion
 
 # Computes the inner product with a metric tensor
 def inner_prod(vect1,vect2,ten = spm.Matrix([[1,0,0],
@@ -37,12 +37,12 @@ def generate_atoms(N):
         qz = sp.Symbol('qz%i'%(i,),commutative = False)
         qvect = spm.Matrix([qx,qy,qz])
 
-        lx = sp.Symbol('lx%i'%(i,),commutative = False)
-        ly = sp.Symbol('ly%i'%(i,),commutative = False)
-        lz = sp.Symbol('lz%i'%(i,),commutative = False)
-        lvect = spm.Matrix([lx,ly,lz])
+        kx = sp.Symbol('kx%i'%(i,),commutative = False)
+        ky = sp.Symbol('ky%i'%(i,),commutative = False)
+        kz = sp.Symbol('kz%i'%(i,),commutative = False)
+        kvect = spm.Matrix([kx,ky,kz])
 
-        real_list.append(lvect)
+        real_list.append(kvect)
         recip_list.append(qvect)
     print "Atoms Generated!"
     return (real_list, recip_list)
@@ -326,7 +326,7 @@ def replace_bdb(N, arg):
 # (gamma r_0)^2 / 2 pi hbar * k'/k * N * {1/2 g F(kappa)}^2 sum over alpha,beta (delta_alpha,beta - kappa_alpha*kappa_beta)
 #    * sum over l exp(i*kappa*l) X integral -oo to oo <exp{-i * kappa . u_0(0)} * exp{i * kappa . u_l(t)}>
 #    <S^alpha_0(0) * S^beta_l(t)> * exp(-i omega t) dt
-def generate_cross_section(N, arg, q, tt, real_list, recip_list):
+def generate_cross_section(N, arg, q, real_list, recip_list):
     """Generates the Cross-Section Formula for the one magnon case"""
     gam = sp.Symbol('gamma', commutative = True)
     r = sp.Symbol('r0', commutative = True)
@@ -359,12 +359,12 @@ def generate_cross_section(N, arg, q, tt, real_list, recip_list):
     unit_vect = []
     for i in range(len(arg)):
         unit_vect.append(arg[i].pop())
-
     # This is were the heart of the calculation comes in.
     # First the exponentials are turned into delta functions:
     for i in range(len(arg)):
         for j in range(N):
-            arg[i][j] = (arg[i][j] * exp(-I*w*t)).expand()
+            arg[i][j] = arg[i][j] * exp(-I*w*t)
+            arg[i][j] = sp.powsimp(arg[i][j], deep = True, combine = 'all')
             arg[i][j] = sub_in(arg[i][j],exp(A*I*t + B*I*t),sp.DiracDelta(A + B))
             arg[i][j] = sub_in(arg[i][j],exp(I*t*A + I*t*B + C),sp.DiracDelta(A*t + B*t + C))
             arg[i][j] = sub_in(arg[i][j],sp.DiracDelta(A*t + B*t + C),sp.DiracDelta(A + B)*sp.DiracDelta(C))
@@ -385,20 +385,43 @@ def generate_cross_section(N, arg, q, tt, real_list, recip_list):
     print "Complete: Cross-section Calculation"
     return dif
 
-def eval_cross_section(cross, qxval, qyval, qzval, etc):
+#def eval_cross_section(N, N_uc, atom_list, jmats, cross, qvals, temp, direction, lmin, lmax):
+def eval_cross_section(spinfile,interactionfile, cross, qvals, temp, direction, kmin, kmax, steps):
+
+    atom_list, jnums, jmats,N_atoms_uc=readFiles(interactionfile,spinfile)
+    N_atoms = len(atom_list)
+
     qx = sp.Symbol('qx', commutative = False)
     qy = sp.Symbol('qy', commutative = False)
     qz = sp.Symbol('qz', commutative = False)
-    return cross.subs([(qx,qxval),(qy,qyval),(qy,qyval)])
+
+    Hsave=calculate_dispersion(atom_list,N_atoms_uc,N_atoms,jmats,showEigs=True)
+
+    qrange = []
+    wrange = []
+    for q in N.arange(kmin,kmax,(lmax-kmax)/steps):
+        wrange.append(calc_eigs(Hsave,q*direction['kx'], q*direction['ky'], q*direction['kz']))
+        qrange.append(q)
+    
+    wrange=N.real(wrange)
+    wrange=N.array(wrange)
+    wrange=N.real(wrange.T)
+    
+    for i in range(N_atoms):
+        nq = sp.Symbol('n%i'%(i,), commutative = False)
+    
+    
+    
+    return cross.subs([(qx,qvals[0]),(qy,qvals[1]),(qz,qvals[2])])
 
 
 def run_cross_section(interactionfile, spinfile):
     start = clock()
 
     # Generate Inputs
-    atom_list, jnums, jmats,N_atoms_uc=rf.readFiles(interactionfile,spinfile)
-    #atom_list,N_atoms_uc = ([rf.atom(),rf.atom()],2)
-    N_atoms = N_atoms_uc
+    atom_list, jnums, jmats,N_atoms_uc=readFiles(interactionfile,spinfile)
+    #atom_list,N_atoms_uc = ([atom(),atom()],2)
+    #N_atoms = N_atoms_uc
 
     real, recip = generate_atoms(N_atoms)
     (b,bd) = generate_b_bd_operators(N_atoms)
@@ -414,13 +437,21 @@ def run_cross_section(interactionfile, spinfile):
     ops = replace_bdb(N_atoms, ops)
     ops = apply_commutation(N_atoms, ops)
     ops = reduce_options(N_atoms, ops)
-    cross_sect = generate_cross_section(N_atoms, ops, 1, 0, real, recip)
+    cross_sect = generate_cross_section(N_atoms, ops, 1, real, recip)
     print '\n', cross_sect
     
-    #cross_sect = eval_cross_section(cross_sect, 0, 0, 0, 0)
+    if 1:
+        data={}
+        data['kx']=1.
+        data['ky']=0.
+        data['kz']=0.
+        direction=data
+        cross_sect = eval_cross_section(interactionfile, spinfile, cross_sect, [0,0,0], 10, data, 0, 1, 100)
 
     end = clock()
     print "\nFinished %i atoms in %.2f seconds" %(N_atoms,end-start)
+    
+    print cross_sect
     
     generate_output(cross_sect)
 
