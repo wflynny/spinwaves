@@ -1,0 +1,93 @@
+\documentclass[aps,prl,preprint,groupedaddress]{revtex4}
+%\usepackage{multicol}
+\begin{document}
+
+\title{Dispersion Relations}
+
+\section{Ferromagnetic}
+\subsection{Chain}
+\begin{equation}
+\pm 2 \: \mathrm{JS} \; (1 - \cos(x))
+\label{eq:fmc}
+\end{equation}
+
+\subsection{Square}
+\begin{equation}
+\pm 4 \: \mathrm{JS} \; (2 - \cos(x) + \cos(y))
+\label{eq:fmsq}
+\end{equation}
+
+\subsection{Simple Cube}
+\begin{equation}
+\pm 4 \; \mathrm{JS} \; (3 - \cos(x) - \cos(y) - \cos(z))
+\label{eq:fmsc}
+\end{equation}
+
+\subsection{Face-Centered Cube}
+\begin{equation}
+\pm 8 \; \mathrm{JS} \; (3 - \cos(x) \cos(y) - \cos(x) \cos(z) - \cos(y) \cos(z))
+\label{eq:fmfcc}
+\end{equation}
+
+\subsection{Body-Centered Cube}
+\begin{equation}
+\pm 16 \; \mathrm{JS} \; (1 - \cos(x) \cos(y) \cos(z))
+\label{eq:fmbcc}
+\end{equation}
+
+\section{Antiferromagnetic}
+\subsection{Chain}
+\begin{equation}
+\pm 2 \; \mathrm{JS} \; \sin(x)
+\label{eq:afmc}
+\end{equation}
+
+\subsection{Square}
+\begin{equation}
+\pm 4 \; \mathrm{JS} \; \sqrt{(2 - \cos(x) - \cos(y)) (2 + \cos(x) + \cos(y))}
+\label{eq:afmsq}
+\end{equation}
+
+\subsection{Simple Cube}
+\begin{equation}
+\pm 4 \; \mathrm{JS} \; \sqrt{(3 - \cos(x) - \cos(y) - \cos(z)) (3 + \cos(x) + \cos(y) + \cos(z))}
+\label{eq:afmsc}
+\end{equation}
+
+\subsection{Face-Centered Cube}
+\begin{equation}
+\pm 8 \; \mathrm{JS} \; \sqrt{(3 - \cos(y)\cos(z) - \cos(x)(\cos(y)+\cos(z))) (3 + \cos(y)\cos(z) + \cos(x)(\cos(y) + \cos(z)))}
+\label{eq:afmfcc}
+\end{equation}
+
+\subsection{Body-Centered Cube}
+\begin{equation}
+\pm 16 \; \mathrm{JS} \; \sqrt{1 - \cos^{2}(x) \cos^{2}(y) \cos^{2}(z)}
+\label{eq:afmbcc}
+\end{equation}
+
+
+\begin{tabular}{|cc||} 															\hline \hline
+
+Name									&			Formula 																																						\\		\hline
+Ferromagnetic																																																		\\		\hline
+%\multicolum{2}{|c|}{Ferromagnetic}																																							\\		\hline
+Chain									&		$\pm 2 \: \mathrm{JS} \; (1 - \cos(x))$																								\\ 
+Square								&		$\pm 4 \: \mathrm{JS} \; (2 - \cos(x) + \cos(y))$																			\\
+Simplie Cube					&		$\pm 4 \; \mathrm{JS} \; (3 - \cos(x) - \cos(y) - \cos(z))$														\\
+Face-Centered Cube		&		$\pm 8 \; \mathrm{JS} \; (3 - \cos(x) \cos(y) - \cos(x) \cos(z) - \cos(y) \cos(z))$		\\
+Body-Centered Cube		&		$\pm 16 \; \mathrm{JS} \; (1 - \cos(x) \cos(y) \cos(z))$															\\		\hline
+
+Antiferromagnetic																																																																					  \\\hline
+Chain									&		$\pm 2 \; \mathrm{JS} \; \sin(x)$																																																	\\ 
+Square								&		$\pm 4 \; \mathrm{JS} \; \sqrt{(2 - \cos(x) - \cos(y)) (2 + \cos(x) + \cos(y))}$																									\\
+Simplie Cube					&		$\pm 4 \; \mathrm{JS} \; \sqrt{(3 - \cos(x) - \cos(y) - \cos(z)) (3 + \cos(x) + \cos(y) + \cos(z))}$															\\
+Face-Centered Cube		&		$\pm 8 \; \mathrm{JS} \; \sqrt{(3 - \cos(y)\cos(z) - \cos(x)(\cos(y)+\cos(z))) (3 + \cos(y)\cos(z) + \cos(x)(\cos(y) + \cos(z)))}$\\
+Body-Centered Cube		&		$\pm 16 \; \mathrm{JS} \; \sqrt{1 - \cos^{2}(x) \cos^{2}(y) \cos^{2}(z)}$																													\\
+																																																																												 \\\hline\hline
+\end{tabular}
+
+
+
+\end{document}
+
