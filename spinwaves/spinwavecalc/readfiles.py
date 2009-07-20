@@ -149,7 +149,7 @@ def readFiles(interactionFileStr,spinFileStr):
     for i in range(len(atomlist)):
         if inDesiredCell(atomlist[i]):
             numcell += 1
-            newAtomList.append(atomlist.pop(i))
+            newAtomList.append(atomlist[i])
     
     #Add remaining atoms to the new list
     for i in range(len(atomlist)):
@@ -209,8 +209,8 @@ def readFiles(interactionFileStr,spinFileStr):
                     #Add magnitude as well
                     #atom1.spinMagnitude = sqrt(spin[0]*spin[0] + spin[1]*spin[1] + spin[2]*spin[2])
                     break
-        else:
-            raise Exception()
+#        else:
+#            raise Exception()
             
             
 #    for atom1 in atomlist:
