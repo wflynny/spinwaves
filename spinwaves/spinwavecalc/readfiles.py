@@ -107,6 +107,7 @@ def readFiles(interactionFileStr,spinFileStr):
                         if tokenized[5] == 'x':  #If it is in the first interaction cell
                             print "atom in first interaction cell"
                             x,y,z=float(tokenized[6]),float(tokenized[7]),float(tokenized[8])
+                            print x,y,z
 
                             Dx,Dy,Dz=float(tokenized[9]),float(tokenized[10]),float(tokenized[11])
                             #spin0=N.matrix([[1,0,0],[0,1,0],[0,0,1]],'float64')
@@ -146,10 +147,17 @@ def readFiles(interactionFileStr,spinFileStr):
         
     #Add atoms in desired cell to the beginning of the new list
     newAtomList = []
-    for i in range(len(atomlist)):
+    Flag=True
+    i=0
+    while Flag:
+    #for i in range(len(atomlist)):
         if inDesiredCell(atomlist[i]):
             numcell += 1
-            newAtomList.append(atomlist[i])
+            newAtomList.append(atomlist.pop(i))
+        else:
+            i=i+1
+        if i==len(atomlist):
+            Flag=False
     
     #Add remaining atoms to the new list
     for i in range(len(atomlist)):
