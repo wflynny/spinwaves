@@ -10,7 +10,7 @@ class atom:
                                             [0, 0, 1]]),
                 spinMag = 1, pos=[0,0,0],neighbors=None,interactions=None,
                 label=0,Dx=0,Dy=0,Dz=0,cell=0,int_cell=[], orig_Index = None,
-                valence = '', atomicNum = 0):
+                valence = 0, atomicNum = 0):
         self.spinRmatrix=spinRmatrix#found with findmat
         if neighbors==None:
             neighbors=[]
@@ -112,8 +112,8 @@ def readFiles(interactionFileStr,spinFileStr):
                             Dx,Dy,Dz=float(tokenized[9]),float(tokenized[10]),float(tokenized[11])
                             #spin0=N.matrix([[1,0,0],[0,1,0],[0,0,1]],'float64')
                             spinMagnitude = float(tokenized[12])
-                            valence = tokenized[4]
-                            atomicNum = tokenized[3]
+                            valence = int(tokenized[4])
+                            atomicNum = int(tokenized[3])
                             pos0=[x,y,z]
                             atom0=atom(spinMag=spinMagnitude, pos=pos0,Dx=Dx,Dy=Dy,Dz=Dz, orig_Index = atom_num, valence = valence, atomicNum = atomicNum)
                             neighbors=[]
