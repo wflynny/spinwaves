@@ -33,7 +33,8 @@ def sub_in(expression, pattern, replacement, match = True):
     else:
         check = lambda expression, pattern: isinstance(expression, pattern)
     new = _walk_it(expression, pattern, replacement, check)
-    if new != None: return new
+    if new != None: 
+        return new
     else: return None
 
 def _walk_it(expression, pattern, replacement, check):

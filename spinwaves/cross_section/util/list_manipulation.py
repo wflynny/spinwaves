@@ -17,10 +17,11 @@ def list_mult(lista, listb):
         temp = []
         for i in range(len(lista)):
             if isinstance(lista[i], int):
-                temp.append((lista[i] * listb[i].expand()).expand())
+                temp.append(sp.powsimp((lista[i] * listb[i]).expand(deep=False)))
             elif isinstance(listb[i], int):
-                temp.append((lista[i].expand() * listb[i]).expand())
-            else: temp.append((lista[i].expand() * listb[i].expand()).expand())
+                temp.append(sp.powsimp((lista[i] * listb[i]).expand(deep=False)))
+            else:
+                temp.append(sp.powsimp((lista[i] * listb[i]).expand(deep=False)))
         return temp
 
 # Method for adding two lists together
@@ -72,23 +73,25 @@ def scalar_mult(scalar, alist):
 
 # Method to grab coefficients (Ondrej Certik)
 def coeff(expr, term):
-   expr = sp.collect(expr, term)
-   #print 'expr',expr
-   symbols = list(term.atoms(sp.Symbol))
-   #print 'symbols',symbols
-   w = sp.Wild("coeff", exclude = symbols)
-   #print 'w',w
-   m = expr.match(w * term + sp.Wild("rest"))
-   #print 'm',m
-   m2 = expr.match(w * term)
-   #print 'm2',m2
-   res = False
-   if m2 != None:
-       #print 'm2[w]',m2[w]
-       res = m2[w] * term == expr
-   if m and res!= True:
-       return m[w]
-   #added the next two lines
-   elif m2:
-       return m2[w]
+    if isinstance(expr, int):
+        return 0
+    expr = sp.collect(expr, term)
+    #print 'expr',expr
+    symbols = list(term.atoms(sp.Symbol))
+    #print 'symbols',symbols
+    w = sp.Wild("coeff", exclude = symbols)
+    #print 'w',w
+    m = expr.match(w * term + sp.Wild("rest"))
+    #print 'm',m
+    m2 = expr.match(w * term)
+    #print 'm2',m2
+    res = False
+    if m2 != None:
+        #print 'm2[w]',m2[w]
+        res = m2[w] * term == expr
+    if m and res!= True:
+        return m[w]
+    #added the next two lines
+    elif m2:
+        return m2[w]
 

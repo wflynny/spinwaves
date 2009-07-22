@@ -1,3 +1,7 @@
+import matplotlib
+matplotlib.use('WXAgg')
+import pylab
+from matplotlib._pylab_helpers import Gcf
 import sympy as sp
 from sympy import oo,I,cos,sin,exp
 import numpy as np
@@ -5,6 +9,53 @@ import scipy as sci
 from scipy.integrate import quad, inf
 import sys
 from scipy.optimize.slsqp import approx_jacobian
+import periodictable
+from periodictable import elements
+from spinwaves.spinwavecalc.readfiles import atom
+from numpy.random import uniform
+
+if 1:
+    #x=uniform(-2,2,200)
+    #y=uniform(-2,2,200)
+    #z=x**2+y**2
+    #X,Y=np.meshgrid(x,y)
+    xi=np.linspace(-2.1,2.1,100)
+    yi=np.linspace(-2.1,2.1,100)
+    zi=xi**2+yi**2
+    Z=np.zeros((xi.shape[0],yi.shape[0]))
+    #zi=matplotlib.mlab.griddata(x, y, z, xi, yi)
+    #print zi.shape
+    
+    Z[range(len(xi)),range(len(yi))]=zi
+    pylab.contourf(xi,yi,Z)
+    pylab.colorbar()
+    pylab.show()
+    sys.exit()
+
+
+
+if 1:
+    a = np.array([1,1,1])
+    b = 5
+    print b/a
+    print a/b
+
+if 1:
+    at1 = atom(pos=[0,0,0], atomicNum = 26, valence = 3)
+    print at1.atomicNum
+    el = elements[at1.atomicNum]
+    print el
+    Q=np.arange(0.,1.,1./100.)
+    print Q
+    Mq = el.magnetic_ff[at1.valence].M_Q(Q)
+    print type(Mq)
+    print type(Q)
+    pylab.plot(Q,Mq)
+    pylab.show()
+
+if 1:
+    x,y = sp.symbols('xy')
+    print (x+1)*y
 
 if 0:
     x,y,z = sp.symbols('xyz', real = False)
