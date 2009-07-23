@@ -561,7 +561,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
 
     # Other Constants
     gamr0 = 2*0.2695*10**(-12) #sp.Symbol('gamma', commutative = True)
-    hbar = 1. # 1.05457148*10**(-34) #sp.Symbol('hbar', commutative = True)
+    hbar = 1.0 # 1.05457148*10**(-34) #sp.Symbol('hbar', commutative = True)
     g = 2.#sp.Symbol('g', commutative = True)
     # Kappa vector
     kap = sp.Symbol('kappa', real = True)#spm.Matrix([sp.Symbol('kapx',real = True),sp.Symbol('kapy',real = True),sp.Symbol('kapz',real = True)])
@@ -636,8 +636,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
                     
                     wq = sp.Symbol('wq', real = True)
                     nq = sp.Symbol('n%i'%(k,), commutative = False)
-                    
-                    
+
                     
                     arg[i][j] = arg[i][j].subs(wq,wrange[k][g])
                     arg[i][j] = arg[i][j].subs(w,w_calc[k][g])
@@ -645,7 +644,8 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
                     arg[i][j] = arg[i][j].subs(nq,n)
                 temp3.append(arg[i][j])
             temp2.append(temp3)
-        csdata.append(temp2)
+        temp1.append(temp2)
+    csdata.append(temp1)
 ##            print arg[i][j]
 #            for g in range(len(kaprange)):
 #                arg[i][j] = arg[i][j].subs(kap, kaprange[g])
