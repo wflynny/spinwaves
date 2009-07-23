@@ -58,15 +58,20 @@ def generate_a_ad_operators(atom_list, k, b_list, bd_list):
     a_list = []; ad_list = []
     N = len(atom_list)
     t = sp.Symbol('t', real = True)
+    q = sp.Symbol('q', real = True)
+    L = sp.Symbol('L', real = True)
+    wq = sp.Symbol('wq', real = True)
     for i in range(N):
         temp = []; tempd = []
-
+        
         for j in range(N):
-            q = spm.Matrix(atom_list[i].pos).T
+#            q = spm.Matrix(atom_list[i].pos).T
             wj = sp.Symbol('w%i'%(j,), real = True)
             
-            temp.append(exp(I*(inner_prod(q,k) - wj*t)) * b_list[j])
-            tempd.append(exp(-I*(inner_prod(q,k) - wj*t)) * bd_list[j])
+            temp.append(exp(I*(q*L - wq*t)) * b_list[j])
+            tempd.append(exp(-I*(q*L - wq*t)) * bd_list[j])
+#            temp.append(exp(I*(inner_prod(q,k) - wj*t)) * b_list[j])
+#            tempd.append(exp(-I*(inner_prod(q,k) - wj*t)) * bd_list[j])
 
         a = sp.Pow(sp.sqrt(N),-1) * sum(temp)
         ad = sp.Pow(sp.sqrt(N),-1) * sum(tempd)
@@ -129,13 +134,13 @@ def generate_Sx_Sy_Sz_operators(atom_list, Sa_list, Sb_list, Sn_list):
         Sz_list.append(Sz)
         
     #Unit vector markers
-    kapx = sp.Symbol('kapxhat',commutative = False)#spm.Matrix([1,0,0])#
-    kapy = sp.Symbol('kapyhat',commutative = False)#spm.Matrix([0,1,0])#
-    kapz = sp.Symbol('kapzhat',commutative = False)#spm.Matrix([0,0,1])#
-
-    Sx_list.append(kapx)
-    Sy_list.append(kapy)
-    Sz_list.append(kapz)
+    kapxhat = sp.Symbol('kapxhat',commutative = False)#spm.Matrix([1,0,0])#
+    kapyhat = sp.Symbol('kapyhat',commutative = False)#spm.Matrix([0,1,0])#
+    kapzhat = sp.Symbol('kapzhat',commutative = False)#spm.Matrix([0,0,1])#
+    
+    Sx_list.append(kapxhat)
+    Sy_list.append(kapyhat)
+    Sz_list.append(kapzhat)
     print "Operators Generated: Sx, Sy, Sz"
     return (Sx_list,Sy_list,Sz_list)
 
@@ -190,19 +195,26 @@ def generate_possible_combinations(atom_list, alist):
     alista = []
     N = len(atom_list)
     t = sp.Symbol('t', commutative = True)
-    #alista = [[alist[i][j].subs(t,0) for j in range(len(alist[i])-1)]for i in range(len(alist))]
+    L = sp.Symbol('L', real = True)
+    q = sp.Symbol('q', real = True)
+    qp = sp.Symbol('qp', real = True)
+    wq = sp.Symbol('wq', real = True)
+    wqp = sp.Symbol('wqp', real = True)
+
     alista = [[subelement.subs(t, 0) for subelement in element] for element in alist]
+    for ele in alista:
+        for sub in ele:
+            sub = sub.subs(L,0)
 
     for i in range(len(alist)):
         for j in range(len(alist)):
-#            print 'inner %i:3, outer %i:3' %(j+1,i+1)
             vect1 = alist[i][-1]
             vect2 = alist[j][-1]
             if cmp(vect1, vect2) == 0: delta = 1
             else: delta = 0
 
-            allzerolist = [alista[i][0] for k in range(len(alista[i])-1)]+[delta-vect1*vect2]
-            otherlist = [alist[j][k] for k in range(len(alist[j])-1)]+[1]
+            allzerolist = [alista[i][0].subs(L,0) for k in range(len(alista[i])-1)]+[delta-vect1*vect2]
+            otherlist = [alist[j][k].subs(q,qp).subs(wq,wqp) for k in range(len(alist[j])-1)]+[1]
             append_list = list_mult(allzerolist,otherlist)
             op_list.append(append_list)
     print "Generated: Possible Operator Combinations"
@@ -227,9 +239,10 @@ def holstein(atom_list, arg):
                 temp.append((S2coeff*S**2).subs(S,Snew))
             elif S2coeff == None and Scoeff != None:
                 temp.append((Scoeff*S).subs(S,Snew))
-        if temp != [] and len(temp) == orig:
-            temp.append(arg[k][-1])
-            new.append(temp)
+        if temp != []:
+            if temp[0] != 0:
+                temp.append(arg[k][-1])
+                new.append(temp)
     print "Applied: Holstein"
     return new
 
@@ -279,16 +292,24 @@ def apply_commutation(atom_list, arg):
                     for g in range(N):
                         bg = sp.Symbol('b%i'%(g,), commutative = False)
                         bdg = sp.Symbol('bd%i'%(g,), commutative = False)
-
-                        if g == j:
-                            arg[k][i] = (arg[k][i].subs(bdg*bj, nj))
-                            arg[k][i] = (arg[k][i].subs(bj*bdg, (bdg*bj+1)))
-                            arg[k][i] = (arg[k][i].subs(bdg*bj, nj))
-                        elif g != j:
-                            arg[k][i] = (arg[k][i].subs(bg*bdj, 0))
-                            arg[k][i] = (arg[k][i].subs(bj*bdg, 0))
-                            arg[k][i] = (arg[k][i].subs(bdg*bj, 0))
-                            arg[k][i] = (arg[k][i].subs(bdj*bg, 0))
+                        
+                        arg[k][i] = arg[k][i].subs(bg*bj,0)
+                        arg[k][i] = arg[k][i].subs(bdg*bdj,0)
+                        
+                        if j == g:
+                            arg[k][i] = arg[k][i].subs(bj*bdg, bdg*bj+1)
+                        else:
+                            arg[k][i] = arg[k][i].subs(bj*bdg, bdg*bj)
+#
+#                        if g == j:
+##                            arg[k][i] = (arg[k][i].subs(bdg*bj, nj))
+##                            arg[k][i] = (arg[k][i].subs(bj*bdg, (bdg*bj+1)))
+#                            arg[k][i] = (arg[k][i].subs(bdg*bj, nj))
+#                        elif g != j:
+#                            arg[k][i] = (arg[k][i].subs(bg*bdj, 0))
+#                            arg[k][i] = (arg[k][i].subs(bj*bdg, 0))
+#                            arg[k][i] = (arg[k][i].subs(bdg*bj, 0))
+#                            arg[k][i] = (arg[k][i].subs(bdj*bg, 0))
 
         print "Applied: Commutation"
         return arg
@@ -298,9 +319,7 @@ def replace_bdb(atom_list, arg):
     """Replaces bdqbq with nq"""
     # Replaces bdq*bq' with nq when q = q'
     N = len(atom_list)
-    print N
     for k in range(len(arg)):
-        print len(arg[k])
         for i in range(N):
             for j in range(N):
                 bj = sp.Symbol('b%i'%(j,), commutative = False)
@@ -317,11 +336,19 @@ def replace_bdb(atom_list, arg):
                     elif j != g:
                         arg[k][i] = (arg[k][i].subs((bdj*bg), 0))
                         arg[k][i] = (arg[k][i].subs((bdg*bj), 0))
+                        
 
                     arg[k][i] = (arg[k][i].subs((bdj*bdg), 0))
                     arg[k][i] = (arg[k][i].subs((bj*bg), 0))
                     arg[k][i] = (arg[k][i].subs((bdg*nj), 0))
                     arg[k][i] = (arg[k][i].subs((bg*nj), 0))
+            print '1', arg[k][i]
+            q = sp.Symbol('q', real = True)
+            qp = sp.Symbol('qp', real = True)
+            wq = sp.Symbol('wq', real = True)
+            wqp = sp.Symbol('wqp', real = True)
+            arg[k][i] = arg[k][i].subs(qp,q).subs(wqp,wq)
+            print '2', arg[k][i]
     print "Applied: bdq*bq Replacement"
     return arg
 
@@ -367,7 +394,7 @@ def generate_cross_section(atom_list, arg, q, real_list, recip_list):
     
     # Grabs the unit vectors from the back of the lists. 
     unit_vect = []
-    kapx = sp.Symbol('kapxhat',commutative = False)
+    kapx = sp.Symbol('kapxhat',)
     kapy = sp.Symbol('kapyhat',commutative = False)
     kapz = sp.Symbol('kapzhat',commutative = False)
     for i in range(len(arg)):
@@ -407,7 +434,7 @@ def generate_cross_section(atom_list, arg, q, real_list, recip_list):
 #def eval_cross_section(N, N_uc, atom_list, jmats, cross, qvals, temp, direction, lmin, lmax):
 def eval_cross_section(interactionfile, spinfile, lattice, arg, 
                        tau_list, h_list, k_list, l_list, w_vect_list, 
-                       direction, temp, kmin, kmax, steps, eief, efixed = 14.7):
+                       direction, temperature, kmin, kmax, steps, eief, efixed = 14.7):
     """
     Calculates the cross_section given the following parameters:
     interactionfile, spinfile - files to get atom data
@@ -451,52 +478,73 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     if len(h_list) == len(k_list) == len(l_list):
         for i in range(len(h_list)):
             kappa = lattice.modvec(h_list[i],k_list[i],l_list[i], 'latticestar')
-            kaprange.append(kappa)
-            kapvect.append(np.array([h_list[i]/kappa,k_list[i]/kappa,l_list[i]/kappa]))
+            kaprange.append(kappa[0])
+            kapvect.append(np.array([h_list[i],k_list[i],l_list[i]]))
+#            kapvect.append(np.array([h_list[i]/kappa,k_list[i]/kappa,l_list[i]/kappa]))
+    else:
+        raise Exception('h,k,l not same lengths')
     # Generate q's from kappa and tau
     pqrange = []
     mqrange = []
-    for kap in kaprange:
-        for tau in tau_list:
-            tau = lattice.modvec(tau[0],tau[1],tau[2], 'latticestar')
-            pqrange.append(kap - tau)
-            mqrange.append(tau - kap)
+    for tau in tau_list:
+        ptemp = []
+        mtemp = []
+        for kap in kapvect:
+            #tau = lattice.modvec(tau[0],tau[1],tau[2], 'latticestar')
+            ptemp.append(kap - tau)
+            mtemp.append(tau - kap)
+        pqrange.append(ptemp)
+        mqrange.append(mtemp)
     # Calculate w_q's using q
     qrange = []
-    krange = []
+#    krange = []
     wrange = []
     if 1: # Change this later
-        for q in pqrange:
-            # q is just a singleton in its own array so just pull it out because
-            # something is throwing up when it's in an array
-            q = q[0]
-            eigs = calc_eigs(Hsave,q*direction['kx'], q*direction['ky'], q*direction['kz'])
-            # Take only one set of eigs. Should probably have a flag here. 
-            wrange.append(eigs[0])
-            krange.append(np.array([q*direction['kx'], q*direction['ky'], q*direction['kz']]))
-            qrange.append(q)
+        for set in pqrange:
+            temp = []
+            temp1 = [] 
+            for q in set:
+                eigs = calc_eigs(Hsave,q[0]*direction['kx'], q[1]*direction['ky'], q[2]*direction['kz'])
+                # Take only one set of eigs. Should probably have a flag here. 
+                temp.append(eigs[0])
+#                krange.append(np.array([q*direction['kx'], q*direction['ky'], q*direction['kz']]))
+                temp1.append(q)
+            wrange.append(temp)
+            qrange.append(temp1)
     print "Calculated: Eigenvalues"
-    wrange=np.real(wrange)
-    wrange=np.array(wrange)
-    wrange=np.real(wrange.T)
-    qrange=np.real(qrange)
-    qrange=np.array(qrange)
-    kaprange=np.real(kaprange)
-    kaprange=np.array(kaprange)
+    
+    wrange=np.array(np.real(wrange))
+    qrange=np.array(np.real(qrange))
+    kaprange=np.array(np.real(kaprange))
+    
+    print qrange.shape
+    print wrange.shape
+    print kaprange.shape
     
     # Calculate w (not _q) as well as kp/k
     w_calc = []
     kpk = []
     if eief == True:
-        for om in w_vect_list:
-            for tau in tau_list:
-                w_calc.append(om - efixed)
-                kpk.append(np.sqrt(om/efixed))
+        for tau in tau_list:
+            temp = []
+            temp1 = []
+            for om in w_vect_list:
+                temp.append(om - efixed)
+                temp1.append(np.sqrt(om/efixed))
+            w_calc.append(temp)
+            kpk.append(temp1)                
     else:
-        for om in w_vect_list:
-            for tau in tau_list:
-                w_calc.append(-(om - efixed))
-                kpk.append(np.sqrt(efixed/om))
+        for tau in tau_list:
+            temp = []
+            temp1 = []
+            for om in w_vect_list:
+                temp.append(-(om - efixed))
+                temp1.append(np.sqrt(efixed/om))
+            w_calc.append(temp)
+            kpk.append(temp1)
+
+    w_calc = np.array(np.real(w_calc))
+    
 
     # Grab Form Factors
     ff_list = []
@@ -514,13 +562,15 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     # Other Constants
     gamr0 = 2*0.2695*10**(-12) #sp.Symbol('gamma', commutative = True)
     hbar = 1. # 1.05457148*10**(-34) #sp.Symbol('hbar', commutative = True)
-    g = 1#sp.Symbol('g', commutative = True)
+    g = 2.#sp.Symbol('g', commutative = True)
     # Kappa vector
     kap = sp.Symbol('kappa', real = True)#spm.Matrix([sp.Symbol('kapx',real = True),sp.Symbol('kapy',real = True),sp.Symbol('kapz',real = True)])
     t = sp.Symbol('t', real = True)
     w = sp.Symbol('w', real = True)
-    W = sp.Symbol('W', commutative = False)
-    tau = sp.Symbol('tau', commutative = False)
+    W = sp.Symbol('W', real = True)
+    tau = sp.Symbol('tau', real = True)
+    q = sp.Symbol('q', real = True)
+    L = sp.Symbol('L', real = True)
     boltz = 1.#1.3806503*10**(-23)     
     
     # Wilds for sub_in method
@@ -528,52 +578,23 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     B = sp.Wild('B',exclude = [0,t])
     C = sp.Wild('C')
     D = sp.Wild('D')
+    K = sp.Wild('K')
 
     # First the exponentials are turned into delta functions:
     for i in range(len(arg)):
         for j in range(N):
-            arg[i][j] = sp.powsimp(arg[i][j], deep = True, combine = 'all')
-            arg[i][j] = arg[i][j] * exp(-I*w*t)# * exp(I*inner_prod(spm.Matrix(atom_list[j].pos).T,kap))
-            arg[i][j] = sp.powsimp(arg[i][j], deep = True, combine = 'all')
-            arg[i][j] = sub_in(arg[i][j],exp(I*t*A + I*t*B + C),sp.DiracDelta(A*t + B*t + C/I))#*sp.DiracDelta(C))
-            arg[i][j] = sub_in(arg[i][j],sp.DiracDelta(A*t + B*t + C),sp.DiracDelta(A*h + B*h)*sp.DiracDelta(C))
-            arg[i][j] = sub_in(arg[i][j],sp.DiracDelta(-A - B),sp.DiracDelta(A + B))
-            print arg[i][j]
+            print '1', arg[i][j]
+            arg[i][j] = sp.powsimp(arg[i][j])#sp.powsimp(arg[i][j], deep = True, combine = 'all')
+            arg[i][j] = (arg[i][j] * exp(-I*w*t) * exp(I*kap*L)).expand()# * exp(I*inner_prod(spm.Matrix(atom_list[j].pos).T,kap))
+            arg[i][j] = sp.powsimp(arg[i][j])#sp.powsimp(arg[i][j], deep = True, combine = 'all')
+#            print '2', arg[i][j]
+            arg[i][j] = sub_in(arg[i][j],exp(I*t*A + I*t*B + I*C + I*D + I*K),sp.DiracDelta(A*t + B*t + C + D + K))#*sp.DiracDelta(C))
+#            print '3', arg[i][j]
+            arg[i][j] = sub_in(arg[i][j],sp.DiracDelta(A*t + B*t + C*L + D*L + K*L),sp.DiracDelta(A*hbar + B*hbar)*sp.simplify(sp.DiracDelta(C + D + K + tau)))
+#            print '4', arg[i][j]
+            arg[i][j] = sub_in(arg[i][j],sp.DiracDelta(-A - B)*sp.DiracDelta(C),sp.DiracDelta(A + B)*sp.DiracDelta(C))
+            print '5', arg[i][j]
     print "Applied: Delta Function Conversion"
-
-    # Subs the actual values for kx,ky,kz, omega_q and n_q into the operator combos
-    # The result is basically a nested list:
-    #
-    #    csdata     = [ op combos ]
-    #    op combos  = [ one combo per atom ]
-    #    1 per atom = [ evaluated exp ]
-    #
-    csdata = []
-    for i in range(len(arg)):
-        temp1 = []
-        for j in range(len(arg[i])):
-            temp2 = []
-#            print arg[i][j]
-            for g in range(len(krange)):
-                temp3 = []
-                wg = sp.Symbol('w%i'%(g,), real = True)
-                ng = sp.Symbol('n%i'%(g,), commutative = False)
-                kx = sp.Symbol('kx', real = True, commutative = True)
-                ky = sp.Symbol('ky', real = True, commutative = True)
-                kz = sp.Symbol('kz', real = True, commutative = True)
-                arg[i][j] = arg[i][j].subs(kx,krange[g][0])
-                arg[i][j] = arg[i][j].subs(ky,krange[g][1])
-                arg[i][j] = arg[i][j].subs(kz,krange[g][2])
-                arg[i][j] = arg[i][j].subs(wg,wrange[j][g])
-                nq = sp.Pow( sp.exp(h*wrange[j][g]/boltz*temp) - 1 ,-1)
-                arg[i][j] = arg[i][j].subs(ng,nq)
-#                arg[i][j] = arg[i][j].subs(tau,tau_list[0])
-                arg[i][j] = arg[i][j].subs(kap, kaprange[g])
-                temp3.append(arg[i][j])
-#                print arg[i][j]
-            temp2.append(temp3)
-#            print arg[i][j]
-        csdata.append(temp2)
 
     # Grabs the unit vectors from the back of the lists. 
     unit_vect = []
@@ -583,26 +604,101 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     for i in range(len(arg)):
         unit_vect.append(arg[i].pop())
 
+    # Subs the actual values for kx,ky,kz, omega_q and n_q into the operator combos
+    # The result is basically a nested list:
+    #
+    #    csdata     = [ op combos ]
+    #    op combos  = [ one combo per atom ]
+    #    1 per atom = [ evaluated exp ]
+    #
+    
+    csdata = []
+    for i in range(len(arg)):
+        temp1 = []
+        for j in range(len(arg[i])):
+            temp2 = []
+            for k in range(len(tau_list)):
+                temp3 = []
+                print i,j,k
+                for g in range(len(qrange[k])):
+                    pvalue = tau_list[k] + kapvect[g] + qrange[k][g]
+                    mvalue = tau_list[k] + kapvect[g] - qrange[k][g]
+
+                    if pvalue[0] == 0 and pvalue[1] == 0 and pvalue[2] == 0:
+                        arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau+q),sp.DiracDelta(0))
+                    else: arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau+q),0)
+                    if mvalue[0] == 0 and mvalue[1] == 0 and mvalue[2] == 0:
+                        arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau-q),sp.DiracDelta(0))
+                    else: arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau-q),0)
+#                    arg[i][j] = arg[i][j].subs(q,qrange[k][g])
+#                    arg[i][j] = arg[i][j].subs(kap,kapvect[g])
+#                    arg[i][j] = arg[i][j].subs(tau,tau_list[k])                   
+                    
+                    wq = sp.Symbol('wq', real = True)
+                    nq = sp.Symbol('n%i'%(k,), commutative = False)
+                    
+                    
+                    
+                    arg[i][j] = arg[i][j].subs(wq,wrange[k][g])
+                    arg[i][j] = arg[i][j].subs(w,w_calc[k][g])
+                    n = sp.Pow( sp.exp(hbar*wrange[k][g]/boltz*temperature) - 1 ,-1)
+                    arg[i][j] = arg[i][j].subs(nq,n)
+                temp3.append(arg[i][j])
+            temp2.append(temp3)
+        csdata.append(temp2)
+##            print arg[i][j]
+#            for g in range(len(kaprange)):
+#                arg[i][j] = arg[i][j].subs(kap, kaprange[g])
+#            for g in range(len(krange)):
+##                print 'calculating'
+#                temp3 = []
+#                wg = sp.Symbol('w%i'%(g,), real = True)
+#                ng = sp.Symbol('n%i'%(g,), commutative = False)
+##                kx = sp.Symbol('kx', real = True, commutative = True)
+##                ky = sp.Symbol('ky', real = True, commutative = True)
+##                kz = sp.Symbol('kz', real = True, commutative = True)
+##                arg[i][j] = arg[i][j].subs(kx,krange[g][0])
+##                arg[i][j] = arg[i][j].subs(ky,krange[g][1])
+##                arg[i][j] = arg[i][j].subs(kz,krange[g][2])
+#                arg[i][j] = arg[i][j].subs(wg,wrange[g])
+#                arg[i][j] = arg[i][j].subs(w,w_calc[g])
+#                nq = sp.Pow( sp.exp(hbar*wrange[g]/boltz*temp) - 1 ,-1)
+#                arg[i][j] = arg[i][j].subs(ng,nq)
+##                arg[i][j] = arg[i][j].subs(tau,tau_list[0])
+#
+#                temp3.append(arg[i][j])
+##                print arg[i][j]
+#            temp2.append(temp3)
+##            print arg[i][j]
+#        csdata.append(temp2)
+
+    print csdata
+
+
     # Front constants and stuff for the cross-section
-    front_constant = (gamr0)**2/(2*pi*hbar)
+    front_constant = 1.0 # (gamr0)**2/(2*pi*hbar)
     front_func = (1./2.)*g#*F(k)
-    vanderwaals = exp(-2*W)
+    vanderwaals = 1. #exp(-2*W)
 
     csrange = []
     if 1:
         temp1 = []
         temp2 = []
         for q in range(len(qrange)):
+            print 'calculating'
             for ii in range(len(csdata)):
                 for jj in range(len(csdata[ii])):
                     temp1.append(csdata[ii][jj])
             # Put on gamr0, 2pi hbar, form factor, kp/k, vanderwaals first
-            dif = front_func**2 * front_constant * kpk[q][0] * vanderwaals# * ff_list[0][q]
-            for vect in unit_vect:
-                vect.subs(kapxhat,kapvect[q][0])
-                vect.subs(kapyhat,kapvect[q][1])
-                vect.subs(kapzhat,kapvect[q][2])
-            dif = (dif * sum(temp1) * sum(unit_vect))#.expand()
+            dif = front_func**2 * front_constant# * kpk[q][0] * vanderwaals * ff_list[0][q]
+#            for vect in unit_vect:
+#                vect.subs(kapxhat,kapvect[q][0][0])
+#                vect.subs(kapyhat,kapvect[q][1][0])
+#                vect.subs(kapzhat,kapvect[q][2][0])
+            print 'diff',dif
+            print 'temp1',temp1
+            print sum(temp1)
+            dif = (dif * sum(temp1))# * sum(unit_vect))#.expand()
             csrange.append(dif)
     print "Calculated: Cross-section"
     csrange=np.real(csrange)
@@ -645,17 +741,27 @@ def run_cross_section(interactionfile, spinfile):
         k = spm.Matrix([kx,ky,kz])
     
     (b,bd) = generate_b_bd_operators(atom_list)
+#    list_print(b)
     (a,ad) = generate_a_ad_operators(atom_list, k, b, bd)
+#    list_print(a)
     (Sp,Sm) = generate_Sp_Sm_operators(atom_list, a, ad)
+#    list_print(Sp)
     (Sa,Sb,Sn) = generate_Sa_Sb_Sn_operators(atom_list, Sp, Sm)
+#    list_print(Sa)
     (Sx,Sy,Sz) = generate_Sx_Sy_Sz_operators(atom_list, Sa, Sb, Sn)
+#    list_print(Sx)
     print ''
     
     #Ham = generate_Hamiltonian(N_atoms, atom_list, b, bd)
     ops = generate_possible_combinations(atom_list, [Sx,Sy,Sz])
+#    list_print(ops)
     ops = holstein(atom_list, ops)
-    ops = replace_bdb(atom_list, ops)
+#    list_print(ops)
     ops = apply_commutation(atom_list, ops)
+#    list_print(ops)
+    ops = replace_bdb(atom_list, ops)
+#    list_print(ops)
+
     ops = reduce_options(atom_list, ops)
     list_print(ops)
 
@@ -675,25 +781,25 @@ def run_cross_section(interactionfile, spinfile):
         data['kz']=0.
         direction=data
 
-        temp = 1
+        temperature = 100.0
         min = 0
         max = 2*sp.pi
         steps = 25
 
         tau_list = []
-        for i in range(N_atoms):
-            tau_list.append(np.array([i,0,0], 'Float64'))
+        for i in range(1):
+            tau_list.append(np.array([0,0,0], 'Float64'))
 
-        h_list = np.linspace(-1,1,100)
-        k_list = np.ones(h_list.shape)
-        l_list = np.ones(h_list.shape)
+        h_list = np.linspace(0,2,100)
+        k_list = np.zeros(h_list.shape)
+        l_list = np.zeros(h_list.shape)
         w_list = np.linspace(-4,4,100)
 
         efixed = 14.7 #meV
         eief = True
         eval_cross_section(interactionfile, spinfile, lattice, ops, 
                            tau_list, h_list, k_list, l_list, w_list,
-                           data, temp, min, max, steps, eief, efixed)
+                           data, temperature, min, max, steps, eief, efixed)
 
     end = clock()
     print "\nFinished %i atoms in %.2f seconds" %(N_atoms,end-start)
