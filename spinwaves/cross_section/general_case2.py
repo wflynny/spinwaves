@@ -13,7 +13,7 @@ matplotlib.use('WXAgg')
 import pylab
 from matplotlib._pylab_helpers import Gcf
 import matplotlib.ticker as ticker
-
+from numpy import ma
 from list_manipulation import *
 from subin import sub_in
 from printing import *
@@ -81,6 +81,24 @@ def generate_a_ad_operators(atom_list, k, b_list, bd_list):
     print "Operators Generated: a, ad"
     return (a_list,ad_list)
 
+#def generate_a_ad_operators(atom_list, k, b_list, bd_list):
+#    a_list = [], ad_list = []
+#    N = len(atom_list)
+#    t = sp.Symbol('t', real = True)
+#    q = sp.Symbol('q', real = True)
+#    L = sp.Symbol('L', real = True)
+#    wq = sp.Symbol('wq', real = True)
+#    for i in range(N):
+#            
+#        a_list.append(exp(I*(q*L - wq*t)) * b_list[i])
+#        ad_list.append(exp(-I*(q*L - wq*t)) * bd_list[i])
+#
+#    a = sp.Pow(sp.sqrt(N),-1) * sum(a_list)
+#    ad = sp.Pow(sp.sqrt(N),-1) * sum(ad_list)
+#
+#    print "Operators Generated: a, ad"
+#    return (a,ad)
+
 # Generates the Sp and Sm operators
 def generate_Sp_Sm_operators(atom_list, a_list, ad_list):
     """Generates S+ and S- operators"""
@@ -95,6 +113,15 @@ def generate_Sp_Sm_operators(atom_list, a_list, ad_list):
         Sm_list.append(Sm)
     print "Operators Generated: Sp, Sm"
     return (Sp_list,Sm_list)
+#def generate_Sp_Sm_operators(atom_list, a, ad):
+#    """Generates S+ and S- operators"""
+#    S = sp.Symbol('S', commutative = True)
+#
+#    Sp = sp.sqrt(2*S) * a
+#    Sm = sp.sqrt(2*S) * ad
+#
+#    print "Operators Generated: Sp, Sm"
+#    return (Sp,Sm)
 
 def generate_Sa_Sb_Sn_operators(atom_list, Sp_list, Sm_list):
     """Generates Sa, Sb, Sn operators"""
@@ -112,6 +139,18 @@ def generate_Sa_Sb_Sn_operators(atom_list, Sp_list, Sm_list):
         Sn_list.append(Sn)
     print "Operators Generated: Sa, Sb, Sn"
     return (Sa_list, Sb_list, Sn_list)
+
+#def generate_Sa_Sb_Sn_operators(atom_list, Sp, Sm):
+#    """Generates Sa, Sb, Sn operators"""
+#
+#    S = sp.Symbol('S', commutative = True)
+#
+#    Sa = ((1/2)*(Sp+Sm)).expand()
+#    Sb = ((1/2)*(1/I)*(Sp-Sm)).expand()
+#    Sn = (S - sp.Pow(2*S,-1) * Sm.expand() * Sp.expand()).expand()
+#
+#    print "Operators Generated: Sa, Sb, Sn"
+#    return (Sa, Sb, Sn)
 
 # Generates the Sx, Sy and Sz operators
 def generate_Sx_Sy_Sz_operators(atom_list, Sa_list, Sb_list, Sn_list):
@@ -144,6 +183,39 @@ def generate_Sx_Sy_Sz_operators(atom_list, Sa_list, Sb_list, Sn_list):
     Sz_list.append(kapzhat)
     print "Operators Generated: Sx, Sy, Sz"
     return (Sx_list,Sy_list,Sz_list)
+
+## Generates the Sx, Sy and Sz operators
+#def generate_Sx_Sy_Sz_operators(atom_list, Sa, Sb, Sn):
+#    """Generates Sx, Sy and Sz operators"""
+#    Sx_list = []; Sy_list = []; Sz_list = []
+#    N = len(atom_list)
+#    S = sp.Symbol('S', commutative = True)
+#    
+#    loc_vect = spm.Matrix([Sa_list[i],Sb_list[i],Sn_list[i]])
+#    loc_vect = loc_vect.reshape(3,1)
+#
+#    for i in range(N):
+#        rotmat = sp.Matrix(atom_list[i].spinRmatrix)
+#        glo_vect = rotmat * loc_vect
+#
+#        Sx = sp.powsimp(glo_vect[0].expand())
+#        Sy = sp.powsimp(glo_vect[1].expand())
+#        Sz = sp.powsimp(glo_vect[2].expand())
+#
+#        Sx_list.append(Sx)
+#        Sy_list.append(Sy)
+#        Sz_list.append(Sz)
+#        
+#    #Unit vector markers
+#    kapxhat = sp.Symbol('kapxhat',real=True)
+#    kapyhat = sp.Symbol('kapyhat',real=True)
+#    kapzhat = sp.Symbol('kapzhat',real=True)
+#    
+#    Sx_list.append(kapxhat)
+#    Sy_list.append(kapyhat)
+#    Sz_list.append(kapzhat)
+#    print "Operators Generated: Sx, Sy, Sz"
+#    return (Sx_list,Sy_list,Sz_list)
 
 # Generate Hamiltonian
 def generate_Hamiltonian(atom_list, b_list, bd_list):
@@ -354,7 +426,7 @@ def replace_bdb(atom_list, arg):
     return arg
 
 
-def eq(a,b,tol=1e-1):
+def eq(a,b,tol=5e-1):
         c = (abs(a-b) < tol)
         if c:
             return 0
@@ -382,8 +454,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
 
     # Read files, get atom_list and such
     atom_list, jnums, jmats,N_atoms_uc=readFiles(interactionfile,spinfile)
-    N_atoms = len(atom_list)
-    N = N_atoms
+    
 
     # TEMPORARY TO OVERRIDE ATOM_LIST ABOVE
 #    atom1 = atom(pos = [0.00,0,0], neighbors = [1],   interactions = [0], int_cell = [0], 
@@ -395,10 +466,15 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
 #    atom4 = atom(pos = [0.75,0,0], neighbors = [2],   interactions = [0], int_cell = [0], 
 #                 atomicNum = 26, valence = 3, spinRmatrix=spm.Matrix([[1, 0, 0],[0, 1, 0],[0, 0, 1]]))
 #    atom_list,N_atoms_uc = ([atom1, atom2, atom3, atom4],1)
-    N_atoms = len(atom_list)
+    
 
     # Get Hsave to calculate its eigenvalues
+    N_atoms = len(atom_list)
     Hsave = calculate_dispersion(atom_list,N_atoms_uc,N_atoms,jmats,showEigs=False)
+    atom_list=atom_list[:N_atoms_uc]
+    N_atoms = len(atom_list)
+    N = N_atoms
+    
     print "Calculated: Dispersion Relation"
 
     # Generate kappa's from (h,k,l)
@@ -437,6 +513,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
         plusq.append(kappa_minus_tau)
     #calculate kfki
     kfki=calc_kfki(w_list,eief,efixed)
+
     
     # Calculate w_q's using q
     if 1: # Change this later
@@ -546,9 +623,9 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
 
             wq = sp.Symbol('wq', real = True)
 #                    nq = sp.Symbol('n%i'%(j,), real = True)
-#            print '1',temp
+            print '1',temp
             temp = temp.subs(wq,eig_list[k][g])
-#            print '2',temp
+            print '2',temp
 #                    print 'w',eig_list[k][g]+w_list[g]
             if eq(eig_list[k][g], w_list[g]) == 0:
                 G=sp.Wild('G', exclude = [Q,kap,tau,w])
@@ -577,14 +654,14 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     # Front constants and stuff for the cross-section
     front_constant = 1.0 # (gamr0)**2/(2*pi*hbar)
     front_func = (1./2.)*g#*F(k)
-    vanderwaals = 1. #exp(-2*W)
+    debye_waller= 1. #exp(-2*W)
 
     csrange = []
     for g in range(nqpts):
         temp1=[]
         for k in range(len(tau_list)):
             dif = csdata[k][g]
-            dif = dif*front_func**2*front_constant*vanderwaals#*kfki * ff_list[0][q]
+            dif = dif*front_func**2*front_constant*debye_waller#*kfki[g]# * ff_list[0][q]
             temp1.append(dif)
         csrange.append(sum(temp1))
     print "Calculated: Cross-section"
@@ -621,14 +698,18 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     print yi.shape
     Z[range(len(xi)),range(len(yi))]=zi
 
-    zmin, zmax = np.min(Z), np.max(Z)
+    zmin, zmax = 1, np.max(Z)
     locator = ticker.MaxNLocator(10) # if you want no more than 10 contours
     locator.create_dummy_axis()
     locator.set_bounds(zmin, zmax)
     levs = locator()
+    levs[0]=1.0
     print zmin, zmax
-
-    pylab.contourf(xi,yi,Z, levs, norm=matplotlib.colors.LogNorm(levs[0],levs[len(levs)-1]))
+    #zm=ma.masked_where(Z<=0,Z)
+    zm=Z
+    print zm
+    print levs
+    pylab.contourf(xi,yi,zm, levs)#, norm=matplotlib.colors.LogNorm(levs[0],levs[len(levs)-1]))
     l_f = ticker.LogFormatter(10, labelOnlyBase=False) 
     cbar = pylab.colorbar(ticks = levs, format = l_f) 
     pylab.show()
@@ -644,7 +725,7 @@ def calc_kfki(w,eief,efixed):
     if eief==True:
         #fixed ef
         w_f=efixed*np.ones((len(w),1),'Float64')
-        w_i=w-w_f
+        w_i=w+w_f
     else:
         #fixed ei
         w_i=efixed*np.ones((len(w),1),'Float64')
@@ -667,6 +748,8 @@ def run_cross_section(interactionfile, spinfile):
     atom4 = atom(pos = [0.75,0,0], neighbors = [2],   interactions = [0], int_cell = [0], 
                  atomicNum = 26, valence = 3)
 #    atom_list,N_atoms_uc = ([atom1, atom2, atom3, atom4],1)
+    
+    atom_list=atom_list[:N_atoms_uc]
     N_atoms = len(atom_list)
     
     print N_atoms
@@ -726,10 +809,10 @@ def run_cross_section(interactionfile, spinfile):
         for i in range(1):
             tau_list.append(np.array([0,0,0], 'Float64'))
 
-        h_list = np.linspace(-0.1,-3,1000)
+        h_list = np.linspace(0.1,6,1000)
         k_list = np.zeros(h_list.shape)
         l_list = np.zeros(h_list.shape)
-        w_list = np.linspace(-0.1,-4,1000)
+        w_list = np.linspace(-0.1,-8,1000)
 
         efixed = 14.7 #meV
         eief = True
