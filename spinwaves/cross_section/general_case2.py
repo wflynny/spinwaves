@@ -53,7 +53,6 @@ def generate_b_bd_operators(atom_list):
     return (b_list,bd_list)
 
 # Generates the a and a dagger operators
-#def generate_a_ad_operators(N, real_list, recip_list, b_list, bd_list):
 def generate_a_ad_operators(atom_list, k, b_list, bd_list):
     """Generates a and a dagger operators"""
     a_list = []; ad_list = []
@@ -62,107 +61,50 @@ def generate_a_ad_operators(atom_list, k, b_list, bd_list):
     q = sp.Symbol('q', real = True)
     L = sp.Symbol('L', real = True)
     wq = sp.Symbol('wq', real = True)
-    for i in range(N):
-        temp = []; tempd = []
-        
-        for j in range(N):
-#            q = spm.Matrix(atom_list[i].pos).T
-            wj = sp.Symbol('w%i'%(j,), real = True)
-            
-            temp.append(exp(I*(q*L - wq*t)) * b_list[j])
-            tempd.append(exp(-I*(q*L - wq*t)) * bd_list[j])
-#            temp.append(exp(I*(inner_prod(q,k) - wj*t)) * b_list[j])
-#            tempd.append(exp(-I*(inner_prod(q,k) - wj*t)) * bd_list[j])
 
-        a = sp.Pow(sp.sqrt(N),-1) * sum(temp)
-        ad = sp.Pow(sp.sqrt(N),-1) * sum(tempd)
-        a_list.append(a); ad_list.append(ad)
+    for i in range(N):
+        a_list.append(exp(I*(q*L - wq*t)) * b_list[i])
+        ad_list.append(exp(-I*(q*L - wq*t)) * bd_list[i])
+
+    a = sp.Pow(sp.sqrt(N),-1) * sum(a_list)
+    ad = sp.Pow(sp.sqrt(N),-1) * sum(ad_list)
 
     print "Operators Generated: a, ad"
-    return (a_list,ad_list)
-
-#def generate_a_ad_operators(atom_list, k, b_list, bd_list):
-#    a_list = [], ad_list = []
-#    N = len(atom_list)
-#    t = sp.Symbol('t', real = True)
-#    q = sp.Symbol('q', real = True)
-#    L = sp.Symbol('L', real = True)
-#    wq = sp.Symbol('wq', real = True)
-#    for i in range(N):
-#            
-#        a_list.append(exp(I*(q*L - wq*t)) * b_list[i])
-#        ad_list.append(exp(-I*(q*L - wq*t)) * bd_list[i])
-#
-#    a = sp.Pow(sp.sqrt(N),-1) * sum(a_list)
-#    ad = sp.Pow(sp.sqrt(N),-1) * sum(ad_list)
-#
-#    print "Operators Generated: a, ad"
-#    return (a,ad)
+    return (a,ad)
 
 # Generates the Sp and Sm operators
-def generate_Sp_Sm_operators(atom_list, a_list, ad_list):
+def generate_Sp_Sm_operators(atom_list, a, ad):
     """Generates S+ and S- operators"""
-    Sp_list = []; Sm_list = []
-    N = len(atom_list)
     S = sp.Symbol('S', commutative = True)
 
-    for i in range(N):
-        Sp = sp.sqrt(2*S) * a_list[i]
-        Sm = sp.sqrt(2*S) * ad_list[i]
-        Sp_list.append(Sp) 
-        Sm_list.append(Sm)
+    Sp = sp.sqrt(2*S) * a
+    Sm = sp.sqrt(2*S) * ad
+
     print "Operators Generated: Sp, Sm"
-    return (Sp_list,Sm_list)
-#def generate_Sp_Sm_operators(atom_list, a, ad):
-#    """Generates S+ and S- operators"""
-#    S = sp.Symbol('S', commutative = True)
-#
-#    Sp = sp.sqrt(2*S) * a
-#    Sm = sp.sqrt(2*S) * ad
-#
-#    print "Operators Generated: Sp, Sm"
-#    return (Sp,Sm)
+    return (Sp,Sm)
 
-def generate_Sa_Sb_Sn_operators(atom_list, Sp_list, Sm_list):
+def generate_Sa_Sb_Sn_operators(atom_list, Sp, Sm):
     """Generates Sa, Sb, Sn operators"""
-    Sa_list = []; Sb_list = []; Sn_list = []
-    N = len(atom_list)
     S = sp.Symbol('S', commutative = True)
 
-    for i in range(N):
-        Sa = ((1/2)*(Sp_list[i]+Sm_list[i])).expand()
-        Sb = ((1/2)*(1/I)*(Sp_list[i]-Sm_list[i])).expand()
-        Sn = (S - sp.Pow(2*S,-1) * Sm_list[i].expand() * Sp_list[i].expand()).expand()
+    Sa = ((1/2)*(Sp+Sm)).expand()
+    Sb = ((1/2)*(1/I)*(Sp-Sm)).expand()
+    Sn = (S - sp.Pow(2*S,-1) * Sm.expand() * Sp.expand()).expand()
 
-        Sa_list.append(Sa)
-        Sb_list.append(Sb)
-        Sn_list.append(Sn)
     print "Operators Generated: Sa, Sb, Sn"
-    return (Sa_list, Sb_list, Sn_list)
-
-#def generate_Sa_Sb_Sn_operators(atom_list, Sp, Sm):
-#    """Generates Sa, Sb, Sn operators"""
-#
-#    S = sp.Symbol('S', commutative = True)
-#
-#    Sa = ((1/2)*(Sp+Sm)).expand()
-#    Sb = ((1/2)*(1/I)*(Sp-Sm)).expand()
-#    Sn = (S - sp.Pow(2*S,-1) * Sm.expand() * Sp.expand()).expand()
-#
-#    print "Operators Generated: Sa, Sb, Sn"
-#    return (Sa, Sb, Sn)
+    return (Sa, Sb, Sn)
 
 # Generates the Sx, Sy and Sz operators
-def generate_Sx_Sy_Sz_operators(atom_list, Sa_list, Sb_list, Sn_list):
+def generate_Sx_Sy_Sz_operators(atom_list, Sa, Sb, Sn):
     """Generates Sx, Sy and Sz operators"""
     Sx_list = []; Sy_list = []; Sz_list = []
     N = len(atom_list)
     S = sp.Symbol('S', commutative = True)
+    loc_vect = spm.Matrix([Sa,Sb,Sn])
+    loc_vect = loc_vect.reshape(3,1)
 
     for i in range(N):
         rotmat = sp.Matrix(atom_list[i].spinRmatrix)
-        loc_vect = spm.Matrix([Sa_list[i],Sb_list[i],Sn_list[i]])
-        loc_vect = loc_vect.reshape(3,1)
         glo_vect = rotmat * loc_vect
 
         Sx = sp.powsimp(glo_vect[0].expand())
@@ -174,48 +116,15 @@ def generate_Sx_Sy_Sz_operators(atom_list, Sa_list, Sb_list, Sn_list):
         Sz_list.append(Sz)
         
     #Unit vector markers
-    kapxhat = sp.Symbol('kapxhat',real=True)#spm.Matrix([1,0,0])#
-    kapyhat = sp.Symbol('kapyhat',real=True)#spm.Matrix([0,1,0])#
-    kapzhat = sp.Symbol('kapzhat',real=True)#spm.Matrix([0,0,1])#
+    kapxhat = sp.Symbol('kapxhat',real = True)#spm.Matrix([1,0,0])#
+    kapyhat = sp.Symbol('kapyhat',real = True)#spm.Matrix([0,1,0])#
+    kapzhat = sp.Symbol('kapzhat',real = True)#spm.Matrix([0,0,1])#
     
     Sx_list.append(kapxhat)
     Sy_list.append(kapyhat)
     Sz_list.append(kapzhat)
     print "Operators Generated: Sx, Sy, Sz"
     return (Sx_list,Sy_list,Sz_list)
-
-## Generates the Sx, Sy and Sz operators
-#def generate_Sx_Sy_Sz_operators(atom_list, Sa, Sb, Sn):
-#    """Generates Sx, Sy and Sz operators"""
-#    Sx_list = []; Sy_list = []; Sz_list = []
-#    N = len(atom_list)
-#    S = sp.Symbol('S', commutative = True)
-#    
-#    loc_vect = spm.Matrix([Sa_list[i],Sb_list[i],Sn_list[i]])
-#    loc_vect = loc_vect.reshape(3,1)
-#
-#    for i in range(N):
-#        rotmat = sp.Matrix(atom_list[i].spinRmatrix)
-#        glo_vect = rotmat * loc_vect
-#
-#        Sx = sp.powsimp(glo_vect[0].expand())
-#        Sy = sp.powsimp(glo_vect[1].expand())
-#        Sz = sp.powsimp(glo_vect[2].expand())
-#
-#        Sx_list.append(Sx)
-#        Sy_list.append(Sy)
-#        Sz_list.append(Sz)
-#        
-#    #Unit vector markers
-#    kapxhat = sp.Symbol('kapxhat',real=True)
-#    kapyhat = sp.Symbol('kapyhat',real=True)
-#    kapzhat = sp.Symbol('kapzhat',real=True)
-#    
-#    Sx_list.append(kapxhat)
-#    Sy_list.append(kapyhat)
-#    Sz_list.append(kapzhat)
-#    print "Operators Generated: Sx, Sy, Sz"
-#    return (Sx_list,Sy_list,Sz_list)
 
 # Generate Hamiltonian
 def generate_Hamiltonian(atom_list, b_list, bd_list):
@@ -490,8 +399,8 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
         #raise Exception('h,k,l not same lengths')
     # Generate q's from kappa and tau
     kaprange=lattice.modvec(h_list,k_list,l_list, 'latticestar')
-    nqpts=len(kaprange)
-    kapvect=np.empty((nqpts,3),'Float64')
+    nkpts=len(kaprange)
+    kapvect=np.empty((nkpts,3),'Float64')
     kapvect[:,0]=h_list
     kapvect[:,1]=k_list
     kapvect[:,2]=l_list
@@ -503,30 +412,30 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     kapunit[:,2]=kapvect[:,2]/kaprange
     #plusq=kappa-tau
     plusq=[]
-    ones_list=np.ones((1,nqpts),'Float64')
+    minusq=[]
+    qlist=[]
+    ones_list=np.ones((1,nkpts),'Float64')
     for tau in tau_list:
-        taui=np.ones((nqpts,3),'Float64')
+        taui=np.ones((nkpts,3),'Float64')
         taui[:,0]=ones_list*tau[0]
         taui[:,1]=ones_list*tau[1]
         taui[:,2]=ones_list*tau[2]
-        kappa_minus_tau=kapvect-taui        
-        plusq.append(kappa_minus_tau)
+        kappa_minus_tau=kapvect-taui
+        kappa_plus_tau=kapvect+taui        
+        qlist.append(kappa_minus_tau)
+        qlist.append(kappa_plus_tau)
     #calculate kfki
+    nqpts=nkpts*2
     kfki=calc_kfki(w_list,eief,efixed)
 
-    
-    # Calculate w_q's using q
-    if 1: # Change this later
-        eig_list=[]
-        for q in plusq:
-                eigs = calc_eigs_direct(Hsave,q[:,0],q[:,1],q[:,2])
-                # Take only one set of eigs. Should probably have a flag here. 
-                eig_list.append(eigs[:,1])
+
+    eig_list=[]
+    for q in qlist:
+        eigs = calc_eigs_direct(Hsave,q[:,0],q[:,1],q[:,2])
+        eig_list.append(eigs)
     print "Calculated: Eigenvalues"
     
     
-    
-
     # Grab Form Factors
     ff_list = []
     s = sp.Symbol('s')
@@ -574,7 +483,8 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
             arg[i][j] = sub_in(arg[i][j],sp.DiracDelta(A*t + B*t + C*L + D*L + K*L),sp.DiracDelta(A*hbar + B*hbar)*sp.simplify(sp.DiracDelta(C + D + K + tau)))
 #            print '4', arg[i][j]
             arg[i][j] = sub_in(arg[i][j],sp.DiracDelta(-A - B)*sp.DiracDelta(C),sp.DiracDelta(A + B)*sp.DiracDelta(C))
-#            print '5', arg[i][j]
+#            arg[i][j] = arg[i][j].subs(-w - wq, w + wq)
+            print '5', arg[i][j]
     print "Applied: Delta Function Conversion"
 
     # Grabs the unit vectors from the back of the lists. 
@@ -605,51 +515,65 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     for k in range(len(tau_list)):
         temp1=[]
         for g in range(nqpts):
-            temp=csection
-            pvalue = tau_list[k] + kapvect[g] + plusq[k][g]
-            mvalue = tau_list[k] + kapvect[g] - plusq[k][g]
-            if eq(pvalue[0],0) == 0 and eq(pvalue[1],0) == 0 and eq(pvalue[2],0) == 0:
-                temp = temp.subs(sp.DiracDelta(kap+tau+Q),sp.S(1))
-            else:
-                temp = temp.subs(sp.DiracDelta(kap+tau+Q),0)
-            if eq(mvalue[0],0) == 0 and eq(mvalue[1],0) == 0 and eq(mvalue[2],0) == 0:
-                temp = temp.subs(sp.DiracDelta(kap+tau-Q),sp.S(1))
-            else:
-                temp = temp.subs(sp.DiracDelta(kap+tau-Q),0)
-
-            temp = temp.subs(kapxhat,kapunit[g,0])
-            temp = temp.subs(kapyhat,kapunit[g,1])
-            temp = temp.subs(kapzhat,kapunit[g,2])
-
-            wq = sp.Symbol('wq', real = True)
-#                    nq = sp.Symbol('n%i'%(j,), real = True)
-            print '1',temp
-            temp = temp.subs(wq,eig_list[k][g])
-            print '2',temp
-#                    print 'w',eig_list[k][g]+w_list[g]
-            if eq(eig_list[k][g], w_list[g]) == 0:
-                G=sp.Wild('G', exclude = [Q,kap,tau,w])
-                temp=sub_in(temp, sp.DiracDelta(G - A*w), sp.S(1))
-            else:
-                temp = temp.subs(w,w_list[g])
-            if eq(eig_list[k][g], -w_list[g]) == 0:
-                G=sp.Wild('G', exclude = [Q,kap,tau,w])
-                temp=sub_in(temp, sp.DiracDelta(G - A*w), sp.S(1))
-            else:
-                temp = temp.subs(w,w_list[g])
-            print '3', temp
-            for num in range(len(atom_list)):
-                nq = sp.Symbol('n%i'%(num,), real = True)
-                n = sp.S(1.0)#sp.Pow( sp.exp(eig_list[k][g]/boltz*temperature) - 1 ,-1)
-                temp = temp.subs(nq,n)
-            print '4',temp
-            temp1.append(temp)
+            temp2=[]
+            for i in range(len(eigs_list[k][g])):
+                temp=csection
+                value = tau_list[k] + kapvect[g] + qlist[k][g]
+                if g%2==0:
+                    if eq(value[0],0) == 0 and eq(value[1],0) == 0 and eq(value[2],0) == 0:
+                        temp = temp.subs(sp.DiracDelta(kap+tau+Q),sp.S(1))
+                    else:
+                        temp = temp.subs(sp.DiracDelta(kap+tau+Q),0)   
+                else:
+                    if eq(value[0],0) == 0 and eq(value[1],0) == 0 and eq(value[2],0) == 0:
+                        temp = temp.subs(sp.DiracDelta(kap+tau-Q),sp.S(1))
+                    else:
+                        temp = temp.subs(sp.DiracDelta(kap+tau-Q),0)
+        
+                temp = temp.subs(kapxhat,kapunit[g//2,0])
+                temp = temp.subs(kapyhat,kapunit[g//2,1])
+                temp = temp.subs(kapzhat,kapunit[g//2,2])
+    
+                wq = sp.Symbol('wq', real = True)
+    #                    nq = sp.Symbol('n%i'%(j,), real = True)
+                print '1',temp
+                temp = temp.subs(wq,eig_list[k][g][i])
+                print '2',temp
+    #                    print 'w',eig_list[k][g]+w_list[g]
+                if eq(eig_list[k][g][i], w_list[g//2]) == 0:
+                    G=sp.Wild('G', exclude = [Q,kap,tau,w])
+                    temp=sub_in(temp, sp.DiracDelta(G - A*w), sp.S(1))
+                else:
+                    temp = temp.subs(w,w_list[g//2])
+                if eq(eig_list[k][g][i], -w_list[g//2]) == 0:
+                    G=sp.Wild('G', exclude = [Q,kap,tau,w])
+                    temp=sub_in(temp, sp.DiracDelta(G - A*w), sp.S(1))
+                else:
+                    temp = temp.subs(w,w_list[g//2])
+                """
+                pom = eig_list[k][g] + w_list[g]
+                mom = eig_list[k][g] - w_list[g]
+                if eq(pom,0)==0:
+                    temp = temp.subs(sp.DiracDelta(wq+w), S(1))
+                else: temp = temp.subs(sp.DiracDelta(wq+w), 0)
+                if eq(mom,0)==0:
+                    temp = temp.subs(sp.DiracDelta(wq-w), S(1))
+                else: temp = temp.subs(sp.DiracDelta(wq-w), 0)
+                """
+                print '3', temp
+                for num in range(len(atom_list)):
+                    nq = sp.Symbol('n%i'%(num,), real = True)
+                    n = sp.S(1.0)#sp.Pow( sp.exp(eig_list[k][g]/boltz*temperature) - 1 ,-1)
+                    temp = temp.subs(nq,n)
+                print '4',temp
+                temp2.append(temp)
+            temp1.append(temp2)
         csdata.append(temp1)
 
 
     print csdata
 
-#    sys.exit()
+    sys.exit()
 
     # Front constants and stuff for the cross-section
     front_constant = 1.0 # (gamr0)**2/(2*pi*hbar)
@@ -809,7 +733,7 @@ def run_cross_section(interactionfile, spinfile):
         for i in range(1):
             tau_list.append(np.array([0,0,0], 'Float64'))
 
-        h_list = np.linspace(0.1,6,1000)
+        h_list = np.linspace(-6,6,1000)
         k_list = np.zeros(h_list.shape)
         l_list = np.zeros(h_list.shape)
         w_list = np.linspace(-0.1,-8,1000)
