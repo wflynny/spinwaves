@@ -433,8 +433,8 @@ def generate_cross_section(atom_list, arg, q, real_list, recip_list):
 
 #def eval_cross_section(N, N_uc, atom_list, jmats, cross, qvals, temp, direction, lmin, lmax):
 def eval_cross_section(interactionfile, spinfile, lattice, arg, 
-                       tau_list, h_list, k_list, l_list, w_vect_list, 
-                       temperature, kmin, kmax, steps, eief, efixed = 14.7):
+                       tau_list, h_list, k_list, l_list, w_list, 
+                       temperature, steps, eief, efixed = 14.7):
     """
     Calculates the cross_section given the following parameters:
     interactionfile, spinfile - files to get atom data
@@ -446,7 +446,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     kmin        - minimum value of k to scan
     kmax        - maximum value of k to scan
     steps       - number of steps between kmin, kmax
-    eief        - True if the energy scheme is Ei - Ef, False if it is Ef - Ei
+    eief        - True if fixed Ef
     efixed      - value of the fixed energy, either Ei or Ef
     """
 
@@ -499,7 +499,9 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
         taui[:,2]=ones_list*tau[2]
         kappa_minus_tau=kapvect-taui        
         plusq.append(kappa_minus_tau)
-        
+    #calculate kfki
+    kfki=calc_kfki(w_list,eief,efixed)
+    
     # Calculate w_q's using q
     qrange = []
 #    krange = []
@@ -512,37 +514,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
                 eiglist.append(eigs[:,0])
     print "Calculated: Eigenvalues"
     
-    wrange=np.array(np.real(wrange))
-    qrange=np.array(np.real(qrange))
-    kaprange=np.array(np.real(kaprange))
     
-    print qrange.shape
-    print wrange.shape
-    print kaprange.shape
-    
-    # Calculate w (not _q) as well as kp/k
-    w_calc = []
-    kpk = []
-    if eief == True:
-        for tau in tau_list:
-            temp = []
-            temp1 = []
-            for om in w_vect_list:
-                temp.append(om - efixed)
-                temp1.append(np.sqrt(om/efixed))
-            w_calc.append(temp)
-            kpk.append(temp1)                
-    else:
-        for tau in tau_list:
-            temp = []
-            temp1 = []
-            for om in w_vect_list:
-                temp.append(-(om - efixed))
-                temp1.append(np.sqrt(efixed/om))
-            w_calc.append(temp)
-            kpk.append(temp1)
-
-    w_calc = np.array(np.real(w_calc))
     
 
     # Grab Form Factors
@@ -689,7 +661,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
                 for jj in range(len(csdata[ii])):
                     temp1.append(csdata[ii][jj])
             # Put on gamr0, 2pi hbar, form factor, kp/k, vanderwaals first
-            dif = front_func**2 * front_constant# * kpk[q][0] * vanderwaals * ff_list[0][q]
+            dif = front_func**2 * front_constant*kfki# * kpk[q][0] * vanderwaals * ff_list[0][q]
 #            for vect in unit_vect:
 #                vect.subs(kapxhat,kapvect[q][0][0])
 #                vect.subs(kapyhat,kapvect[q][1][0])
@@ -716,6 +688,23 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
 #    pylab.contourf(qrange,wrange,csrange)
 #    pylab.show()
 
+    
+def calc_kfki(w,eief,efixed):
+    #eief==True if fixed Ef
+
+    
+    if eieif==True:
+        #fixed ef
+        w_f=efixed*N.ones((len(w),1),'Float64')
+        w_i=w-w_f
+    else:
+        #fixed ei
+        w_i=efixed*N.ones((len(w),1),'Float64')
+        w_f=w_i-w
+        
+    kfki=N.sqrt(wf/wi)
+    return kfki
+    
 def run_cross_section(interactionfile, spinfile):
     start = clock()
 
@@ -781,8 +770,8 @@ def run_cross_section(interactionfile, spinfile):
         direction=data
 
         temperature = 100.0
-        min = 0
-        max = 2*sp.pi
+        kmin = 0
+        kmax = 2*sp.pi
         steps = 25
 
         tau_list = []
@@ -798,7 +787,7 @@ def run_cross_section(interactionfile, spinfile):
         eief = True
         eval_cross_section(interactionfile, spinfile, lattice, ops, 
                            tau_list, h_list, k_list, l_list, w_list,
-                           temperature, min, max, steps, eief, efixed)
+                           temperature, steps, eief, efixed)
 
     end = clock()
     print "\nFinished %i atoms in %.2f seconds" %(N_atoms,end-start)
