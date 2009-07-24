@@ -421,9 +421,9 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
         taui[:,1]=ones_list*tau[1]
         taui[:,2]=ones_list*tau[2]
         kappa_minus_tau=kapvect-taui
-        kappa_plus_tau=kapvect+taui        
-        qlist.append(kappa_minus_tau)
-        qlist.append(kappa_plus_tau)
+        kappa_plus_tau=kapvect+taui 
+               
+        qlist.append(np.concatenate(kappa_minus_tau,kappa_plus_tau))
     #calculate kfki
     nqpts=nkpts*2
     kfki=calc_kfki(w_list,eief,efixed)
@@ -435,7 +435,9 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
         eig_list.append(eigs)
     print "Calculated: Eigenvalues"
     
-    
+    print len(qlist)
+    print len(eig_list[0])
+    sys.exit()
     # Grab Form Factors
     ff_list = []
     s = sp.Symbol('s')
@@ -516,7 +518,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
         temp1=[]
         for g in range(nqpts):
             temp2=[]
-            for i in range(len(eigs_list[k][g])):
+            for i in range(len(eig_list[k][g])):
                 temp=csection
                 value = tau_list[k] + kapvect[g] + qlist[k][g]
                 if g%2==0:
