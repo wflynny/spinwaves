@@ -572,8 +572,8 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     kapxhat = sp.Symbol('kapxhat',real=True)
     kapyhat = sp.Symbol('kapyhat',real=True)
     kapzhat = sp.Symbol('kapzhat',real=True)
-    for i in range(len(arg)):
-        unit_vect.append(arg[i].pop())
+    #for i in range(len(arg)):
+    #    unit_vect.append(arg[i].pop())
 
     # Subs the actual values for kx,ky,kz, omega_q and n_q into the operator combos
     # The result is basically a nested list:
@@ -602,7 +602,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
                     #else: arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau-q),0)
                     wq = sp.Symbol('wq', real = True)
                     nq = sp.Symbol('n%i'%(k,), real = True)
-                    arg[i][j] = arg[i][j].subs(wq,wrange[g])
+                    arg[i][j] = arg[i][j].subs(wq,eig_list[k][g])
                     arg[i][j] = arg[i][j].subs(w,w_list[g])
                     n = sp.Pow( sp.exp(w_list[g]/boltz*temperature) - 1 ,-1)
                     arg[i][j] = arg[i][j].subs(nq,n)
