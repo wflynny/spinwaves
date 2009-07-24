@@ -365,7 +365,7 @@ def generate_cross_section(atom_list, arg, q, real_list, recip_list):
     N = len(atom_list)
     gam = 1.913 #sp.Symbol('gamma', commutative = True)
     r = sp.Symbol('r0', commutative = True)
-    h = 1. # 1.05457148*10**(-34) #sp.Symbol('hbar', commutative = True)
+    hbar = 1. # 1.05457148*10**(-34) #sp.Symbol('hbar', commutative = True)
     k = sp.Symbol('k', commutative = True)
     kp = sp.Symbol('kp', commutative = True)
     g = sp.Symbol('g', commutative = True)
@@ -384,7 +384,7 @@ def generate_cross_section(atom_list, arg, q, real_list, recip_list):
     # Wilds for sub_in method
     A = sp.Wild('A',exclude = [0]); B = sp.Wild('B',exclude = [0]); C = sp.Wild('C'); D = sp.Wild('D'); 
     
-    front_constant = (gam*r)**2/(2*pi*h)*(kp/k)*N
+    front_constant = (gam*r)**2/(2*pi*hbar)*(kp/k)
     front_func = (1./2.)*g#*F(k)
     vanderwaals = exp(-2*W)
 
@@ -507,11 +507,11 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
 #    krange = []
     wrange = []
     if 1: # Change this later
-        eiglist=[]
+        eig_list=[]
         for q in plusq:
                 eigs = calc_eigs_direct(Hsave,q[:,0],q[:,1],q[:,2])
                 # Take only one set of eigs. Should probably have a flag here. 
-                eiglist.append(eigs[:,0])
+                eig_list.append(eigs[:,0])
     print "Calculated: Eigenvalues"
     
     
@@ -582,7 +582,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     #    op combos  = [ one combo per atom ]
     #    1 per atom = [ evaluated exp ]
     #
-    
+        
     csdata = []
     for i in range(len(arg)):
         temp1 = []
@@ -591,27 +591,24 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
             for k in range(len(tau_list)):
                 temp3 = []
                 print i,j,k
-                for g in range(len(qrange[k])):
-                    pvalue = tau_list[k] + kapvect[g] + qrange[k][g]
-                    mvalue = tau_list[k] + kapvect[g] - qrange[k][g]
+                for g in range(nqpts):
+                    #pvalue = tau_list[k] + kapvect[g] + qrange[k][g]
+                    #mvalue = tau_list[k] + kapvect[g] - qrange[k][g]
 
-                    if pvalue[0] == 0 and pvalue[1] == 0 and pvalue[2] == 0:
-                        arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau+q),sp.DiracDelta(0))
-                    else: arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau+q),0)
-                    if mvalue[0] == 0 and mvalue[1] == 0 and mvalue[2] == 0:
-                        arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau-q),sp.DiracDelta(0))
-                    else: arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau-q),0)
-#                    arg[i][j] = arg[i][j].subs(q,qrange[k][g])
-#                    arg[i][j] = arg[i][j].subs(kap,kapvect[g])
-#                    arg[i][j] = arg[i][j].subs(tau,tau_list[k])                   
-                    
+                    #if pvalue[0] == 0 and pvalue[1] == 0 and pvalue[2] == 0:
+                    #    arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau+q),sp.DiracDelta(0))
+                    #else: arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau+q),0)
+                    #if mvalue[0] == 0 and mvalue[1] == 0 and mvalue[2] == 0:
+                    #    arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau-q),sp.DiracDelta(0))
+                    #else: arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau-q),0)
+                  
                     wq = sp.Symbol('wq', real = True)
-                    nq = sp.Symbol('n%i'%(k,), commutative = False)
+                    nq = sp.Symbol('n%i'%(k,), real = True)
 
                     
-                    arg[i][j] = arg[i][j].subs(wq,wrange[k][g])
-                    arg[i][j] = arg[i][j].subs(w,w_calc[k][g])
-                    n = sp.Pow( sp.exp(wrange[k][g]/boltz*temperature) - 1 ,-1)
+                    arg[i][j] = arg[i][j].subs(wq,wrange[g])
+                    arg[i][j] = arg[i][j].subs(w,w_list[g])
+                    n = sp.Pow( sp.exp(w_list[g]/boltz*temperature) - 1 ,-1)
                     arg[i][j] = arg[i][j].subs(nq,n)
                 temp3.append(arg[i][j])
             temp2.append(temp3)
