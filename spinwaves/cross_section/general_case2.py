@@ -569,9 +569,9 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
 
     # Grabs the unit vectors from the back of the lists. 
     unit_vect = []
-    kapxhat = sp.Symbol('kapxhat',commutative = False)
-    kapyhat = sp.Symbol('kapyhat',commutative = False)
-    kapzhat = sp.Symbol('kapzhat',commutative = False)
+    kapxhat = sp.Symbol('kapxhat',real=True)
+    kapyhat = sp.Symbol('kapyhat',real=True)
+    kapzhat = sp.Symbol('kapzhat',real=True)
     for i in range(len(arg)):
         unit_vect.append(arg[i].pop())
 
@@ -611,7 +611,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
                     
                     arg[i][j] = arg[i][j].subs(wq,wrange[k][g])
                     arg[i][j] = arg[i][j].subs(w,w_calc[k][g])
-                    n = sp.Pow( sp.exp(hbar*wrange[k][g]/boltz*temperature) - 1 ,-1)
+                    n = sp.Pow( sp.exp(wrange[k][g]/boltz*temperature) - 1 ,-1)
                     arg[i][j] = arg[i][j].subs(nq,n)
                 temp3.append(arg[i][j])
             temp2.append(temp3)
@@ -702,7 +702,7 @@ def calc_kfki(w,eief,efixed):
         w_i=efixed*np.ones((len(w),1),'Float64')
         w_f=w_i-w
         
-    kfki=np.sqrt(wf/wi)
+    kfki=np.sqrt(w_f/w_i)
     return kfki
     
 def run_cross_section(interactionfile, spinfile):
