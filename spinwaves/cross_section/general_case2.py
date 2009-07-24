@@ -423,13 +423,14 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
         kappa_minus_tau=kapvect-taui
         kappa_plus_tau=kapvect+taui 
                
-        qlist.append(np.concatenate(kappa_minus_tau,kappa_plus_tau))
+        qlist.append(np.hstack([kappa_minus_tau,kappa_plus_tau]))
     #calculate kfki
     nqpts=nkpts*2
     kfki=calc_kfki(w_list,eief,efixed)
 
 
     eig_list=[]
+    print qlist
     for q in qlist:
         eigs = calc_eigs_direct(Hsave,q[:,0],q[:,1],q[:,2])
         eig_list.append(eigs)
