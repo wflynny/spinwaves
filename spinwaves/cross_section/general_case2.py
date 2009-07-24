@@ -702,7 +702,7 @@ def calc_kfki(w,eief,efixed):
         w_i=efixed*np.ones((len(w),1),'Float64')
         w_f=w_i-w
         
-    kfki=N.sqrt(wf/wi)
+    kfki=np.sqrt(wf/wi)
     return kfki
     
 def run_cross_section(interactionfile, spinfile):
