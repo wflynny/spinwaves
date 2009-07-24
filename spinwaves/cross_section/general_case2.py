@@ -594,26 +594,22 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
                 for g in range(nqpts):
                     #pvalue = tau_list[k] + kapvect[g] + qrange[k][g]
                     #mvalue = tau_list[k] + kapvect[g] - qrange[k][g]
-
                     #if pvalue[0] == 0 and pvalue[1] == 0 and pvalue[2] == 0:
                     #    arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau+q),sp.DiracDelta(0))
                     #else: arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau+q),0)
                     #if mvalue[0] == 0 and mvalue[1] == 0 and mvalue[2] == 0:
                     #    arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau-q),sp.DiracDelta(0))
                     #else: arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau-q),0)
-                  
                     wq = sp.Symbol('wq', real = True)
                     nq = sp.Symbol('n%i'%(k,), real = True)
-
-                    
                     arg[i][j] = arg[i][j].subs(wq,wrange[g])
                     arg[i][j] = arg[i][j].subs(w,w_list[g])
                     n = sp.Pow( sp.exp(w_list[g]/boltz*temperature) - 1 ,-1)
                     arg[i][j] = arg[i][j].subs(nq,n)
-                temp3.append(arg[i][j])
-            temp2.append(temp3)
-        temp1.append(temp2)
-    csdata.append(temp1)
+                    temp3.append(arg[i][j])
+                temp2.append(temp3)
+            temp1.append(temp2)
+        csdata.append(temp1)
 ##            print arg[i][j]
 #            for g in range(len(kaprange)):
 #                arg[i][j] = arg[i][j].subs(kap, kaprange[g])
@@ -652,7 +648,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     if 1:
         temp1 = []
         temp2 = []
-        for q in range(len(qrange)):
+        for q in range(nqpts):
             print 'calculating'
             for ii in range(len(csdata)):
                 for jj in range(len(csdata[ii])):
