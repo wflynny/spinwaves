@@ -12,6 +12,7 @@ import matplotlib
 matplotlib.use('WXAgg')
 import pylab
 from matplotlib._pylab_helpers import Gcf
+import matplotlib.ticker as ticker
 
 from list_manipulation import *
 from subin import sub_in
@@ -134,9 +135,9 @@ def generate_Sx_Sy_Sz_operators(atom_list, Sa_list, Sb_list, Sn_list):
         Sz_list.append(Sz)
         
     #Unit vector markers
-    kapxhat = sp.Symbol('kapxhat',commutative = False)#spm.Matrix([1,0,0])#
-    kapyhat = sp.Symbol('kapyhat',commutative = False)#spm.Matrix([0,1,0])#
-    kapzhat = sp.Symbol('kapzhat',commutative = False)#spm.Matrix([0,0,1])#
+    kapxhat = sp.Symbol('kapxhat',real=True)#spm.Matrix([1,0,0])#
+    kapyhat = sp.Symbol('kapyhat',real=True)#spm.Matrix([0,1,0])#
+    kapzhat = sp.Symbol('kapzhat',real=True)#spm.Matrix([0,0,1])#
     
     Sx_list.append(kapxhat)
     Sy_list.append(kapyhat)
@@ -324,7 +325,7 @@ def replace_bdb(atom_list, arg):
             for j in range(N):
                 bj = sp.Symbol('b%i'%(j,), commutative = False)
                 bdj = sp.Symbol('bd%i'%(j,), commutative = False)
-                nj = sp.Symbol('n%i'%(j,), commutative = False)
+                nj = sp.Symbol('n%i'%(j,), real = True)
 
                 for g in range(N):
                     bg = sp.Symbol('b%i'%(g,), commutative = False)
@@ -352,85 +353,14 @@ def replace_bdb(atom_list, arg):
     print "Applied: bdq*bq Replacement"
     return arg
 
-#   _        _
-#  / \  |   |  \
-# |   | |   |   |
-#  \_/  |__ |_ /
-# Inelastic Cross Section Equation
-# (gamma r_0)^2 / 2 pi hbar * k'/k * N * {1/2 g F(kappa)}^2 sum over alpha,beta (delta_alpha,beta - kappa_alpha*kappa_beta)
-#    * sum over l exp(i*kappa*l) X integral -oo to oo <exp{-i * kappa . u_0(0)} * exp{i * kappa . u_l(t)}>
-#    <S^alpha_0(0) * S^beta_l(t)> * exp(-i omega t) dt
-def generate_cross_section(atom_list, arg, q, real_list, recip_list):
-    """Generates the Cross-Section Formula for the one magnon case"""
-    N = len(atom_list)
-    gam = 1.913 #sp.Symbol('gamma', commutative = True)
-    r = sp.Symbol('r0', commutative = True)
-    hbar = 1. # 1.05457148*10**(-34) #sp.Symbol('hbar', commutative = True)
-    k = sp.Symbol('k', commutative = True)
-    kp = sp.Symbol('kp', commutative = True)
-    g = sp.Symbol('g', commutative = True)
-    F = sp.Function('F')
-    def FF(arg):
-        F = sp.Function('F')
-        if arg.shape == (3,1) or arg.shape == (1,3):
-            return sp.Symbol("%r"%(F(arg.tolist()),),commutative = False)
-    kap = spm.Matrix([sp.Symbol('kapx',commutative = False),sp.Symbol('kapy',commutative = False),sp.Symbol('kapz',commutative = False)])
-    t = sp.Symbol('t', commutative = True)
-    w = sp.Symbol('w', commutative = True)
-    W = sp.Symbol('W', commutative = False)
-    kappa = sp.Symbol('kappa', commutative = False)
-    tau = sp.Symbol('tau', commutative = False)
-    
-    # Wilds for sub_in method
-    A = sp.Wild('A',exclude = [0]); B = sp.Wild('B',exclude = [0]); C = sp.Wild('C'); D = sp.Wild('D'); 
-    
-    front_constant = (gam*r)**2/(2*pi*hbar)*(kp/k)
-    front_func = (1./2.)*g#*F(k)
-    vanderwaals = exp(-2*W)
 
-    temp2 = []
-    temp3 = []
-    temp4 = []
-    
-    # Grabs the unit vectors from the back of the lists. 
-    unit_vect = []
-    kapx = sp.Symbol('kapxhat',)
-    kapy = sp.Symbol('kapyhat',commutative = False)
-    kapz = sp.Symbol('kapzhat',commutative = False)
-    for i in range(len(arg)):
-        unit_vect.append(arg[i].pop())
-#    for ele in unit_vect:
-#        ele = ele.subs(kapx,spm.Matrix([1,0,0]))
-#        ele = ele.subs(kapy,spm.Matrix([0,1,0]))
-#        ele = ele.subs(kapz,spm.Matrix([0,0,1]))
-    # This is were the heart of the calculation comes in.
-    # First the exponentials are turned into delta functions:
-    for i in range(len(arg)):
-        for j in range(N):
-            arg[i][j] = sp.powsimp(arg[i][j], deep = True, combine = 'all')
-            arg[i][j] = arg[i][j] * exp(-I*w*t) * exp(I*inner_prod(spm.Matrix(atom_list[j].pos).T,kap))
-            arg[i][j] = sp.powsimp(arg[i][j], deep = True, combine = 'all')
-            arg[i][j] = sub_in(arg[i][j],exp(I*t*A + I*t*B + C),sp.DiracDelta(A*t + B*t + C/I))#*sp.DiracDelta(C))
-            arg[i][j] = sub_in(arg[i][j],sp.DiracDelta(A*t + B*t + C),sp.DiracDelta(A*h + B*h)*sp.DiracDelta(C + tau))
-            arg[i][j] = sub_in(arg[i][j],sp.DiracDelta(-A - B),sp.DiracDelta(A + B))
-            print arg[i][j]
-    print "Applied: Delta Function Conversion"
-    
-#    for ele in arg:
-#        for subele in ele:
-#            temp2.append(subele)
-#        temp3.append(sum(temp2))
-#    
-#    for i in range(len(temp3)):
-#        temp4.append(unit_vect[i] * temp3[i])
-
-    for k in range(len(arg)):
-        temp4.append(arg[k][q])
-    dif = (front_func**2 * front_constant * vanderwaals * sum(temp4))#.expand()#sp.simplify(sum(temp4))).expand()
-
-    print "Complete: Cross-section Calculation"
-    return dif
-
+def eq(a,b,tol=1e-1):
+        c = (abs(a-b) < tol)
+        if c:
+            return 0
+        else:
+            if a>b: return abs(a-b)
+            else: return abs(b-a)
 #def eval_cross_section(N, N_uc, atom_list, jmats, cross, qvals, temp, direction, lmin, lmax):
 def eval_cross_section(interactionfile, spinfile, lattice, arg, 
                        tau_list, h_list, k_list, l_list, w_list, 
@@ -489,6 +419,12 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     kapvect[:,0]=h_list
     kapvect[:,1]=k_list
     kapvect[:,2]=l_list
+    print kapvect.shape
+    print kaprange.shape
+    kapunit = kapvect.copy()
+    kapunit[:,0]=kapvect[:,0]/kaprange
+    kapunit[:,1]=kapvect[:,1]/kaprange
+    kapunit[:,2]=kapvect[:,2]/kaprange
     #plusq=kappa-tau
     plusq=[]
     ones_list=np.ones((1,nqpts),'Float64')
@@ -503,15 +439,12 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     kfki=calc_kfki(w_list,eief,efixed)
     
     # Calculate w_q's using q
-    qrange = []
-#    krange = []
-    wrange = []
     if 1: # Change this later
         eig_list=[]
         for q in plusq:
                 eigs = calc_eigs_direct(Hsave,q[:,0],q[:,1],q[:,2])
                 # Take only one set of eigs. Should probably have a flag here. 
-                eig_list.append(eigs[:,0])
+                eig_list.append(eigs[:,1])
     print "Calculated: Eigenvalues"
     
     
@@ -531,7 +464,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     print "Calculated: Form Factors"
 
     # Other Constants
-    gamr0 = 2*0.2695*10**(-12) #sp.Symbol('gamma', commutative = True)
+    gamr0 = 2*0.2695e-12 #sp.Symbol('gamma', commutative = True)
     hbar = 1.0 # 1.05457148*10**(-34) #sp.Symbol('hbar', commutative = True)
     g = 2.#sp.Symbol('g', commutative = True)
     # Kappa vector
@@ -540,9 +473,9 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     w = sp.Symbol('w', real = True)
     W = sp.Symbol('W', real = True)
     tau = sp.Symbol('tau', real = True)
-    q = sp.Symbol('q', real = True)
+    Q = sp.Symbol('q', real = True)
     L = sp.Symbol('L', real = True)
-    boltz = 1.#1.3806503*10**(-23)     
+    boltz = 8.617343e-2
     
     # Wilds for sub_in method
     A = sp.Wild('A',exclude = [0,t])
@@ -554,7 +487,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     # First the exponentials are turned into delta functions:
     for i in range(len(arg)):
         for j in range(N):
-            print '1', arg[i][j]
+#            print '1', arg[i][j]
             arg[i][j] = sp.powsimp(arg[i][j])#sp.powsimp(arg[i][j], deep = True, combine = 'all')
             arg[i][j] = (arg[i][j] * exp(-I*w*t) * exp(I*kap*L)).expand()# * exp(I*inner_prod(spm.Matrix(atom_list[j].pos).T,kap))
             arg[i][j] = sp.powsimp(arg[i][j])#sp.powsimp(arg[i][j], deep = True, combine = 'all')
@@ -564,7 +497,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
             arg[i][j] = sub_in(arg[i][j],sp.DiracDelta(A*t + B*t + C*L + D*L + K*L),sp.DiracDelta(A*hbar + B*hbar)*sp.simplify(sp.DiracDelta(C + D + K + tau)))
 #            print '4', arg[i][j]
             arg[i][j] = sub_in(arg[i][j],sp.DiracDelta(-A - B)*sp.DiracDelta(C),sp.DiracDelta(A + B)*sp.DiracDelta(C))
-            print '5', arg[i][j]
+#            print '5', arg[i][j]
     print "Applied: Delta Function Conversion"
 
     # Grabs the unit vectors from the back of the lists. 
@@ -572,9 +505,9 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     kapxhat = sp.Symbol('kapxhat',real=True)
     kapyhat = sp.Symbol('kapyhat',real=True)
     kapzhat = sp.Symbol('kapzhat',real=True)
-    #for i in range(len(arg)):
-    #    unit_vect.append(arg[i].pop())
-
+    for i in range(len(arg)):
+        unit_vect.append(arg[i].pop())
+    print unit_vect
     # Subs the actual values for kx,ky,kz, omega_q and n_q into the operator combos
     # The result is basically a nested list:
     #
@@ -582,38 +515,64 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     #    op combos  = [ one combo per atom ]
     #    1 per atom = [ evaluated exp ]
     #
-        
-    csdata = []
+    csection=0
     for i in range(len(arg)):
-        temp1 = []
         for j in range(len(arg[i])):
-            temp2 = []
-            for k in range(len(tau_list)):
-                temp3 = []
-                print i,j,k
-                for g in range(nqpts):
-                    #pvalue = tau_list[k] + kapvect[g] + qrange[k][g]
-                    #mvalue = tau_list[k] + kapvect[g] - qrange[k][g]
-                    #if pvalue[0] == 0 and pvalue[1] == 0 and pvalue[2] == 0:
-                    #    arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau+q),sp.DiracDelta(0))
-                    #else: arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau+q),0)
-                    #if mvalue[0] == 0 and mvalue[1] == 0 and mvalue[2] == 0:
-                    #    arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau-q),sp.DiracDelta(0))
-                    #else: arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau-q),0)
-                    wq = sp.Symbol('wq', real = True)
-                    nq = sp.Symbol('n%i'%(k,), real = True)
-                    arg[i][j] = arg[i][j].subs(wq,eig_list[k][g])
-                    arg[i][j] = arg[i][j].subs(w,w_list[g])
-                    n = sp.Pow( sp.exp(w_list[g]/boltz*temperature) - 1 ,-1)
-                    arg[i][j] = arg[i][j].subs(nq,n)
-                    temp3.append(arg[i][j])
-                temp2.append(temp3)
-            temp1.append(temp2)
+            csection=csection+arg[i][j]*unit_vect[i]
+    
+    print csection
+    
+#    sys.exit()
+#    print arg
+    csdata=[]
+    for k in range(len(tau_list)):
+        temp1=[]
+        for g in range(nqpts):
+            temp=csection
+            pvalue = tau_list[k] + kapvect[g] + plusq[k][g]
+            mvalue = tau_list[k] + kapvect[g] - plusq[k][g]
+            if eq(pvalue[0],0) == 0 and eq(pvalue[1],0) == 0 and eq(pvalue[2],0) == 0:
+                temp = temp.subs(sp.DiracDelta(kap+tau+Q),sp.S(1))
+            else:
+                temp = temp.subs(sp.DiracDelta(kap+tau+Q),0)
+            if eq(mvalue[0],0) == 0 and eq(mvalue[1],0) == 0 and eq(mvalue[2],0) == 0:
+                temp = temp.subs(sp.DiracDelta(kap+tau-Q),sp.S(1))
+            else:
+                temp = temp.subs(sp.DiracDelta(kap+tau-Q),0)
+
+            temp = temp.subs(kapxhat,kapunit[g,0])
+            temp = temp.subs(kapyhat,kapunit[g,1])
+            temp = temp.subs(kapzhat,kapunit[g,2])
+
+            wq = sp.Symbol('wq', real = True)
+#                    nq = sp.Symbol('n%i'%(j,), real = True)
+#            print '1',temp
+            temp = temp.subs(wq,eig_list[k][g])
+#            print '2',temp
+#                    print 'w',eig_list[k][g]+w_list[g]
+            if eq(eig_list[k][g], w_list[g]) == 0:
+                G=sp.Wild('G', exclude = [Q,kap,tau,w])
+                temp=sub_in(temp, sp.DiracDelta(G - A*w), sp.S(1))
+            else:
+                temp = temp.subs(w,w_list[g])
+            if eq(eig_list[k][g], -w_list[g]) == 0:
+                G=sp.Wild('G', exclude = [Q,kap,tau,w])
+                temp=sub_in(temp, sp.DiracDelta(G - A*w), sp.S(1))
+            else:
+                temp = temp.subs(w,w_list[g])
+            print '3', temp
+            for num in range(len(atom_list)):
+                nq = sp.Symbol('n%i'%(num,), real = True)
+                n = sp.S(1.0)#sp.Pow( sp.exp(eig_list[k][g]/boltz*temperature) - 1 ,-1)
+                temp = temp.subs(nq,n)
+            print '4',temp
+            temp1.append(temp)
         csdata.append(temp1)
 
 
     print csdata
 
+#    sys.exit()
 
     # Front constants and stuff for the cross-section
     front_constant = 1.0 # (gamr0)**2/(2*pi*hbar)
@@ -621,37 +580,57 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     vanderwaals = 1. #exp(-2*W)
 
     csrange = []
-    if 1:
-        temp1 = []
-        temp2 = []
-        for q in range(nqpts):
-            print 'calculating'
-            for ii in range(len(csdata)):
-                for jj in range(len(csdata[ii])):
-                    temp1.append(csdata[ii][jj])
-            # Put on gamr0, 2pi hbar, form factor, kp/k, vanderwaals first
-            dif = front_func**2 * front_constant*kfki# * kpk[q][0] * vanderwaals * ff_list[0][q]
-#            for vect in unit_vect:
-#                vect.subs(kapxhat,kapvect[q][0][0])
-#                vect.subs(kapyhat,kapvect[q][1][0])
-#                vect.subs(kapzhat,kapvect[q][2][0])
-            print 'diff',dif
-            print 'temp1',temp1
-            print sum(temp1)
-            dif = (dif * sum(temp1))# * sum(unit_vect))#.expand()
-            csrange.append(dif)
+    for g in range(nqpts):
+        temp1=[]
+        for k in range(len(tau_list)):
+            dif = csdata[k][g]
+            dif = dif*front_func**2*front_constant*vanderwaals#*kfki * ff_list[0][q]
+            temp1.append(dif)
+        csrange.append(sum(temp1))
     print "Calculated: Cross-section"
     csrange=np.real(csrange)
     csrange=np.array(csrange)
-
-    xi=qrange
-    yi=wrange
+    print csrange.shape
+#    if 1:
+#        temp1 = []
+#        temp2 = []
+#        for kk in range(len(tau_list)):
+#            for q in range(nqpts):
+#                print 'calculating'
+#                for ii in range(len(csdata)):
+#                    for jj in range(len(csdata[ii])):
+#                        temp1.append(csdata[ii][jj][kk][q])
+#                # Put on gamr0, 2pi hbar, form factor, kp/k, vanderwaals first
+#                dif = front_func**2 * front_constant*kfki# * kpk[q][0] * vanderwaals * ff_list[0][q]
+#
+#                print 'diff',dif
+#                print 'temp1',temp1
+#                print sum(temp1)
+#                dif = (dif * sum(temp1))# * sum(unit_vect))#.expand()
+#                csrange.append(dif)
+#    print "Calculated: Cross-section"
+#    csrange=np.real(csrange)
+#    csrange=np.array(csrange)
+#    print csrange.shape
+    xi=h_list
+    yi=w_list
     zi=csrange
-    Z=np.zeros((xi.shape[0],yi.shape[0])) 
+    Z=np.zeros((len(xi),len(yi))) 
+    print Z.shape
+    print xi.shape
+    print yi.shape
     Z[range(len(xi)),range(len(yi))]=zi
 
-    pylab.contourf(xi,yi,Z)
-    pylab.colorbar()
+    zmin, zmax = np.min(Z), np.max(Z)
+    locator = ticker.MaxNLocator(10) # if you want no more than 10 contours
+    locator.create_dummy_axis()
+    locator.set_bounds(zmin, zmax)
+    levs = locator()
+    print zmin, zmax
+
+    pylab.contourf(xi,yi,Z, levs, norm=matplotlib.colors.LogNorm(levs[0],levs[len(levs)-1]))
+    l_f = ticker.LogFormatter(10, labelOnlyBase=False) 
+    cbar = pylab.colorbar(ticks = levs, format = l_f) 
     pylab.show()
 
 #    pylab.contourf(qrange,wrange,csrange)
@@ -738,7 +717,7 @@ def run_cross_section(interactionfile, spinfile):
         data['kz']=0.
         direction=data
 
-        temperature = 100.0
+        temperature = 1.0
         kmin = 0
         kmax = 2*sp.pi
         steps = 25
@@ -747,10 +726,10 @@ def run_cross_section(interactionfile, spinfile):
         for i in range(1):
             tau_list.append(np.array([0,0,0], 'Float64'))
 
-        h_list = np.linspace(0,2,100)
+        h_list = np.linspace(-0.1,-3,1000)
         k_list = np.zeros(h_list.shape)
         l_list = np.zeros(h_list.shape)
-        w_list = np.linspace(-4,4,100)
+        w_list = np.linspace(-0.1,-4,1000)
 
         efixed = 14.7 #meV
         eief = True
