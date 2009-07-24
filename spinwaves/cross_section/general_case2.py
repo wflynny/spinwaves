@@ -610,31 +610,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
                 temp2.append(temp3)
             temp1.append(temp2)
         csdata.append(temp1)
-##            print arg[i][j]
-#            for g in range(len(kaprange)):
-#                arg[i][j] = arg[i][j].subs(kap, kaprange[g])
-#            for g in range(len(krange)):
-##                print 'calculating'
-#                temp3 = []
-#                wg = sp.Symbol('w%i'%(g,), real = True)
-#                ng = sp.Symbol('n%i'%(g,), commutative = False)
-##                kx = sp.Symbol('kx', real = True, commutative = True)
-##                ky = sp.Symbol('ky', real = True, commutative = True)
-##                kz = sp.Symbol('kz', real = True, commutative = True)
-##                arg[i][j] = arg[i][j].subs(kx,krange[g][0])
-##                arg[i][j] = arg[i][j].subs(ky,krange[g][1])
-##                arg[i][j] = arg[i][j].subs(kz,krange[g][2])
-#                arg[i][j] = arg[i][j].subs(wg,wrange[g])
-#                arg[i][j] = arg[i][j].subs(w,w_calc[g])
-#                nq = sp.Pow( sp.exp(hbar*wrange[g]/boltz*temp) - 1 ,-1)
-#                arg[i][j] = arg[i][j].subs(ng,nq)
-##                arg[i][j] = arg[i][j].subs(tau,tau_list[0])
-#
-#                temp3.append(arg[i][j])
-##                print arg[i][j]
-#            temp2.append(temp3)
-##            print arg[i][j]
-#        csdata.append(temp2)
+
 
     print csdata
 
