@@ -693,13 +693,13 @@ def calc_kfki(w,eief,efixed):
     #eief==True if fixed Ef
 
     
-    if eieif==True:
+    if eief==True:
         #fixed ef
-        w_f=efixed*N.ones((len(w),1),'Float64')
+        w_f=efixed*np.ones((len(w),1),'Float64')
         w_i=w-w_f
     else:
         #fixed ei
-        w_i=efixed*N.ones((len(w),1),'Float64')
+        w_i=efixed*np.ones((len(w),1),'Float64')
         w_f=w_i-w
         
     kfki=N.sqrt(wf/wi)
