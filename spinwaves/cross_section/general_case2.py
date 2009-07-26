@@ -421,9 +421,9 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
         taui[:,1]=ones_list*tau[1]
         taui[:,2]=ones_list*tau[2]
         kappa_minus_tau=kapvect-taui
-        kappa_plus_tau=kapvect+taui 
+        tau_minus_kappa=taui - kapvect
                
-        qlist.append(np.vstack([kappa_minus_tau,kappa_plus_tau]))
+        qlist.append(np.vstack([kappa_minus_tau,tau_minus_kappa]))
     #calculate kfki
     nqpts=nkpts*2
     kfki=calc_kfki(w_list,eief,efixed)
@@ -454,7 +454,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
 
     # Other Constants
     gamr0 = 2*0.2695e-12 #sp.Symbol('gamma', commutative = True)
-    hbar = sp.Symbol('hbar', real = True)#1.0 # 1.05457148*10**(-34) #sp.Symbol('hbar', commutative = True)
+    hbar = sp.S(1.0) # 1.05457148*10**(-34) #sp.Symbol('hbar', commutative = True)
     g = 2.#sp.Symbol('g', commutative = True)
     # Kappa vector
     kap = sp.Symbol('kappa', real = True)#spm.Matrix([sp.Symbol('kapx',real = True),sp.Symbol('kapy',real = True),sp.Symbol('kapz',real = True)])
@@ -472,25 +472,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     C = sp.Wild('C')
     D = sp.Wild('D')
     K = sp.Wild('K')
-
-    # First the exponentials are turned into delta functions:
-    for i in range(len(arg)):
-        for j in range(N):
-#            print '1', arg[i][j]
-            arg[i][j] = sp.powsimp(arg[i][j])#sp.powsimp(arg[i][j], deep = True, combine = 'all')
-            arg[i][j] = (arg[i][j] * exp(-I*w*t) * exp(I*kap*L)).expand()# * exp(I*inner_prod(spm.Matrix(atom_list[j].pos).T,kap))
-            arg[i][j] = sp.powsimp(arg[i][j])#sp.powsimp(arg[i][j], deep = True, combine = 'all')
-#            print '2', arg[i][j]
-            arg[i][j] = sub_in(arg[i][j],exp(I*t*A + I*t*B + I*C + I*D + I*K),sp.DiracDelta(A*t + B*t + C + D + K))#*sp.DiracDelta(C))
-#            print '3', arg[i][j]
-            arg[i][j] = sub_in(arg[i][j],sp.DiracDelta(A*t + B*t + C*L + D*L + K*L),sp.DiracDelta(A*hbar + B*hbar)*sp.simplify(sp.DiracDelta(C + D + K + tau)))
-#            print '4', arg[i][j]
-            arg[i][j] = sub_in(arg[i][j],sp.DiracDelta(-A - B)*sp.DiracDelta(C),sp.DiracDelta(A + B)*sp.DiracDelta(C))
-#            arg[i][j] = arg[i][j].subs(-w - wq, w + wq)
-#            print '5', arg[i][j]
-            
-    print "Applied: Delta Function Conversion"
-
+    
     # Grabs the unit vectors from the back of the lists. 
     unit_vect = []
     kapxhat = sp.Symbol('kapxhat',real=True)
@@ -498,7 +480,45 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     kapzhat = sp.Symbol('kapzhat',real=True)
     for i in range(len(arg)):
         unit_vect.append(arg[i].pop())
-    print unit_vect
+    #print unit_vect
+    
+    csection=0
+    for i in range(len(arg)):
+        for j in range(len(arg[i])):
+            csection=csection+arg[i][j]*unit_vect[i]
+    
+    print csection
+    
+    csection=sp.powsimp(csection)
+    csection = (csection * exp(-I*w*t) * exp(I*kap*L)).expand()
+    print 'intermediate'
+    #print csection
+    csection= sp.powsimp(csection)
+    csection = sub_in(csection,exp(I*t*A + I*t*B + I*C + I*D + I*K),sp.DiracDelta(A*t + B*t + C + D + K))
+    csection = sub_in(csection,sp.DiracDelta(A*t + B*t + C*L + D*L ),sp.DiracDelta(A*hbar + B*hbar)*sp.simplify(sp.DiracDelta(C + D  - tau)))
+    print "Applied: Delta Function Conversion"
+   # print csection
+    print 'done'
+
+    ## First the exponentials are turned into delta functions:
+    #for i in range(len(arg)):
+        #for j in range(N):
+##            print '1', arg[i][j]
+            #arg[i][j] = sp.powsimp(arg[i][j])#sp.powsimp(arg[i][j], deep = True, combine = 'all')
+            #arg[i][j] = (arg[i][j] * exp(-I*w*t) * exp(I*kap*L)).expand()# * exp(I*inner_prod(spm.Matrix(atom_list[j].pos).T,kap))
+            #arg[i][j] = sp.powsimp(arg[i][j])#sp.powsimp(arg[i][j], deep = True, combine = 'all')
+##            print '2', arg[i][j]
+            #arg[i][j] = sub_in(arg[i][j],exp(I*t*A + I*t*B + I*C + I*D + I*K),sp.DiracDelta(A*t + B*t + C + D + K))#*sp.DiracDelta(C))
+##            print '3', arg[i][j]
+            #arg[i][j] = sub_in(arg[i][j],sp.DiracDelta(A*t + B*t + C*L + D*L + K*L),sp.DiracDelta(A*hbar + B*hbar)*sp.simplify(sp.DiracDelta(C + D + K + tau)))
+##            print '4', arg[i][j]
+            #arg[i][j] = sub_in(arg[i][j],sp.DiracDelta(-A - B)*sp.DiracDelta(C),sp.DiracDelta(A + B)*sp.DiracDelta(C))
+##            arg[i][j] = arg[i][j].subs(-w - wq, w + wq)
+##            print '5', arg[i][j]
+            
+    print "Applied: Delta Function Conversion"
+
+
     # Subs the actual values for kx,ky,kz, omega_q and n_q into the operator combos
     # The result is basically a nested list:
     #
@@ -506,12 +526,6 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     #    op combos  = [ one combo per atom ]
     #    1 per atom = [ evaluated exp ]
     #
-    csection=0
-    for i in range(len(arg)):
-        for j in range(len(arg[i])):
-            csection=csection+arg[i][j]*unit_vect[i]
-    
-    print csection
     csection=sub_in(csection,sp.DiracDelta(-A - B)*sp.DiracDelta(C),sp.DiracDelta(A + B)*sp.DiracDelta(C))
     
 #    sys.exit()
@@ -523,16 +537,23 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
             temp2=[]
             for i in range(len(eig_list[k][g])):
                 temp=csection
-                value =  kapvect[g]+tau_list[k] - qlist[k][g]
+                #value =  kapvect[g//2]-tau_list[k] - qlist[k][g]
                 if g%2==0:
-                    if eq(value[0],0) == 0 and eq(value[1],0) == 0 and eq(value[2],0) == 0:
-                        temp = temp.subs(sp.DiracDelta(kap+tau-Q),sp.S(1))
-                        temp = temp.subs(sp.DiracDelta(-kap-tau+Q),sp.S(1)) # recall that the delta function is symmetric
-                value =kapvect[g]- tau_list[k] - qlist[k][g] 
-                if g%2!=0:
-                    if eq(value[0],0) == 0 and eq(value[1],0) == 0 and eq(value[2],0) == 0:
+                    #if eq(value[0],0) == 0 and eq(value[1],0) == 0 and eq(value[2],0) == 0:
                         temp = temp.subs(sp.DiracDelta(kap-tau-Q),sp.S(1))
-                        temp = temp.subs(sp.DiracDelta(-kap+tau+Q),sp.S(1))
+                        temp = temp.subs(sp.DiracDelta(-kap+tau+Q),sp.S(1)) # recall that the delta function is symmetric
+                #value =kapvect[g//2]- tau_list[k] + qlist[k][g] 
+                if g%2!=0:
+                    #if eq(value[0],0) == 0 and eq(value[1],0) == 0 and eq(value[2],0) == 0:
+                        temp = temp.subs(sp.DiracDelta(kap-tau+Q),sp.S(1))
+                        temp = temp.subs(sp.DiracDelta(-kap+tau-Q),sp.S(1))
+                value=tau_list[k]      
+                if eq(value[0],0) == 0 and eq(value[1],0) == 0 and eq(value[2],0) == 0:
+                    temp = temp.subs(sp.DiracDelta(kap-tau-Q),sp.S(1))
+                    temp = temp.subs(sp.DiracDelta(-kap+tau+Q),sp.S(1)) #
+                    temp = temp.subs(sp.DiracDelta(kap-tau+Q),sp.S(1))
+                    temp = temp.subs(sp.DiracDelta(-kap+tau-Q),sp.S(1))
+                    
 
         
                 temp = temp.subs(kapxhat,kapunit[g//2,0])
@@ -578,7 +599,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
 
     print csdata
 
-    sys.exit()
+  #  sys.exit()
 
     # Front constants and stuff for the cross-section
     front_constant = 1.0 # (gamr0)**2/(2*pi*hbar)
@@ -589,9 +610,10 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     for g in range(nqpts):
         temp1=[]
         for k in range(len(tau_list)):
-            dif = csdata[k][g]
-            dif = dif*front_func**2*front_constant*debye_waller#*kfki[g]# * ff_list[0][q]
-            temp1.append(dif)
+            for lrange in range(len(eig_list[k][g])):
+                dif = csdata[k][g][lrange]
+                dif = dif*front_func**2*front_constant*debye_waller#*kfki[g]# * ff_list[0][q]
+                temp1.append(dif)
         csrange.append(sum(temp1))
     print "Calculated: Cross-section"
     csrange=np.real(csrange)
@@ -618,8 +640,8 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
 #    csrange=np.real(csrange)
 #    csrange=np.array(csrange)
 #    print csrange.shape
-    xi=h_list
-    yi=w_list
+    xi=np.hstack([h_list,h_list])
+    yi=np.hstack([w_list,w_list])
     zi=csrange
     Z=np.zeros((len(xi),len(yi))) 
     print Z.shape
@@ -738,10 +760,10 @@ def run_cross_section(interactionfile, spinfile):
         for i in range(1):
             tau_list.append(np.array([0,0,0], 'Float64'))
 
-        h_list = np.linspace(-6,6,1000)
+        h_list = np.linspace(0.1,12.0,1000)
         k_list = np.zeros(h_list.shape)
         l_list = np.zeros(h_list.shape)
-        w_list = np.linspace(-0.1,-8,1000)
+        w_list = np.linspace(0.1,8,1000)
 
         efixed = 14.7 #meV
         eief = True
