@@ -415,6 +415,8 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     minusq=[]
     qlist=[]
     ones_list=np.ones((1,nkpts),'Float64')
+    wtlist=[]
+    qtlist=[]
     for tau in tau_list:
         taui=np.ones((nkpts,3),'Float64')
         taui[:,0]=ones_list*tau[0]
@@ -534,6 +536,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
 #    sys.exit()
 #    print arg
     csdata=[]
+
     for k in range(len(tau_list)):
         temp1=[]
         for g in range(nqpts):
@@ -637,8 +640,10 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
 #    csrange=np.real(csrange)
 #    csrange=np.array(csrange)
 #    print csrange.shape
-    xi=np.hstack([h_list,h_list])
+    xi=np.hstack([q_list,h_list])
     yi=np.hstack([w_list,w_list])
+    xi=qtlist
+    yi=wtlist
     zi=csrange
     Z=np.zeros((len(xi),len(yi))) 
     print Z.shape
