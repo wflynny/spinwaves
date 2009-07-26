@@ -464,6 +464,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     tau = sp.Symbol('tau', real = True)
     Q = sp.Symbol('q', real = True)
     L = sp.Symbol('L', real = True)
+    lifetime=sp.Symbol('V',real=True)
     boltz = 8.617343e-2
     
     # Wilds for sub_in method
@@ -495,7 +496,9 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     #print csection
     csection= sp.powsimp(csection)
     csection = sub_in(csection,exp(I*t*A + I*t*B + I*C + I*D + I*K),sp.DiracDelta(A*t + B*t + C + D + K))
-    csection = sub_in(csection,sp.DiracDelta(A*t + B*t + C*L + D*L ),sp.DiracDelta(A*hbar + B*hbar)*sp.simplify(sp.DiracDelta(C + D  - tau)))
+    #csection = sub_in(csection,sp.DiracDelta(A*t + B*t + C*L + D*L ),sp.DiracDelta(A*hbar + B*hbar)*sp.simplify(sp.DiracDelta(C + D  - tau)))  #This is correct
+    csection = sub_in(csection,sp.DiracDelta(A*t + B*t + C*L + D*L ),sp.simplify(lifetime*sp.DiracDelta(C + D  - tau)*
+                                                                                 sp.Pow((A-B)**2+lifetime**2,-1)))
     print "Applied: Delta Function Conversion"
    # print csection
     print 'done'
@@ -564,32 +567,26 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     #                    nq = sp.Symbol('n%i'%(j,), real = True)
  #               print '1',temp
                 temp = temp.subs(wq,eig_list[k][g][i])
-#                print '2',temp
-    #                    print 'w',eig_list[k][g]+w_list[g]
-                if eq(eig_list[k][g][i], w_list[g//2]) == 0:
-                    G=sp.Wild('G', exclude = [Q,kap,tau,w])
-                    temp=sub_in(temp, sp.DiracDelta(G - A*w), sp.S(1))
-                else:
-                    temp = temp.subs(w,w_list[g//2])
-                if eq(eig_list[k][g][i], -w_list[g//2]) == 0:
-                    G=sp.Wild('G', exclude = [Q,kap,tau,w])
-                    temp=sub_in(temp, sp.DiracDelta(G - A*w), sp.S(1))
-                else:
-                    temp = temp.subs(w,w_list[g//2])
-                """
-                pom = eig_list[k][g] + w_list[g]
-                mom = eig_list[k][g] - w_list[g]
-                if eq(pom,0)==0:
-                    temp = temp.subs(sp.DiracDelta(wq+w), S(1))
-                else: temp = temp.subs(sp.DiracDelta(wq+w), 0)
-                if eq(mom,0)==0:
-                    temp = temp.subs(sp.DiracDelta(wq-w), S(1))
-                else: temp = temp.subs(sp.DiracDelta(wq-w), 0)
-                """
+
+                temp=temp.subs(w,w_list[g//2])
+                if 0:
+                    if eq(eig_list[k][g][i], w_list[g//2]) == 0:
+                        G=sp.Wild('G', exclude = [Q,kap,tau,w])
+                        temp=sub_in(temp, sp.DiracDelta(G - A*w), sp.S(1))
+                    else:
+                        temp = temp.subs(w,w_list[g//2])
+                    if eq(eig_list[k][g][i], -w_list[g//2]) == 0:
+                        G=sp.Wild('G', exclude = [Q,kap,tau,w])
+                        temp=sub_in(temp, sp.DiracDelta(G - A*w), sp.S(1))
+                    else:
+                        temp = temp.subs(w,w_list[g//2])
+ 
 #                print '3', temp
-                for num in range(len(atom_list)):
+                for num in range(N_atoms_uc):
                     nq = sp.Symbol('n%i'%(num,), real = True)
-                    n = sp.S(1.0)#sp.Pow( sp.exp(eig_list[k][g]/boltz*temperature) - 1 ,-1)
+                    #n = sp.Pow( sp.exp(-np.abs(eig_list[k][g][i])/boltz/temperature) - 1 ,-1)
+                    n=sp.S(0.0)
+                        
                     temp = temp.subs(nq,n)
 #                print '4',temp
                 temp2.append(temp)
@@ -597,12 +594,12 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
         csdata.append(temp1)
 
 
-    print csdata
+#    print csdata
 
   #  sys.exit()
 
     # Front constants and stuff for the cross-section
-    front_constant = 1.0 # (gamr0)**2/(2*pi*hbar)
+    front_constant = 1.0#(gamr0)**2#/(2*pi*hbar)
     front_func = (1./2.)*g#*F(k)
     debye_waller= 1. #exp(-2*W)
 
@@ -611,13 +608,13 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
         temp1=[]
         for k in range(len(tau_list)):
             for lrange in range(len(eig_list[k][g])):
-                dif = csdata[k][g][lrange]
+                dif = csdata[k][g][lrange].subs(lifetime,sp.S(.1))
                 dif = dif*front_func**2*front_constant*debye_waller#*kfki[g]# * ff_list[0][q]
                 temp1.append(dif)
         csrange.append(sum(temp1))
     print "Calculated: Cross-section"
     csrange=np.real(csrange)
-    csrange=np.array(csrange)
+    csrange=np.array(csrange,'Float64')
     print csrange.shape
 #    if 1:
 #        temp1 = []
@@ -760,10 +757,10 @@ def run_cross_section(interactionfile, spinfile):
         for i in range(1):
             tau_list.append(np.array([0,0,0], 'Float64'))
 
-        h_list = np.linspace(0.1,12.0,1000)
+        h_list = np.linspace(-12.0,12.0,1000)
         k_list = np.zeros(h_list.shape)
         l_list = np.zeros(h_list.shape)
-        w_list = np.linspace(0.1,8,1000)
+        w_list = np.linspace(0.1,10.0,1000)
 
         efixed = 14.7 #meV
         eief = True
