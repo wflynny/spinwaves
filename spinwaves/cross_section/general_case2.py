@@ -335,7 +335,7 @@ def replace_bdb(atom_list, arg):
     return arg
 
 
-def eq(a,b,tol=5e-1):
+def eq(a,b,tol=2e-1):
         c = (abs(a-b) < tol)
         if c:
             return 0
@@ -415,8 +415,16 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     minusq=[]
     qlist=[]
     ones_list=np.ones((1,nkpts),'Float64')
-    wtlist=[]
+    #wtlist=np.ones((1,nkpts*2),'Float64').flatten()
+    wtlist=np.hstack([w_list,w_list])
+    #weven=np.array(range(0,nkpts*2,2))
+    #wodd=np.array(range(1,nkpts*2,2))
+    #wtlist[wodd]=w_list
+    #wtlist[weven]=w_list    
     qtlist=[]
+    
+    
+    
     for tau in tau_list:
         taui=np.ones((nkpts,3),'Float64')
         taui[:,0]=ones_list*tau[0]
@@ -536,6 +544,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
 #    sys.exit()
 #    print arg
     csdata=[]
+    wq = sp.Symbol('wq', real = True)
 
     for k in range(len(tau_list)):
         temp1=[]
@@ -544,12 +553,14 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
             for i in range(len(eig_list[k][g])):
                 temp=csection
                 #value =  kapvect[g//2]-tau_list[k] - qlist[k][g]
-                if g%2==0:
+                #if g==0:
+                if g<nkpts:
                     #if eq(value[0],0) == 0 and eq(value[1],0) == 0 and eq(value[2],0) == 0:
                         temp = temp.subs(sp.DiracDelta(kap-tau-Q),sp.S(1))
                         temp = temp.subs(sp.DiracDelta(-kap+tau+Q),sp.S(1)) # recall that the delta function is symmetric
                 #value =kapvect[g//2]- tau_list[k] + qlist[k][g] 
-                if g%2!=0:
+                #if g%2!=0:
+                elif g>=nkpts:
                     #if eq(value[0],0) == 0 and eq(value[1],0) == 0 and eq(value[2],0) == 0:
                         temp = temp.subs(sp.DiracDelta(kap-tau+Q),sp.S(1))
                         temp = temp.subs(sp.DiracDelta(-kap+tau-Q),sp.S(1))
@@ -566,23 +577,22 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
                 temp = temp.subs(kapyhat,kapunit[g//2,1])
                 temp = temp.subs(kapzhat,kapunit[g//2,2])
     
-                wq = sp.Symbol('wq', real = True)
+                
     #                    nq = sp.Symbol('n%i'%(j,), real = True)
  #               print '1',temp
                 temp = temp.subs(wq,eig_list[k][g][i])
 
-                temp=temp.subs(w,w_list[g//2])
-                if 0:
-                    if eq(eig_list[k][g][i], w_list[g//2]) == 0:
+                #temp=temp.subs(w,wtlist[g])
+                if 1:
+                    if eq(eig_list[k][g][i], wtlist[g]) == 0:
+                        G=sp.Wild('G', exclude = [Q,kap,tau,w])
+                        temp=sub_in(temp, sp.DiracDelta(G - A*w), sp.S(1))
+                    elif eq(eig_list[k][g][i], -wtlist[g]) == 0:
                         G=sp.Wild('G', exclude = [Q,kap,tau,w])
                         temp=sub_in(temp, sp.DiracDelta(G - A*w), sp.S(1))
                     else:
-                        temp = temp.subs(w,w_list[g//2])
-                    if eq(eig_list[k][g][i], -w_list[g//2]) == 0:
-                        G=sp.Wild('G', exclude = [Q,kap,tau,w])
-                        temp=sub_in(temp, sp.DiracDelta(G - A*w), sp.S(1))
-                    else:
-                        temp = temp.subs(w,w_list[g//2])
+                        temp = temp.subs(w,wtlist[g])
+
  
 #                print '3', temp
                 for num in range(N_atoms_uc):
@@ -640,17 +650,19 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
 #    csrange=np.real(csrange)
 #    csrange=np.array(csrange)
 #    print csrange.shape
-    xi=np.hstack([q_list,h_list])
-    yi=np.hstack([w_list,w_list])
+#    xi=np.hstack([h_list,h_list])
+#    yi=np.hstack([w_list,w_list])
+    qtlist=np.array(qlist,'Float64').reshape((nqpts*len(tau_list),3))[:,0]
     xi=qtlist
     yi=wtlist
     zi=csrange
+#    Z=matplotlib.mlab.griddata(xi,yi,zi,xi,yi)
     Z=np.zeros((len(xi),len(yi))) 
-    print Z.shape
-    print xi.shape
-    print yi.shape
+#    print Z.shape
+#    print xi.shape
+#    print yi.shape
     Z[range(len(xi)),range(len(yi))]=zi
-
+    
     zmin, zmax = 1, np.max(Z)
     locator = ticker.MaxNLocator(10) # if you want no more than 10 contours
     locator.create_dummy_axis()
@@ -760,12 +772,12 @@ def run_cross_section(interactionfile, spinfile):
 
         tau_list = []
         for i in range(1):
-            tau_list.append(np.array([0,0,0], 'Float64'))
+            tau_list.append(np.array([3,0,0], 'Float64'))
 
-        h_list = np.linspace(-12.0,12.0,1000)
+        h_list = np.linspace(0.1,12.0,200)
         k_list = np.zeros(h_list.shape)
         l_list = np.zeros(h_list.shape)
-        w_list = np.linspace(0.1,10.0,1000)
+        w_list = np.linspace(0.1,10.0,200)
 
         efixed = 14.7 #meV
         eief = True
