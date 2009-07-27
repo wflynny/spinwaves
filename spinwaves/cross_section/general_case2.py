@@ -646,7 +646,22 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     xi=qtlist
     yi=wtlist
     zi=np.array(cstemp,'Float64')
-    
+    Z=matplotlib.mlab.griddata(xi,yi,zi,xi,yi)
+    zmin, zmax = np.min(Z), np.max(Z)
+    locator = ticker.MaxNLocator(10) # if you want no more than 10 contours
+    locator.create_dummy_axis()
+    locator.set_bounds(zmin, zmax)
+    levs = locator()
+    levs[0]=1.0
+    print zmin, zmax
+    #zm=ma.masked_where(Z<=0,Z)
+    zm=Z
+    print zm
+    print levs
+    pylab.contourf(xi,yi,Z, levs)#, norm=matplotlib.colors.LogNorm(levs[0],levs[len(levs)-1]))
+    l_f = ticker.LogFormatter(10, labelOnlyBase=False) 
+    cbar = pylab.colorbar(ticks = levs, format = l_f)
+    pylab.show()
 
     csrange = []
     for g in range(nqpts):
@@ -678,7 +693,7 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
         pylab.plot(yi,zi,'s')
         pylab.show()
     
-    zmin, zmax = 1, np.max(Z)
+    zmin, zmax = np.min(Z), np.max(Z)
     locator = ticker.MaxNLocator(10) # if you want no more than 10 contours
     locator.create_dummy_axis()
     locator.set_bounds(zmin, zmax)
