@@ -13,6 +13,7 @@ matplotlib.use('WXAgg')
 import pylab
 from matplotlib._pylab_helpers import Gcf
 import matplotlib.ticker as ticker
+import matplotlib.pyplot as plt
 from numpy import ma
 from util.list_manipulation import *
 from util.subin import sub_in
@@ -343,7 +344,7 @@ def eq(a,b,tol=2e-1):
             if a>b: return abs(a-b)
             else: return abs(b-a)
 #def eval_cross_section(N, N_uc, atom_list, jmats, cross, qvals, temp, direction, lmin, lmax):
-def eval_cross_section(interactionfile, spinfile, lattice, arg, 
+def generate_cross_section(interactionfile, spinfile, lattice, arg, 
                        tau_list, h_list, k_list, l_list, w_list, 
                        temperature, steps, eief, efixed = 14.7):
     """
@@ -363,18 +364,6 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
 
     # Read files, get atom_list and such
     atom_list, jnums, jmats,N_atoms_uc=readFiles(interactionfile,spinfile)
-    
-
-    # TEMPORARY TO OVERRIDE ATOM_LIST ABOVE
-#    atom1 = atom(pos = [0.00,0,0], neighbors = [1],   interactions = [0], int_cell = [0], 
-#                 atomicNum = 26, valence = 3, spinRmatrix=spm.Matrix([[1, 0, 0],[0, 1, 0],[0, 0, 1]]))
-#    atom2 = atom(pos = [0.25,0,0], neighbors = [0,2], interactions = [0], int_cell = [0], 
-#                 atomicNum = 26, valence = 3, spinRmatrix=spm.Matrix([[1, 0, 0],[0, 1, 0],[0, 0, 1]]))
-#    atom3 = atom(pos = [0.50,0,0], neighbors = [1,3], interactions = [0], int_cell = [0], 
-#                 atomicNum = 26, valence = 3, spinRmatrix=spm.Matrix([[1, 0, 0],[0, 1, 0],[0, 0, 1]]))
-#    atom4 = atom(pos = [0.75,0,0], neighbors = [2],   interactions = [0], int_cell = [0], 
-#                 atomicNum = 26, valence = 3, spinRmatrix=spm.Matrix([[1, 0, 0],[0, 1, 0],[0, 0, 1]]))
-#    atom_list,N_atoms_uc = ([atom1, atom2, atom3, atom4],1)
     
 
     # Get Hsave to calculate its eigenvalues
@@ -545,8 +534,37 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     #
     csection=sub_in(csection,sp.DiracDelta(-A - B)*sp.DiracDelta(C),sp.DiracDelta(A + B)*sp.DiracDelta(C))
 
+    print "end part 1"
     #print csection
+    return (N_atoms_uc, csection, kaprange, qlist, tau_list, eig_list, kapvect, wtlist)
     
+def eval_cross_section(N_atoms_uc, csection, kaprange, qlist, tau_list, eig_list, kapvect, wtlist):    
+    print "begin part 2"
+    
+    gamr0 = 2*0.2695e-12 #sp.Symbol('gamma', commutative = True)
+    hbar = sp.S(1.0) # 1.05457148*10**(-34) #sp.Symbol('hbar', commutative = True)
+    g = 2.#sp.Symbol('g', commutative = True)
+    # Kappa vector
+    kap = sp.Symbol('kappa', real = True)#spm.Matrix([sp.Symbol('kapx',real = True),sp.Symbol('kapy',real = True),sp.Symbol('kapz',real = True)])
+    t = sp.Symbol('t', real = True)
+    w = sp.Symbol('w', real = True)
+    W = sp.Symbol('W', real = True)
+    tau = sp.Symbol('tau', real = True)
+    Q = sp.Symbol('q', real = True)
+    L = sp.Symbol('L', real = True)
+    lifetime=sp.Symbol('V',real=True)
+    boltz = 8.617343e-2    
+    kapxhat = sp.Symbol('kapxhat',real=True)
+    kapyhat = sp.Symbol('kapyhat',real=True)
+    kapzhat = sp.Symbol('kapzhat',real=True)    
+
+    kapunit = kapvect.copy()
+    kapunit[:,0]=kapvect[:,0]/kaprange
+    kapunit[:,1]=kapvect[:,1]/kaprange
+    kapunit[:,2]=kapvect[:,2]/kaprange    
+    
+    nkpts = len(kaprange)
+    nqpts = 2*nkpts
     
     csdata=[]
     wq = sp.Symbol('wq', real = True)
@@ -658,60 +676,60 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
     zm=Z
     print zm
     print levs
-    pylab.contourf(xi,yi,Z, levs)#, norm=matplotlib.colors.LogNorm(levs[0],levs[len(levs)-1]))
+    plt.contourf(xi,yi,Z, levs)#, norm=matplotlib.colors.LogNorm(levs[0],levs[len(levs)-1]))
     l_f = ticker.LogFormatter(10, labelOnlyBase=False) 
-    cbar = pylab.colorbar(ticks = levs, format = l_f)
-    pylab.show()
+    cbar = plt.colorbar(ticks = levs, format = l_f)
+    plt.show()
 
-    csrange = []
-    for g in range(nqpts):
-        temp1=[]
-        for k in range(len(tau_list)):
-            for lrange in range(len(eig_list[k][g])):
-                dif = csdata[k][g][lrange].subs(lifetime,sp.S(.1))
-                dif = dif*front_func**2*front_constant*debye_waller#*kfki[g]# * ff_list[0][q]
-                temp1.append(dif)
-        csrange.append(sum(temp1))
-    print "Calculated: Cross-section"
-    csrange=np.real(csrange)
-    csrange=np.array(csrange,'Float64')
-    print csrange.shape
+    #csrange = []
+    #for g in range(nqpts):
+        #temp1=[]
+        #for k in range(len(tau_list)):
+            #for lrange in range(len(eig_list[k][g])):
+                #dif = csdata[k][g][lrange].subs(lifetime,sp.S(.1))
+                #dif = dif*front_func**2*front_constant*debye_waller#*kfki[g]# * ff_list[0][q]
+                #temp1.append(dif)
+        #csrange.append(sum(temp1))
+    #print "Calculated: Cross-section"
+    #csrange=np.real(csrange)
+    #csrange=np.array(csrange,'Float64')
+    #print csrange.shape
 
-    zi=csrange
-    X,Y = np.meshgrid(xi,yi)
-    Z=matplotlib.mlab.griddata(xi,yi,zi,xi,yi)
-#    Z=np.zeros((len(xi),len(yi))) 
-#    print Z.shape
-#    print xi.shape
-#    print yi.shape
-   # Z[range(len(xi)),range(len(yi))]=zi
+    #zi=csrange
+    #X,Y = np.meshgrid(xi,yi)
+    #Z=matplotlib.mlab.griddata(xi,yi,zi,xi,yi)
+##    Z=np.zeros((len(xi),len(yi))) 
+##    print Z.shape
+##    print xi.shape
+##    print yi.shape
+   ## Z[range(len(xi)),range(len(yi))]=zi
     
-    if 0:
-        pylab.plot(xi,zi,'s')
-        pylab.show()
-    if 1:
-        pylab.plot(yi,zi,'s')
-        pylab.show()
+    #if 0:
+        #pylab.plot(xi,zi,'s')
+        #pylab.show()
+    #if 0:
+        #pylab.plot(yi,zi,'s')
+        #pylab.show()
     
-    zmin, zmax = np.min(Z), np.max(Z)
-    locator = ticker.MaxNLocator(10) # if you want no more than 10 contours
-    locator.create_dummy_axis()
-    locator.set_bounds(zmin, zmax)
-    levs = locator()
-    levs[0]=1.0
-    print zmin, zmax
-    #zm=ma.masked_where(Z<=0,Z)
-    zm=Z
-    print zm
-    print levs
-    pylab.contourf(xi,yi,zm, levs)#, norm=matplotlib.colors.LogNorm(levs[0],levs[len(levs)-1]))
-    l_f = ticker.LogFormatter(10, labelOnlyBase=False) 
-    cbar = pylab.colorbar(ticks = levs, format = l_f) 
-    if 0:
-        pylab.show()
-    print 'hi'
-#    pylab.contourf(qrange,wrange,csrange)
-#    pylab.show()
+    #zmin, zmax = np.min(Z), np.max(Z)
+    #locator = ticker.MaxNLocator(10) # if you want no more than 10 contours
+    #locator.create_dummy_axis()
+    #locator.set_bounds(zmin, zmax)
+    #levs = locator()
+    #levs[0]=1.0
+    #print zmin, zmax
+    ##zm=ma.masked_where(Z<=0,Z)
+    #zm=Z
+    #print zm
+    #print levs
+    #pylab.contourf(xi,yi,zm, levs)#, norm=matplotlib.colors.LogNorm(levs[0],levs[len(levs)-1]))
+    #l_f = ticker.LogFormatter(10, labelOnlyBase=False) 
+    #cbar = pylab.colorbar(ticks = levs, format = l_f) 
+    #if 0:
+        #pylab.show()
+    #print 'hi'
+##    pylab.contourf(qrange,wrange,csrange)
+##    pylab.show()
 
     
 def calc_kfki(w,eief,efixed):
@@ -812,15 +830,15 @@ def run_cross_section(interactionfile, spinfile):
 
         efixed = 14.7 #meV
         eief = True
-        eval_cross_section(interactionfile, spinfile, lattice, ops, 
-                           tau_list, h_list, k_list, l_list, w_list,
-                           temperature, steps, eief, efixed)
-
+        N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist = generate_cross_section(interactionfile, spinfile, lattice, ops, 
+                                                                                                     tau_list, h_list, k_list, l_list, w_list,
+                                                                                                     temperature, steps, eief, efixed)
+        return N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist
     end = clock()
     print "\nFinished %i atoms in %.2f seconds" %(N_atoms,end-start)
     
-    
-    #generate_output(cross_sect)
+def run_eval_cross_section(N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist):
+    eval_cross_section(N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist)
 
 
 #---------------- MAIN --------------------------------------------------------- 
@@ -831,7 +849,8 @@ if __name__=='__main__':
     interfile = 'c:/test_montecarlo.txt'
     spinfile = 'c:/test_Spins.txt'    
     
-    run_cross_section(interfile,spinfile)
+    N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist = run_cross_section(interfile,spinfile)
+    run_eval_cross_section(N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist)
 
 
     ### THINGS LEFT TO DO

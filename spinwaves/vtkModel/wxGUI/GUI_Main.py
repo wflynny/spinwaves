@@ -21,13 +21,17 @@ from spinwaves.vtkModel.CellClass import *
 #import random
 import spinwaves.vtkModel.SpaceGroups
 from Session import Session
-from spinwaves.cross_section.general_case import run_cross_section
+from spinwaves.cross_section.general_case2 import run_cross_section, run_eval_cross_section
 
 #It could not find MonteCarlo package (import MonteCarlo.CSim)
 #sys.path.append(mainPath +"\\MonteCarlo")
 import spinwaves.MonteCarlo.CSim as CSim
 import spinwaves.spinwavecalc.spinwavepanel as spinwavepanel
 import spinwaves.spinwavecalc.spinwave_calc_file as spinwave_calc_file
+
+import cross_section.util.printing as printing
+from multiprocessing import Process, Pipe
+import copy
 
 from spinwaves.vtkModel.BondClass import JParam
 from spinwaves.vtkModel.Parameter_Manager import Fitter
@@ -2016,8 +2020,13 @@ class Frame(wx.Frame):
         frame1.Refresh()
         
     def OnLaunchCrossSection(self, evt):
+        myparent = self
+        #frame_1 = wx.Frame(myparent, -1, "Cross-section")
+        #dlg = Cross_Section(parent = frame_1,id=-1)
         frame_1 = Cross_Section(self, -1, "")
+        #self.SetExtraStyle(wx.WS_EX_VALIDATE_RECURSIVELY)
         frame_1.Show()
+        frame_1.Refresh()
     
     def OnSaveImage(self, evt):
         """Saves an image of the current rendering.  Currently only .tiff
@@ -2077,7 +2086,9 @@ class Frame(wx.Frame):
 
 class Cross_Section(wx.Frame):
     def __init__(self, *args, **kwds):
-        # begin wxGlade: Cross_Section.__init__
+    #def __init__(self, parent, id):
+        #wx.Panel.__init__(self, parent, id)
+         #begin wxGlade: Cross_Section.__init__
         kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
         self.sizer_4_staticbox = wx.StaticBox(self, -1, "Spins File")
@@ -2087,6 +2098,23 @@ class Cross_Section(wx.Frame):
         self.text_ctrl_2 = wx.TextCtrl(self, -1, "")
         self.button_1 = wx.Button(self, -1, "Browse")
         self.launchButton = wx.Button(self, -1, "Launch")
+        self.process_list = []
+
+        
+        
+        #self.sizer_4_staticbox = wx.StaticBox(self, -1, "Spins File")
+        #self.sizer_5_staticbox = wx.StaticBox(self, -1, "Interactions File")
+        #self.text_ctrl_1 = wx.TextCtrl(self, -1, "")
+        #self.interactionsFileBrowse = wx.Button(self, -1, "Browse")
+        #self.text_ctrl_2 = wx.TextCtrl(self, -1, "")
+        #self.button_1 = wx.Button(self, -1, "Browse")
+        #self.launchButton = wx.Button(self, -1, "Launch")
+        #self.process_list = []
+        
+        ##Fit this window
+        #self.Fit()
+        #self.GetParent().Fit()#Fit the frame containing this panel
+        #self.GetParent().SetMinSize(self.GetParent().GetSize())
 
         self.__set_properties()
         self.__do_layout()
@@ -2094,7 +2122,7 @@ class Cross_Section(wx.Frame):
 
     def __set_properties(self):
         # begin wxGlade: Cross_Section.__set_properties
-        self.SetTitle("frame_1")
+        self.SetTitle("Cross-Section")
         self.text_ctrl_1.SetMinSize((160, 27))
         self.text_ctrl_2.SetMinSize((160, 27))
         # end wxGlade
@@ -2118,7 +2146,13 @@ class Cross_Section(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.OnBrowseInteractions, self.interactionsFileBrowse)
         self.Bind(wx.EVT_BUTTON, self.OnBrowseSpins, self.button_1)
         self.Bind(wx.EVT_BUTTON, self.OnLaunch, self.launchButton)
+        self.Bind(wx.EVT_CLOSE,  self.OnCloseWindow)
 
+    def OnCloseWindow(self, evt):
+        for pro in self.process_list:
+            pro.terminate()
+        self.Destroy()
+        
     def OnBrowseInteractions(self, evt):
         confBase = wx.ConfigBase.Create()
         confBase.SetStyle(wx.CONFIG_USE_LOCAL_FILE)
@@ -2176,9 +2210,38 @@ class Cross_Section(wx.Frame):
             return
         f.close()
         
-        run_cross_section(self.text_ctrl_1.GetValue(), self.text_ctrl_2.GetValue())
-    
+        N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist = run_cross_section(self.text_ctrl_1.GetValue(), self.text_ctrl_2.GetValue())
+        
+        print 'create pipe'
+        left_conn, right_conn = Pipe()
+        p = Process(target = printing.create_latex, args = (right_conn, csection, "eigs"))
+        print 'process starting'
+        p.start()
+        print 'process started'
+        self.process_list.append(p)
 
+        printing.process_info('main line')
+        #q = Process(target = run_eval_cross_section, args = (N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist))
+        run_eval_cross_section(N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist)
+        #q.start()
+        
+        p.join()
+        print 'displaying window'
+        eig_frame = printing.LaTeXDisplayFrame(None, p.pid, left_conn.recv(), 'Cross-section')
+        if eig_frame.PID == p.pid:
+            eig_frame.Show()
+            self.process_list.remove(p)
+            p.terminate()
+        else:
+            if p in self.process_list:
+                p.terminate()
+                raise Exception('process messed up')
+        p.terminate()
+        print 'p terminated'
+        #q.join()
+        #print 'q done'
+        #q.terminate()
+        print 'q terminated'
 # end of class Cross_Section
 
 

@@ -4,9 +4,12 @@ import  wx.lib.intctrl
 import  wx.grid as  gridlib
 import numpy as N
 import sys,os
-import spinwave_calc_file_old2 as spinwave_calc_file
+import spinwave_calc_file as spinwave_calc_file
 import wx.richtext
 from sympy import pi
+import cross_section.util.printing as printing
+from multiprocessing import Process, Pipe
+import copy
 
 class MyApp(wx.App):
     def __init__(self, redirect=False, filename=None, useBestVisual=False, clearSigInt=True):
@@ -131,6 +134,7 @@ class RichTextFrame(wx.Frame):
 class FormDialog(sc.SizedPanel):
     def __init__(self, parent, id):
         self.parent = parent
+        self.process_list = []
         
         #valstyle=wx.WS_EX_VALIDATE_RECURSIVELY
         sc.SizedPanel.__init__(self, parent, -1,
@@ -265,6 +269,8 @@ class FormDialog(sc.SizedPanel):
         
     def OnCancel(self, evt):
         """Closes window"""
+        for pro in self.process_list:
+            pro.terminate()
         self.parent.Close()
         
     
@@ -279,9 +285,37 @@ class FormDialog(sc.SizedPanel):
         print self.data['step']
         print self.interactionfile
         print self.spinfile
-        spinwave_calc_file.driver(self.spinfile,self.interactionfile,self.data,self.data['step'], float(self.kRange['kMin'])*pi, float(self.kRange['kMax'])*pi)
-        #button click event is not passed on, so the window does not close when OK is clicked
+        
+        Hsave = spinwave_calc_file.driver1(self.spinfile,self.interactionfile)
+        myeigs=printing.eig_process(copy.deepcopy(Hsave))
 
+        left_conn, right_conn = Pipe()
+        p = Process(target = printing.create_latex, args = (right_conn, myeigs, "eigs"))
+        p.start()
+        eig_frame = printing.LaTeXDisplayFrame(self.parent, p.pid, left_conn.recv(), 'Dispersion Eigenvalues')
+        self.process_list.append(p)
+        
+
+        printing.process_info('main line')
+        q = Process(target = spinwave_calc_file.driver2, args = (Hsave,self.data,self.data['step'], float(self.kRange['kMin'])*pi, float(self.kRange['kMax'])*pi))
+        #button click event is not passed on, so the window does not close when OK is clicked
+        q.start()
+        p.join()
+        
+        if eig_frame.PID == p.pid:
+            eig_frame.Show()
+            self.process_list.remove(p)
+            p.terminate()
+        else:
+            if p.pid in self.process_list:
+                p.terminate()
+                raise Exception('process messed up')
+        
+        p.terminate()
+        q.join()
+        q.terminate()
+        
+        
     def EvtSpinCtrl(self,evt):
         print self.__dict__
         print 'event',evt.__dict__

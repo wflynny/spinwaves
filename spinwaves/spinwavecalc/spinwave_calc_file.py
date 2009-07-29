@@ -14,6 +14,7 @@ import scipy.linalg
 from matplotlib._pylab_helpers import Gcf
 import sys
 #from sympy import latex
+import matplotlib.pyplot as plt
 
 #translations=[[0,0,0],
 #              [0,0,1],[0,0,-1]
@@ -32,25 +33,27 @@ def print_matplotlib(s):
 
 
 def coeff(expr, term):
-   expr = sympy.collect(expr, term)
-   #print 'expr',expr
-   symbols = list(term.atoms(sympy.Symbol))
-   #print 'symbols',symbols
-   w = sympy.Wild("coeff", exclude=symbols)
-   #print 'w',w
-   m = expr.match(w*term+sympy.Wild("rest"))
-   #print 'm',m
-   m2=expr.match(w*term)
-   #print 'm2',m2
-   res=False
-   if m2!=None:
-       #print 'm2[w]',m2[w]
-       res=m2[w]*term==expr
-   if m and res!=True:
-       return m[w]
-   #added the next two lines
-   elif m2:
-       return m2[w]
+    if isinstance(expr, int):
+        return 0
+    expr = sympy.collect(expr, term)
+    #print 'expr',expr
+    symbols = list(term.atoms(sympy.Symbol))
+    #print 'symbols',symbols
+    w = sympy.Wild("coeff", exclude=symbols)
+    #print 'w',w
+    m = expr.match(w*term+sympy.Wild("rest"))
+    #print 'm',m
+    m2=expr.match(w*term)
+    #print 'm2',m2
+    res=False
+    if m2!=None:
+        #print 'm2[w]',m2[w]
+        res=m2[w]*term==expr
+    if m and res!=True:
+        return m[w]
+    #added the next two lines
+    elif m2:
+        return m2[w]
 
 
 
@@ -113,8 +116,6 @@ def generate_hdef(atom_list,Jij,Sxyz,N_atoms_uc,N_atoms):
     Hdef=0
 #    print 'Jij',Jij,len(Jij)
 
-    
-    print atom_list
     print 'N_atoms_uc', N_atoms_uc
     #for i in range(N_atoms):
     for i in range(N_atoms_uc): #correct
@@ -157,8 +158,8 @@ def generate_hdef(atom_list,Jij,Sxyz,N_atoms_uc,N_atoms):
 def holstein(Hdef):
         S = sympy.Symbol('S',real=True)
         print 'holstein'
-        print Hdef.atoms(sympy.Symbol)
-        Hdef=Hdef.expand()
+        #print Hdef.atoms(sympy.Symbol)
+        #Hdef=Hdef.expand()
         #Hdef=Hdef.as_poly(S)
         p = sympy.Wild('p',exclude='S')
         q = sympy.Wild('q',exclude='S')
@@ -189,7 +190,7 @@ def fouriertransform(atom_list,Jij,Hlin,k,N_atoms_uc,N_atoms):
     #print 'atom_list',atom_list
     #print 'Sxyz',Sxyz
     #print 'Jij',Jij
-#    print 'fourier'
+    print 'fourier'
 #    print Hlin
 #    print Hlin.atoms(sympy.Symbol)
 #    print 'expand'
@@ -261,7 +262,7 @@ def fouriertransform(atom_list,Jij,Hlin,k,N_atoms_uc,N_atoms):
 
 def applycommutation(atom_list,Jij,Hfou,k,N_atoms_uc,N_atoms):
     """Operate commutation relations to put all the 2nd order term as ckd**ck, cmk**cmkd, cmk**ck and ckd**cmkd form"""
-
+    print "commutation application"
     for i in range(N_atoms_uc):
         N_int=len(atom_list[i].interactions)
         ci=sympy.Symbol("c%d"%(i,),commutative=False,real=True)
@@ -335,7 +336,7 @@ def gen_operator_table_dagger(atom_list,N_atoms_uc):
 
 def gen_XdX(atom_list,operator_table,operator_table_dagger,Hcomm,N_atoms_uc):
     """Operate commutation relations to put all the 2nd order term as ckd**ck, cmk**cmkd, cmk**ck and ckd**cmkd form"""
-
+    print "gen_XdX"
     exclude_list=[]
     coeff_list=[]
     Hcomm=Hcomm.expand()
@@ -364,9 +365,9 @@ def gen_XdX(atom_list,operator_table,operator_table_dagger,Hcomm,N_atoms_uc):
 
 def calculate_dispersion(atom_list,N_atoms_uc,N_atoms,Jij,showEigs=False):
     Sabn=generate_sabn(N_atoms)       
-    print 'Sabn',Sabn 
+#    print 'Sabn',Sabn 
     Sxyz=generate_sxyz(Sabn,atom_list)
-    print 'Sxyz', Sxyz
+#    print 'Sxyz', Sxyz
         
     if 1:
         #print len(translations)   
@@ -374,7 +375,7 @@ def calculate_dispersion(atom_list,N_atoms_uc,N_atoms,Jij,showEigs=False):
         #Jij=[N.matrix([[J,0,0],[0,J,0],[0,0,J]])]
         #Hdef=generate_hdef(atom_list,Jij,Sabn,N_atoms_uc,N_atoms)
         Hdef=generate_hdef(atom_list,Jij,Sxyz,N_atoms_uc,N_atoms)
-#        print 'Hdef',Hdef
+        print 'Hdef',Hdef
         #pngview(Hdef)
         #print_matplotlib(latex(Hdef)) 
     #if 0:
@@ -409,10 +410,11 @@ def calculate_dispersion(atom_list,N_atoms_uc,N_atoms,Jij,showEigs=False):
                         #print 'ky',Ntwo[i,j].match(ky)
                         #Ntwo[i,j]=sympy.re(Ntwo[i,j].evalf())
                         #Ntwo[i,j]=Ntwo[i,j].evalf()
-                        TwogH2[i,j]=TwogH2[i,j].expand(complex=True)#.subs(I,1.0j)
+                        TwogH2[i,j]=TwogH2[i,j].expand(complex=True, trig = True)#.subs(I,1.0j)
+        print 'trigified'
 #        print 'trigified',TwogH2
-#        print TwogH2[0,1]
-
+#        print TwogH2[0,1]            
+                        
         Hsave=TwogH2        
         if showEigs:
             #print 'calculating'
@@ -429,7 +431,7 @@ def calculate_dispersion(atom_list,N_atoms_uc,N_atoms,Jij,showEigs=False):
             x=sympy.Symbol('x')
            # print_matplotlib(latex(TwogH2))
             #eigs=TwogH2.berkowitz_charpoly(x)
-            #print 'eigs', eigs
+            print 'eigs', eigs
             keys=eigs.keys()
             #print 'key',keys[0]
             #print keys[0].expand(complex=True)
@@ -437,7 +439,7 @@ def calculate_dispersion(atom_list,N_atoms_uc,N_atoms,Jij,showEigs=False):
             #eigs=TwogH2.eigenvals()
             #print 'eigenvalues', sympy.simplify(eigs[1][0])
             return (Hsave, Hsave.charpoly(x), eigs)
-
+        print 'calc dispersion: complete'
         return Hsave
     
 def calc_eigs(Hsave,kx_val,ky_val,kz_val):
@@ -565,7 +567,7 @@ def calc_eigs_direct(Hsave,H,K,L):
                 l,v=scipy.linalg.eig(Nthree)
                 for cur_l in l:
                     cur_l=cur_l.real
-                print l[1]
+#                print l[1]
                 wrange.append(l)
         return N.array(wrange,'Float64')
 
@@ -696,8 +698,25 @@ def Sapplycommutation(atom_list,Sfou,k):
     
     
     return Sfou
+def driver1(spinfile,interactionfile):
+    "generates Hsave"
+    atom_list, jnums, jmats,N_atoms_uc=readfiles.readFiles(interactionfile,spinfile)
+    N_atoms=len(atom_list)
 
-def driver(spinfile,interactionfile,direction,steps, kMin, kMax):
+    print 'N_atoms',N_atoms,'Natoms_uc',N_atoms_uc
+
+    for atom in atom_list:
+        print atom.neighbors
+        print atom.interactions
+    
+    Hsave = calculate_dispersion(atom_list,N_atoms_uc,N_atoms,jmats,showEigs=False)   
+    
+    print 'driver1: complete'
+    
+    return Hsave
+
+def driver2(Hsave,direction, steps, kMin, kMax):
+    "plots"
 #    myfilestr=spinfile#r'c:\spins.txt'
 #    myspins=readfiles.read_spins(myfilestr)#Returns all spins from file in array form
 #    spins=readfiles.find_collinear(myspins)#This is actually a list of Rotation matrices
@@ -711,24 +730,25 @@ def driver(spinfile,interactionfile,direction,steps, kMin, kMax):
     
     #any atom.spin opbjects past here would have actually been rotation matrices
     #so they can be replaced with the new spinRmatrix
-    atom_list, jnums, jmats,N_atoms_uc=readfiles.readFiles(interactionfile,spinfile)
+    #atom_list, jnums, jmats,N_atoms_uc=readfiles.readFiles(interactionfile,spinfile)
     #sympy.matrices.Matrix
     #atom_list[1].spinRmatrix = N.matrix([[-1, 0, 0],
     #                                     [0, 1, 0],
     #                                     [0,0,-1]],'Float64')
     
-    
-    N_atoms=len(atom_list)
+    #N_atoms=len(atom_list)
     #N_atoms_uc=1
-    print 'N_atoms',N_atoms,'Natoms_uc',N_atoms_uc
+    #print 'N_atoms',N_atoms,'Natoms_uc',N_atoms_uc
     #atom_list=generate_atoms()
     #atom_list=generate_atoms_rot()
-    for atom in atom_list:
-        print atom.neighbors
-        print atom.interactions
+    #for atom in atom_list:
+        #print atom.neighbors
+        #print atom.interactions
     
-    Hsave=calculate_dispersion(atom_list,N_atoms_uc,N_atoms,jmats,showEigs=True)
-    sys.exit()
+    #(Hsave, charpoly, eigs)=calculate_dispersion(atom_list,N_atoms_uc,N_atoms,jmats,showEigs=True)
+    #sys.exit()
+    print "driver2"
+    
     qrange = []
     wrange = []
     for q in N.arange(kMin,kMax,kMax/steps):
@@ -738,27 +758,32 @@ def driver(spinfile,interactionfile,direction,steps, kMin, kMax):
     wrange=N.real(wrange)
     wrange=N.array(wrange)
     wrange=N.real(wrange.T)
-    
+
+    print wrange.shape
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
     for wrange1 in wrange:
-        pylab.plot(qrange,wrange1,'s')
+        ax.plot(qrange, wrange1)
+        plt.hold(True)
+    plt.show()
     
     
+    #direction={}
+    #direction['kx']=0.
+    #direction['ky']=0.
+    #direction['kz']=1.
     
-    direction={}
-    direction['kx']=0.
-    direction['ky']=1.
-    direction['kz']=0.
     #pylab.figure()
     #calc_eigs(Hsave,direction,steps)
     
-    pylab.show()
+    #pylab.show()
     #for figwin in Gcf.get_all_fig_managers():
     #    figwin.frame.Show()
-    print jmats
+    #print jmats
     print direction
     print steps
-    print spinfile
-    print interactionfile
+    #print spinfile
+    #print interactionfile
     
 if __name__=='__main__':
     if 1:
@@ -779,8 +804,8 @@ if __name__=='__main__':
         #interactionfile=r'C:/Documents and Settings/wflynn/My Documents/workspace/spinwaves/spinwaves/spinwavecalc/tests/montecarlo_sc.txt'
         
         #simple cubic afm
-        spinfile=r'C:/Documents and Settings/wflynn/My Documents/workspace/spinwaves/spinwaves/spinwavecalc/tests/spins_sc_afm.txt'
-        interactionfile=r'C:/Documents and Settings/wflynn/My Documents/workspace/spinwaves/spinwaves/spinwavecalc/tests/montecarlo_sc_afm.txt'
+        spinfile=r'C:/test_Spins.txt'
+        interactionfile=r'C:/test_montecarlo.txt'
         
         steps=100
         data={}
@@ -788,7 +813,8 @@ if __name__=='__main__':
         data['ky']=0.
         data['kz']=0.
         direction=data
-        driver(spinfile,interactionfile,direction,steps,0,2*N.pi)
+        Hsave = driver1(spinfile,interactionfile)
+        driver2(Hsave,direction,steps,0,2*N.pi)
         #atom_list, jnums, jmats=readfiles.read_interactions(myfilestr,spins)
         #N_atoms=len(atom_list)
         #N_atoms_uc=1

@@ -6,6 +6,70 @@ import subprocess as sub
 from subprocess import *
 import sympy.galgebra.latex_ex as tex
 import sympy.galgebra.GA as GA
+import wx
+from multiprocessing import Process
+
+class LaTeXDisplayFrame(wx.Frame):
+    def __init__(self, parent, ID, input_text, title):
+        self.parent = parent
+        self.PID = ID
+        self.input = input_text
+
+        wx.Frame.__init__(self, parent, -1, title, size=(300,250))
+        panel = wx.Panel(self,-1)
+        multiLabel = wx.StaticText(panel, -1, "Analytic")
+        multiText = wx.TextCtrl(panel, -1, self.input, size=(225,200), style=wx.TE_MULTILINE)
+        multiText.SetInsertionPoint(0)
+        
+        sizer = wx.FlexGridSizer(cols=2, hgap=6, vgap=6)
+        sizer.AddMany([multiLabel, multiText])
+        panel.SetSizer(sizer)
+
+def eig_process(mat):
+    process_info('function eig_process')
+    if isinstance(mat, np.ndarray):
+        print mat.eig
+        return mat.eig
+    elif isinstance(mat, sp.matrices.Matrix):
+        #print mat.eigenvals().keys()
+        return mat.eigenvals().keys()
+
+def process_info(title):
+    print title
+    print 'module name:', __name__
+    print 'process id:', os.getpid()        
+        
+def create_latex(conn, input, name = None):
+    pieces = []
+    print type(input)
+    print input
+    if not isinstance(input, str):
+        if isinstance(input, list):
+            try:
+                print 'list'
+                for i in range(len(input)):
+                    pieces.append(sp.latex(input[i]))
+            except: e
+        else:
+            try:
+                output = sp.latex(input)+"\n"
+            except: 
+                e
+                print e
+    else: output = output+"\n\n"
+    if pieces != []:
+        output = '\n\n'.join(pieces)
+    else:
+        if output.find(',') > 0:
+            output = '\n'.join(output.split(','))
+    output = output.replace('operatorname','mbox')
+    if name != None:
+        output = '\section{'+ name + '}' +'\n\n'+ output
+    conn.send(output)
+    conn.close()
+    
+    print "Output OUT"
+
 
 def generate_output_3(output):
     
@@ -18,8 +82,9 @@ GA.set_main(sys.modules[__name__])
 def generate_output_2(output):
     tex.Format()
     tex.sym_format(1)
-    tex.print_LaTeX(output)
-    tex.xdvi(debug=True)
+    x = tex.print_LaTeX(output)
+    print x
+    #tex.xdvi(debug=True)
 
 def generate_output(output, out = ".dvi"):
     """ Prints the given output in LaTeX """
@@ -38,7 +103,7 @@ def generate_output(output, out = ".dvi"):
             output = sp.latex(output)+"\n"
         except: e
     else: output = output+"\n\n"
-    
+    output = '\n'.join(output.split(','))
     #split = output.split('+')
     #reformatted = '$ \n\n$+'.join(split)
     #reformatted = reformatted.replace('$','')
@@ -83,4 +148,4 @@ def generate_output(output, out = ".dvi"):
 if __name__ == "__main__":
     if 1:
         x,y = sp.symbols('xy')
-        generate_output_2(x+2*y)
+        create_latex(x+2*y)
