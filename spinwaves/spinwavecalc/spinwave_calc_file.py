@@ -339,7 +339,7 @@ def gen_XdX(atom_list,operator_table,operator_table_dagger,Hcomm,N_atoms_uc):
     print "gen_XdX"
     exclude_list=[]
     coeff_list=[]
-    Hcomm=Hcomm.expand()
+    #Hcomm=Hcomm.expand(deep = False)
     XdX=sympy.zeros(2*N_atoms_uc)
     g=sympy.zeros(2*N_atoms_uc)
     for i in range(2*N_atoms_uc):
@@ -358,7 +358,7 @@ def gen_XdX(atom_list,operator_table,operator_table_dagger,Hcomm,N_atoms_uc):
                     g[i,j]=-1
                 else:
                     g[i,j]=1
- 
+    print 'XdX done'
     return XdX,g
 
 
@@ -399,6 +399,7 @@ def calculate_dispersion(atom_list,N_atoms_uc,N_atoms,Jij,showEigs=False):
 #        print 'g',g
         TwogH2=2*g*XdX
 #        print 'TwogH2',TwogH2
+        print 'trigifying'
         m,n=TwogH2.shape
         if 1:
                 for i in range(m):

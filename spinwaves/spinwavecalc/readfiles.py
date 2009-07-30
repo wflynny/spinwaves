@@ -43,7 +43,7 @@ def get_tokenized_line(myfile,returnline=['']):
         return tokenized
 
 
-def readFiles(interactionFileStr,spinFileStr):
+def readFiles(interactionFileStr,spinFileStr, allAtoms=False):
     """modified from read_interactions.  Originally this(read_interactions) read
     in the atoms from the interaction file and matched the spin rotation
     matrices with the appropriate atoms based on indices.  Now it takes the
@@ -105,7 +105,7 @@ def readFiles(interactionFileStr,spinFileStr):
                             break
                         #print tokenized
                         atom_num=int(tokenized[0])
-                        if tokenized[5] == 'x':  #If it is in the first interaction cell
+                        if tokenized[5] == 'x' or allAtoms:  #If it is in the first interaction cell
                             print "atom in first interaction cell"
                             x,y,z=float(tokenized[6]),float(tokenized[7]),float(tokenized[8])
                             print x,y,z
