@@ -5,7 +5,7 @@ Created on Jul 16, 2009
 '''
 import copy
 #from ctypes import c_float, c_int
-from numpy import cos, sin, arctan, arccos, pi
+from numpy import cos, sin, arctan, arccos, pi,arcsin
 from spinwaves.utilities.mpfit import mpfit
 #from CSim import passAtoms, passMatrices, loadLib
 #from simple import readFile
@@ -87,7 +87,7 @@ def optimizeSpins(interactionFile, inFile, outFile):
     m = mpfit(hamiltonian, p0, parinfo = parinfo)
     return m.params
 
-def gen_Ham(atom_list):
+def gen_Jij(atom_list):
     """ Creates a scipy bsr sparse array """
     N_atoms = len(atom_list)
     jij_values = []
@@ -136,19 +136,8 @@ def gen_Ham(atom_list):
     
     # Create Sparse Array
     jij = bsr_matrix( (jij_values,jij_columns,jij_rowIndex), shape=(3*N_atoms,3*N_atoms) ).todense()
-    sij = gen_spinVector(atom_list)
-    sijT = sij.reshape((1,9))
-    anis = gen_anisotropy(atom_list)
     
-    res1 = sijT * jij
-    Hij = np.dot(res1,sij).flat[0]
-
-    print 'Hij', Hij
-    print 'anis', anis
-    
-    Ham = - Hij - anis
-
-    return Ham
+    return jij
 
 def gen_spinVector(atom_list):
     N_atoms = len(atom_list)
@@ -168,132 +157,143 @@ def gen_anisotropy(atom_list):
         anis_vect.append(atom_list[i].Dy)
         anis_vect.append(atom_list[i].Dz)
     anis_vect = np.array(anis_vect)
-    spin_vect = gen_spinVector(atom_list)
-    return np.dot(anis_vect, spin_vect**2)
+    return anis_vect
+
+def calculate_Ham(sij, anis, jij, dsij = None):
+    
+    sijT =sij.T    #sij.reshape((1,sij.shape[0]))
+    
+    if dsij == None:
+        res1 = sijT * jij
+        Hij = np.dot(res1,sij).flat[0]
+        Ham = - Hij - np.dot(anis, sij**2)
+    else:
+        res1 = dsij * jij
+        Hij = np.dot(res1,sij)
+        Ham = - Hij - np.matrix(np.dot((dsij**2),anis)).T
+
+
+    return Ham
 
 def local_optimizer(interfile, spinfile, outfile):
-    atom_list, jnums, jmats,N_atoms_uc=rf.readFiles(interfile,spinfile)
-    N_atoms = len(atom_list)
+    atom_list, jnums, jmats,N_atoms_uc=rf.readFiles(interfile,spinfile,allAtoms=True)
+    Jij = gen_Jij(atom_list)
+    anis = gen_anisotropy(atom_list)
+    spin_mags = []
+    for i in range(len(atom_list)):
+        spin_mags.append(atom_list[i].spinMagnitude)
+    spin_mags = np.array(spin_mags)
+    print 'constants generated'
     
-    def hamiltonian(p, fjac=None, y=None, err=None):
-        N_atoms = len(atom_list)
-        fake_atom_list = []
+    def hamiltonian(p, Jij = None, spins = None, anis = None):
+        print 'computing hamiltonian'
+        theta = p[:len(p)//2]
+        phi = p[len(p)//2:]
 
-        for i in range(N_atoms):
-            S = atom_list[i].spinMagnitude
-            theta = p[2*i]
-            phi   = p[2*i + 1]
-            
-            Sx = S*cos(theta)*cos(phi)
-            Sy = S*cos(theta)*sin(phi)
-            Sz = S*sin(theta)
-            
-            nbrs  = atom_list[i].neighbors
-            intrs = atom_list[i].interactions
-            new_atom = rf.atom( spinMag = S, spin = np.array([Sx,Sy,Sz]), neighbors = nbrs, interactions = intrs )
-            fake_atom_list.append( new_atom )
+        Sx = spins*cos(theta)*cos(phi)
+        Sy = spins*cos(theta)*sin(phi)
+        Sz = spins*sin(theta)
 
-        status = 0
-
-        result = gen_Ham(fake_atom_list)
-        print float(result)
-        return [status, [result]]        
-    # Ham
-    # [S cos(t)cos(p), S cos(t)sin(p), S sin(t)] Jij [S cos(t)cos(p), S cos(t)sin(p), S sin(t)] - [Dx,Dy,Dz].[S^2 cos^2(t)cos^2(p), S^2 cos^2(t)sin^2(p), S^2 sin^2(t)]
-    # derivative t
-    # [-S sin(t)cos(p), -S sin(t)sin(p), S cos(t)] Jij [-S sin(t)cos(p), -S sin(t)sin(p), S cos(t)] - [Dx,Dy,Dz].[-2 S^2 cos(t)sin(t)cos^2(p), -2 S^2 cos(t)sin(t)sin^2(p), 2 S^2 cos(t)sin(t)]
-    # derivative p
-    # [-S cos(t)sin(p), S cos(t)cos(p), 0] Jij [-S cos(t)sin(p), S cos(t)cos(p), 0] - [Dx,Dy,Dz].[-2 S^2 cos^2(t)sin(p)cos(p), 2 S^2 cos^2(t)cos()sin(p), 0]
+        Sij = np.array([Sx,Sy,Sz])
+        Sij = Sij.T.reshape(1,3*len(p)//2).T
+        result = calculate_Ham(Sij, anis, Jij)
+        
+        print result
+        
+        #return np.array([result])
+        return result
     
-    def dEdphi():
-        N_atoms = len(atom_list)
-        fake_atom_list = []
+    def deriv(p, Jij = None, spins = None, anis = None):
+        whole = len(p)
+        half = len(p)/2
+        theta = p[:half]
+        phi = p[half:]        
+
+        Sx = spins*cos(theta)*cos(phi)
+        Sy = spins*cos(theta)*sin(phi)
+        Sz = spins*sin(theta)
+
+        Sxt = -spins*sin(theta)*cos(phi)
+        Syt = -spins*sin(theta)*sin(phi)
+        Szt = spins*cos(theta)
+        Sxp = -spins*cos(theta)*sin(phi)
+        Syp = spins*cos(theta)*cos(phi)
+        Szp = 0*cos(theta)
         
-        for i in range(N_atoms):
-            S = atom_list[i].spinMagnitude
-            tehta = p[2*i]
-            phi   = p[2*i + 1]
-            
-            Sx = -S*cos(theta)*sin(phi)
-            Sy = S*cos(theta)*cos(phi)
-            Sz = 0
-            
-            nbrs  = atom_list[i].neighbors
-            intrs = atom_list[i].interactions
-            new_atom = rf.atom( spinMag = S, spin = np.array([Sx,Sy,Sz]), neighbors = nbrs, interactions = intrs )
-            fake_atom_list.append( new_atom )
-        status = 0
-
-        result = gen_Ham(fake_atom_list)
-        print float(result)
-        return [status, [result]] 
-
-    def dEdtheta():
-        N_atoms = len(atom_list)
-        fake_atom_list = []
+        dSijt = np.zeros((half,3*half))
+        dSijp = np.zeros((half,3*half))
+        dSijt[range(half),range(0,3*half,3)]=Sxt
+        dSijt[range(half),range(1,3*half,3)]=Syt
+        dSijt[range(half),range(2,3*half,3)]=Szt
+        dSijp[range(half),range(0,3*half,3)]=Sxp
+        dSijp[range(half),range(1,3*half,3)]=Syp
+        dSijp[range(half),range(2,3*half,3)]=Szp
         
-        for i in range(N_atoms):
-            S = atom_list[i].spinMagnitude
-            tehta = p[2*i]
-            phi   = p[2*i + 1]
-            
-            Sx = -S*sin(theta)*cos(phi)
-            Sy = -S*sin(theta)*sin(phi)
-            Sz = S*cos(theta)
-            
-            nbrs  = atom_list[i].neighbors
-            intrs = atom_list[i].interactions
-            new_atom = rf.atom( spinMag = S, spin = np.array([Sx,Sy,Sz]), neighbors = nbrs, interactions = intrs )
-            fake_atom_list.append( new_atom )
-        status = 0
+        Sij = np.array([Sx,Sy,Sz])
+        Sij = Sij.T.reshape(1,3*len(p)//2).T
+        rest = calculate_Ham(Sij,anis,Jij,dsij = dSijt)
+        resp = calculate_Ham(Sij,anis,Jij,dsij = dSijp)
+        result = np.concatenate((np.array(rest),np.array(resp)))
+        
 
-        result = gen_Ham(fake_atom_list)
-        print float(result)
-        return [status, [result]]      
+        return result.T
 
     #populate initial p list
-    p0 = []
+    thetas = []
+    phis = []
     for i in range(N_atoms):
         sx = atom_list[i].spin[0]
-        sy = atom_list[i].spin[0]
-        sz = atom_list[i].spin[0]
+        sy = atom_list[i].spin[1]
+        sz = atom_list[i].spin[2]
         s  = atom_list[i].spinMagnitude
         
-        theta = arccos(sz/s)
+        #temporary
+        #sx=0.0
+        #sy=1.0/np.sqrt(2)
+        #sz=1.0/np.sqrt(2)
+        
+        theta = arcsin(sz/s)
         phi   = np.arctan2(sy,sx)
         
-        p0.append(theta)
-        p0.append(phi)
-
-    parbase={'value':0., 'limited':[0,0], 'limits':[0.,0.]}
-    parinfo=[]
+        thetas.append(theta)
+        phis.append(phi)
+    p0 = np.array(thetas+phis)
+    
+    limits = []
     for i in range(len(p0)):
-        parinfo.append(copy.deepcopy(parbase))
-    for i in range(len(p0)):
-        parinfo[i]['value']=p0[i]
-        if(i%2 == 0):#even index means theta
-            parinfo[i]['limits'][0]= -pi
-            parinfo[i]['limits'][1] = pi
-            parinfo[i]['limited'][0] = 1
-            parinfo[i]['limited'][1] = 1
+        if i < len(p0)//2:#theta
+            limits.append((-pi,pi))
         else:#phi
-            parinfo[i]['limits'][0]= 0
-            parinfo[i]['limits'][1] = pi
-            parinfo[i]['limited'][0] = 1
-            parinfo[i]['limited'][1] = 1
-        
-    m = fmin_l_bfgs_b(hamiltonian, p0, bounds = parinfo['limits'])
-    return m.params
+            limits.append((0,pi))
+    
+    m = fmin_l_bfgs_b(hamiltonian, p0, fprime = deriv, args = (Jij, spin_mags, anis), bounds = limits)#, approx_grad = True)
+    print m
+    pout=m[0]
+    theta=pout[0:len(pout)/2]
+    phi=pout[len(pout)/2::]
+    sx=spin_mags*cos(theta)*cos(phi)
+    sy=spin_mags*cos(theta)*sin(phi)
+    sz=spin_mags*sin(theta)
+    
+    return np.array([sx,sy,sz]).T
+
+
+
 
 if __name__ == '__main__':
     #print optimizeSpins('C:\\export.txt', 'C:\\spins.txt', 'C:\\spins2.txt')
-    interfile = 'c:/test_montecarlo.txt'
-    spinfile  = 'c:/test_Spins.txt'
+    #interfile = 'c:/test_montecarlo.txt'
+    #spinfile  = 'c:/test_Spins.txt'
+    interfile='c:/montecarlo_ferro.txt'
+    spinfile='c:/Spins_ferro.txt'
 
-    atom_list, jnums, jmats,N_atoms_uc=rf.readFiles(interfile,spinfile)
+    atom_list, jnums, jmats,N_atoms_uc=rf.readFiles(interfile,spinfile,allAtoms=True)
     N_atoms = len(atom_list)
 
-    Ham = gen_Ham(atom_list)
+    jij = gen_Jij(atom_list)
+    anis = gen_anisotropy(atom_list)
+    sij = gen_spinVector(atom_list)
+    Ham = calculate_Ham(sij, anis, jij)
     print Ham
     
     print local_optimizer(interfile, spinfile, 'C:\\spins_new.txt')
