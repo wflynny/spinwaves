@@ -87,7 +87,7 @@ def optimizeSpins(interactionFile, inFile, outFile):
     m = mpfit(hamiltonian, p0, parinfo = parinfo)
     return m.params
 
-def gen_Jij(atom_list):
+def gen_Jij(atom_list,jmats):
     """ Creates a scipy bsr sparse array """
     N_atoms = len(atom_list)
     jij_values = []
@@ -98,7 +98,6 @@ def gen_Jij(atom_list):
     num_inters = 0
     # Scan through atom_list
     for i in range(N_atoms):
-        print 'atom %i'%(i,)
         ints_list = atom_list[i].interactions
         nbrs_list = atom_list[i].neighbors
         nbrs_ints = [ (nbrs_list[x],ints_list[x]) for x in range(len(nbrs_list)) ]
@@ -109,8 +108,6 @@ def gen_Jij(atom_list):
         for j in range(len(nbrs_ints)):
             nbr = nbrs_ints[j][0]
             intr = nbrs_ints[j][1]
-            
-            print 'atom',i, 'nbr',nbr, 'inter',intr
 
             #Get an interaction matrix
             curr_mat = jmats[intr].tolist()
@@ -175,18 +172,17 @@ def calculate_Ham(sij, anis, jij, dsij = None):
 
     return Ham
 
-def local_optimizer(interfile, spinfile, outfile):
+def local_optimizer(interfile, spinfile):
     atom_list, jnums, jmats,N_atoms_uc=rf.readFiles(interfile,spinfile,allAtoms=True)
-    Jij = gen_Jij(atom_list)
+    N_atoms = len(atom_list)
+    Jij = gen_Jij(atom_list,jmats)
     anis = gen_anisotropy(atom_list)
     spin_mags = []
     for i in range(len(atom_list)):
         spin_mags.append(atom_list[i].spinMagnitude)
     spin_mags = np.array(spin_mags)
-    print 'constants generated'
     
     def hamiltonian(p, Jij = None, spins = None, anis = None):
-        print 'computing hamiltonian'
         theta = p[:len(p)//2]
         phi = p[len(p)//2:]
 
@@ -197,10 +193,7 @@ def local_optimizer(interfile, spinfile, outfile):
         Sij = np.array([Sx,Sy,Sz])
         Sij = Sij.T.reshape(1,3*len(p)//2).T
         result = calculate_Ham(Sij, anis, Jij)
-        
-        print result
-        
-        #return np.array([result])
+
         return result
     
     def deriv(p, Jij = None, spins = None, anis = None):
@@ -247,11 +240,6 @@ def local_optimizer(interfile, spinfile, outfile):
         sz = atom_list[i].spin[2]
         s  = atom_list[i].spinMagnitude
         
-        #temporary
-        #sx=0.0
-        #sy=1.0/np.sqrt(2)
-        #sz=1.0/np.sqrt(2)
-        
         theta = arcsin(sz/s)
         phi   = np.arctan2(sy,sx)
         
@@ -267,7 +255,6 @@ def local_optimizer(interfile, spinfile, outfile):
             limits.append((0,pi))
     
     m = fmin_l_bfgs_b(hamiltonian, p0, fprime = deriv, args = (Jij, spin_mags, anis), bounds = limits)#, approx_grad = True)
-    print m
     pout=m[0]
     theta=pout[0:len(pout)/2]
     phi=pout[len(pout)/2::]
@@ -277,7 +264,16 @@ def local_optimizer(interfile, spinfile, outfile):
     
     return np.array([sx,sy,sz]).T
 
-
+def optimization_driver(interfile, spinfile):
+    atom_list, jnums, jmats, N_atoms_uc = rf.readFiles(interfile,spinfile,allAtoms=True)
+    N_atoms = len(atom_list)
+    jij = gen_Jij(atom_list,jmats)
+    anis = gen_anisotropy(atom_list)
+    sij = gen_spinVector(atom_list)
+    Ham = calculate_Ham(sij, anis, jij)
+    
+    return local_optimizer(interfile, spinfile)
+    
 
 
 if __name__ == '__main__':
@@ -296,7 +292,7 @@ if __name__ == '__main__':
     Ham = calculate_Ham(sij, anis, jij)
     print Ham
     
-    print local_optimizer(interfile, spinfile, 'C:\\spins_new.txt')
+    print local_optimizer(interfile, spinfile)
     
     
     

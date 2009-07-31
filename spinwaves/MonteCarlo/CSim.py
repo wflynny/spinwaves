@@ -9,6 +9,8 @@ import wx
 #import pylab
 
 from simple import readFile, Timer, simpleAtom
+from localOpt import optimization_driver
+from spinwavecalc.readfiles import get_tokenized_line
 
 def loadLib():
     #dllpath=r'C:\mytripleaxisproject\trunk\eclipse\src\spinwaves\C code'
@@ -212,6 +214,22 @@ def createVideo(spinsToImageFunction, outFilePath, inFilePath):
     timer.printTime()
     print "done"
 
+def write_to_file(outFilePath, atoms, spins):
+    outFile = open(outFilePath, 'w')
+    outFile.write("#Atom_Number Position_X Position_Y Position_Z Spin_X Spin_Y Spin_Z\n")
+    for i in range(len(atoms)):
+        atom = atoms[i]
+        Posx = str(atom.pos[0])
+        Posy = str(atom.pos[1])
+        Posz = str(atom.pos[2])
+        spin = spins[i]
+        Spinx = str(spin[0])
+        Spiny = str(spin[1])
+        Spinz = str(spin[2])
+        atomStr = str(i) + " " + Posx + " " + Posy + " " + Posz + " " + Spinx + " " + Spiny + " " + Spinz + "\n"
+        outFile.write(atomStr)
+    
+    outFile.close()
 
 def simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath):
     """Runs the monte carlo simulation written in C.
@@ -232,24 +250,13 @@ def simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath):
     timer.printTime()
     
     #output the spins to a file
-    outFile = open(outFilePath, 'w')
-    outFile.write("#Atom_Number Position_X Position_Y Position_Z Spin_X Spin_Y Spin_Z\n")
-    for i in range(len(atoms)):
-        atom = atoms[i]
-        Posx = str(atom.pos[0])
-        Posy = str(atom.pos[1])
-        Posz = str(atom.pos[2])
-        spin = spins[i]
-        Spinx = str(spin[0])
-        Spiny = str(spin[1])
-        Spinz = str(spin[2])
-        atomStr = str(i) + " " + Posx + " " + Posy + " " + Posz + " " + Spinx + " " + Spiny + " " + Spinz + "\n"
-        outFile.write(atomStr)
+    write_to_file(outFilePath, atoms, spins)
     
-    outFile.close()
-    
-    timer.printTime()
-    print "simulation done"
+    print "local optimizing"
+    opt_spins = optimization_driver(inFilePath, outFilePath)
+    write_to_file(outFilePath, atoms, opt_spins)
+
+    print "process done"
       
 def passAtoms(atoms):
     """Pass the list of atoms to the C Library so that the ground state can be
