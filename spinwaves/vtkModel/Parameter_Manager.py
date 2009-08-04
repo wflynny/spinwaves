@@ -7,7 +7,7 @@ import pylab
 from sympy import pi
 from numpy import PINF, NINF
 from spinwaves.MonteCarlo.simple import simpleAtom
-from spinwaves.MonteCarlo.CSim import Sim_Aux
+from spinwaves.MonteCarlo.CSim import get_ground_state, local_opt
 from spinwaves.spinwavecalc.readfiles import findmat, atom as SpinwaveAtom
 from spinwaves.spinwavecalc.spinwave_calc_file import calculate_dispersion, calc_eigs
 
@@ -156,6 +156,8 @@ class Fitter():
         same index.  Then GetResult() is called to return the list of
         eigenvalues.
         -spinwave_domain is a list of tuples (kx,ky,kz)"""
+        self._run = 0
+        self.spins = []
         self.spinwave_domain = spinwave_domain
         self._k = k
         self.tMin = .01
@@ -240,14 +242,16 @@ class Fitter():
             jAvg += jSum/9
         
         self._tMax = jAvg*12
-        self._tMin = jAvg/1000000000
+        self._tMin = jAvg/10000
         self._tMax = 10
-        self._tMin = 1E-12
+        self._tMin = 1E-6
         
         
-        spins = Sim_Aux(self._k, self._tMax, self._tMin, self._tFactor,
+        if self._run ==0:
+            self.spins = get_ground_state(self._k, self._tMax, self._tMin, self._tFactor,
                         self._simpleAtoms, monteCarloMats)
-        
+        else:
+            self.spins = local_opt(self._simpleAtoms, monteCarloMats, self.spins)
         
         
         def inUnitCell(atom):
@@ -288,7 +292,7 @@ class Fitter():
                 Dz = atom.anisotropy[2]
                 spinwave_atom = SpinwaveAtom(pos=atom.pos, Dx=Dx,Dy=Dy,Dz=Dz,
                                              orig_Index = i)
-                rmat = findmat(spins[i])#indices match up
+                rmat = findmat(self.spins[i])#indices match up
                 spinwave_atom.spinRmatrix = rmat
                 
                 for interaction in atom.interactions:
@@ -327,7 +331,7 @@ class Fitter():
         
         N_atoms=len(spinwave_atoms)
         Hsave=calculate_dispersion(spinwave_atoms,first_cell_atoms,N_atoms,jmats
-                                   ,showEigs=True)
+                                   ,showEigs=False)
         qrange = []
         wrange = []
         q = 0
@@ -344,6 +348,7 @@ class Fitter():
         #for wrange1 in wrange:
         #    pylab.plot(qrange,wrange1,'s')
         #pylab.show()
+        self._run+=1
         
         return wrange[0]#for now just one set
 

@@ -15,9 +15,9 @@ from matplotlib._pylab_helpers import Gcf
 import matplotlib.ticker as ticker
 import matplotlib.pyplot as plt
 from numpy import ma
-from util.list_manipulation import *
-from util.subin import sub_in
-from util.printing import *
+from spinwaves.cross_section.util.list_manipulation import *
+from spinwaves.cross_section.util.subin import sub_in
+from spinwaves.cross_section.util.printing import *
 from spinwaves.spinwavecalc.readfiles import atom, readFiles
 from spinwaves.spinwavecalc.spinwave_calc_file import calculate_dispersion, calc_eigs_direct
 from periodictable import elements

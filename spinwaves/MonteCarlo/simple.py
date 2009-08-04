@@ -37,7 +37,6 @@ def readFile(filename):
     #read in the interactions file
     file = open(filename, 'r')
     
-    
     #This will use a huge amount of memory
     atoms = []
     lines = file.readlines()#memory problem with huge files?

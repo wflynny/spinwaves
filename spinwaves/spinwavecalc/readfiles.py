@@ -34,6 +34,7 @@ class atom:
 
 
 
+
 def get_tokenized_line(myfile,returnline=['']):
         lineStr=myfile.readline()
         returnline[0]=lineStr.rstrip()

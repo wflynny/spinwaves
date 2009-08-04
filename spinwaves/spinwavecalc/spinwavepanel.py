@@ -7,7 +7,7 @@ import sys,os
 import spinwave_calc_file as spinwave_calc_file
 import wx.richtext
 from sympy import pi
-import cross_section.util.printing as printing
+import spinwaves.cross_section.util.printing as printing
 from multiprocessing import Process, Pipe
 import copy
 

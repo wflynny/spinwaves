@@ -71,6 +71,29 @@ def fitting(session, spinwave_domain, spinwave_range, size=3, k = 100, tFactor =
     
     #Return the parameters
     return (m.status, m.params, m.perror)
+
+def readDataFile(fileName):
+    vals = np.loadtxt(fname = fileName, commments = '#')
+    hklPoints = []
+    hklErr = []
+    wVals = []
+    wErr = []
+    for row in vals:
+        hklPoints.append([row[0], row[2], row[4]])
+        hklErr.append([row[1], row[3], row[5]])
+        wVals.append(row[6])
+        wErr.append(row[7])
+    
+    print 'hklPoints:\n', hklPoints, '\n\nhklErr::\n', hklErr
+    print 'wPoints:\n', wVals
+    print 'wErr', wErr
+    
+    return hklPoints, hklErr, wVals, wErr
+
+def fitFromFile(fileName, session):
+    domain, xErr, w, wErr = readDataFile(fileName)
+    fitting(sess, domain, w, size = 3, k = 200)
+    
     
 if __name__ == '__main__':
       print 'start'
@@ -91,7 +114,7 @@ if __name__ == '__main__':
       #sw_range = (4 - 4*np.cos(domain[))
       sess.openXMLSession('C:\\testsess.xml')
       print 'fitting...'
-      print fitting(sess, domain, sw_range, size = 3, k = 1000)
+      print fitting(sess, domain, sw_range, size = 3, k = 100)
 #===============================================================================
 #    def simpleFunc(p, fjac = None, y = None, err = None):
 #        model = (np.cos((p**.34)/15 + 4))
