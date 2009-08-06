@@ -26,7 +26,7 @@ class simpleAtom():
         self.pos = pos
         self.anisotropy = anisotropy
         self.spinMag = spinMag
-        self.s = numpy.array([0,0,random.uniform(-1,1)])
+        self.s = numpy.array([0,0,spinMag])
         self.interactions = []
 
 

@@ -11,86 +11,12 @@ import copy
 from numpy import cos, sin, arctan, arccos, pi,arcsin
 from spinwaves.utilities.mpfit import mpfit
 #from CSim import passAtoms, passMatrices, loadLib
-#from simple import readFile
+from simple import readFile
 import spinwaves.spinwavecalc.readfiles as rf
 import numpy as np
 import sympy as sp
 from scipy.sparse import bsr_matrix
 from scipy.optimize import fmin_l_bfgs_b
-
-
-#Populate C atom list
-def optimizeSpins(interactionFile, inFile, outFile):
-    """This will use the local optimizer, mpfit, to perfect the values of ground
-    state spins.  'inFile is a spin file with the same format that the 
-    montecarlo simulation creates.  'outFile' is the path of the file to output,
-    with locally optimized spins.  It is the same format as inFile."""
-    
-    atoms, jMatrices = readFile(interactionFile)
-    atomListPointer, nbr_pointers, mat_pointers = passAtoms(atoms)
-    matPointer = passMatrices(jMatrices)
-    c_lib = loadLib()
-    
-    def hamiltonian(p, fjac=None, y=None, err=None):
-        """p is the parameters and will be formatted as:
-        [theta1, phi1, theta2, phi2, ...] where theta and phi specify the
-        angular coordinates of the spin."""
-        #copy new spin values to C spinwave list
-        for i in range(len(atoms)):
-            theta = p[2*i]
-            phi = p[(2*i) + 1]
-            r = atoms[i].spinMag
-            
-            Sx = r*cos(theta)*sin(phi)
-            Sy = r*sin(theta)*sin(phi)
-            Sz = r*cos(phi)
-            
-            c_lib.setSpin(atomListPointer, c_int(i), c_float(Sx), c_float(Sy), c_float(Sz))
-        
-        status = 0
-        result = c_lib.totalE(atomListPointer, len(atoms), matPointer)
-        print float(result)
-        return [status, [result]]
-    
-    #populate initial p list
-    p0 = []
-    for atom in atoms:
-        x = atom.s[0]
-        y = atom.s[1]
-        z = atom.s[2]
-        r = atom.spinMag
-        theta = arctan(y/x)#-pi/2 to pi/2
-        #range will now be from -pi to pi
-        if(x < 0 and y < 0):
-            theta -= pi
-        elif(x<0):
-            theta += pi
-        phi = arccos(z/r)#0 to pi
-        p0.append(theta)
-        p0.append(phi)
-        
-    parbase={'value':0., 'limited':[0,0], 'limits':[0.,0.]}
-    parinfo=[]
-    for i in range(len(p0)):
-        parinfo.append(copy.deepcopy(parbase))
-    for i in range(len(p0)):
-        parinfo[i]['value']=p0[i]
-        if(i/2 == 0):#even index means theta
-            parinfo[i]['limits'][0]= -pi
-            parinfo[i]['limits'][1] = pi
-            parinfo[i]['limited'][0] = 1
-            parinfo[i]['limited'][1] = 1
-        else:#phi
-            parinfo[i]['limits'][0]= 0
-            parinfo[i]['limits'][1] = pi
-            parinfo[i]['limited'][0] = 1
-            parinfo[i]['limited'][1] = 1
-        
-    
-    m = mpfit(hamiltonian, p0, parinfo = parinfo)
-    return m.params
-
-
 
 def gen_Jij(atom_list,jmats):
     """ Creates a scipy bsr sparse array of the Jij interaction matrices"""
@@ -102,10 +28,10 @@ def gen_Jij(atom_list,jmats):
     # Counts total number of interactions: needed for row indexing
     num_inters = 0
     # Scan through atom_list
+    
+    nbrs_ints = []  
     for i in range(N_atoms):
-        ints_list = atom_list[i].interactions
-        nbrs_list = atom_list[i].neighbors
-        nbrs_ints = [ (nbrs_list[x],ints_list[x]) for x in range(len(nbrs_list)) ]
+        nbrs_ints = atom_list[i].interactions
         nbrs_ints.sort()
 
         # Now we have a sorted list of (nbr,intr) tuples from lowest neighbor to highest neighbor
@@ -142,11 +68,12 @@ def gen_Jij(atom_list,jmats):
     return jij
 
 def gen_spinVector(atom_list):
-    """ From an atom_list, this method returns a numpy array of the atoms' spinvectors"""
+    """ From an atom_list, this method returns a numpy array of the atoms' spinvectors.
+    The atom list is a list of simpleAtoms as defined in simple.py"""
     N_atoms = len(atom_list)
     vect_list = []
     for i in range(N_atoms):
-        spinvect = atom_list[i].spin
+        spinvect = atom_list[i].s
         vect_list.append(spinvect[0])
         vect_list.append(spinvect[1])
         vect_list.append(spinvect[2])
@@ -157,9 +84,9 @@ def gen_anisotropy(atom_list):
     N_atoms = len(atom_list)
     anis_vect = []
     for i in range(N_atoms):
-        anis_vect.append(atom_list[i].Dx)
-        anis_vect.append(atom_list[i].Dy)
-        anis_vect.append(atom_list[i].Dz)
+        anis_vect.append(atom_list[i].anisotropy[0])
+        anis_vect.append(atom_list[i].anisotropy[1])
+        anis_vect.append(atom_list[i].anisotropy[2])
     anis_vect = np.array(anis_vect)
     return anis_vect
 
@@ -192,25 +119,10 @@ def calculate_Ham(sij, anis, jij, dsij = None):
 
     return Ham
 
-def local_optimizer(interfile, spinfile):
-    """
-    Given an interaction file and a spin file, this optimizer will uses readfiles.readfiles to populate 
-    an atom list as well as return the interaction matrices. Given that information, it will recalculate
-    the hamiltonian and attempt to minimize it as a function of theta and phi. The annealing will get the
-    spins close to the global minimum and this method makes sure the spins are aligned. This routine uses
-    only python instead of C. 
-    """
-
-    # Get atoms list, jmats from the interaction and spin files
-    atom_list, jnums, jmats,N_atoms_uc=rf.readFiles(interfile,spinfile,allAtoms=True)
-    
-    return opt_aux(atom_list, jmats)
-
-def opt_aux(atom_list, jmats):
-    """This method separates the functionality of the local optimization from
-    the files.  jmats is assumed to be in order of index here, ie. jnums is of
-    the form [0,1,2,3...]
-    atomlist is a list of atoms as defined in spinwavecalc.readfiles"""
+def opt_aux(atom_list, jmats, spins, tol = 1.0e-6):
+    """This function separates the functionality of the optimizer from the
+    files.  This method assumes that jmats is in the correct order. 
+    ie. jnums looks like [0,1,2,3...]"""
     N_atoms = len(atom_list)
     # Generate the Jij and anisotropy arrays
     Jij = gen_Jij(atom_list,jmats)
@@ -218,7 +130,7 @@ def opt_aux(atom_list, jmats):
     # Get the spin magnitudes from the atoms in atom list
     spin_mags = []
     for i in range(len(atom_list)):
-        spin_mags.append(atom_list[i].spinMagnitude)
+        spin_mags.append(atom_list[i].spinMag)
     spin_mags = np.array(spin_mags)
     
     # hamiltonian method
@@ -236,9 +148,13 @@ def opt_aux(atom_list, jmats):
         # Array of spin vectors for each atom. Reshape it. Calculate hamiltonian with it and return the hamiltonian. 
         Sij = np.array([Sx,Sy,Sz])
         Sij = Sij.T.reshape(1,3*len(p)//2).T
-        result = calculate_Ham(Sij, anis, Jij)
+        
+        SijT = Sij.T
+        res1 = SijT * Sij
+        Hij = np.dot(res1,Sij).flat[0]
+        Ham = - Hij - np.dot(anis, Sij**2)
 
-        return result
+        return Ham 
     
     # derivative of the hamiltonian
     def deriv(p, Jij = None, spins = None, anis = None):
@@ -284,10 +200,16 @@ def opt_aux(atom_list, jmats):
         Sij = np.array([Sx,Sy,Sz])
         Sij = Sij.T.reshape(1,3*len(p)//2).T
         # Calculate a hamiltonian for both theta and phi
-        rest = calculate_Ham(Sij,anis,Jij,dsij = dSijt)
-        resp = calculate_Ham(Sij,anis,Jij,dsij = dSijp)
+        res1t = dSijt * Jij
+        Hijt = np.dot(res1t,Sij)
+        Hamt = - Hijt - np.matrix(np.dot((dSijt**2),anis)).T
+        
+        res1p = dSijp * Jij
+        Hijp = np.dot(res1p,Sij)
+        Hamp = - Hijp - np.matrix(np.dot((dSijp**2),anis)).T
+        
         # Concatenate the two and return the result
-        result = np.concatenate((np.array(rest),np.array(resp)))
+        result = np.concatenate((np.array(Hamt),np.array(Hamp)))
 
         return result.T
 
@@ -295,11 +217,12 @@ def opt_aux(atom_list, jmats):
     # returns a numpy array of all the thetas followed by all the phis
     thetas = []
     phis = []
+    if len(spins)!=N_atoms: raise Exception('poop')
     for i in range(N_atoms):
-        sx = atom_list[i].spin[0]
-        sy = atom_list[i].spin[1]
-        sz = atom_list[i].spin[2]
-        s  = atom_list[i].spinMagnitude
+        sx = spins[i][0]
+        sy = spins[i][1]
+        sz = spins[i][2]
+        s  = atom_list[i].spinMag
         
         theta = arcsin(sz/s)
         phi   = np.arctan2(sy,sx)
@@ -317,7 +240,7 @@ def opt_aux(atom_list, jmats):
             limits.append((0,pi))
     
     # call minimizing function
-    m = fmin_l_bfgs_b(hamiltonian, p0, fprime = deriv, args = (Jij, spin_mags, anis), bounds = limits)
+    m = fmin_l_bfgs_b(hamiltonian, p0, fprime = deriv, args = (Jij, spin_mags, anis), pgtol=tol)#bounds = limits
 
     # grab returned parameters
     # thetas are the first half of the list, phis are the second half
@@ -329,21 +252,7 @@ def opt_aux(atom_list, jmats):
     sy=spin_mags*cos(theta)*sin(phi)
     sz=spin_mags*sin(theta)
     
-    # return spin vector array
-    return np.array([sx,sy,sz]).T
-
-
-def optimization_driver(interfile, spinfile):
-    """ runs the local optimization routine given just an interactionfile and spinfile. this should be called by the GUI """
-    atom_list, jnums, jmats, N_atoms_uc = rf.readFiles(interfile,spinfile,allAtoms=True)
-    N_atoms = len(atom_list)
-    jij = gen_Jij(atom_list,jmats)
-    anis = gen_anisotropy(atom_list)
-    sij = gen_spinVector(atom_list)
-    Ham = calculate_Ham(sij, anis, jij)
-    
-    return local_optimizer(interfile, spinfile)
-    
+    return np.array([sx,sy,sz]).T   
 
 
 if __name__ == '__main__':
@@ -352,17 +261,9 @@ if __name__ == '__main__':
     #spinfile  = 'c:/test_Spins.txt'
     interfile='c:/montecarlo_ferro.txt'
     spinfile='c:/Spins_ferro.txt'
-
-    atom_list, jnums, jmats,N_atoms_uc=rf.readFiles(interfile,spinfile,allAtoms=True)
-    N_atoms = len(atom_list)
-
-    jij = gen_Jij(atom_list, jmats)
-    anis = gen_anisotropy(atom_list)
-    sij = gen_spinVector(atom_list)
-    Ham = calculate_Ham(sij, anis, jij)
-    print Ham
-    
-    print local_optimizer(interfile, spinfile)
+    readfile=interfile
+    tol = 1.0e-8
+    print local_optimizer(interfile, spinfile, tol)
     
     
     

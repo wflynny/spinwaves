@@ -102,17 +102,10 @@ def gen_Jij(atom_list,jmats):
     # Counts total number of interactions: needed for row indexing
     num_inters = 0
     # Scan through atom_list
-    
-#This is using the spinwavecalc.readfiles atom format, it's been changed
-#the simpleAtom format in simple.py
-#    for i in range(N_atoms):
-#        ints_list = atom_list[i].interactions
-#        nbrs_list = atom_list[i].neighbors
-#        nbrs_ints = [ (nbrs_list[x],ints_list[x]) for x in range(len(nbrs_list)) ]
-#        nbrs_ints.sort()
-
     for i in range(N_atoms):
-        nbrs_ints = atom_list[i].interactions
+        ints_list = atom_list[i].interactions
+        nbrs_list = atom_list[i].neighbors
+        nbrs_ints = [ (nbrs_list[x],ints_list[x]) for x in range(len(nbrs_list)) ]
         nbrs_ints.sort()
 
         # Now we have a sorted list of (nbr,intr) tuples from lowest neighbor to highest neighbor
@@ -149,12 +142,11 @@ def gen_Jij(atom_list,jmats):
     return jij
 
 def gen_spinVector(atom_list):
-    """ From an atom_list, this method returns a numpy array of the atoms' spinvectors.
-    The atom list is a list of simpleAtoms as defined in simple.py"""
+    """ From an atom_list, this method returns a numpy array of the atoms' spinvectors"""
     N_atoms = len(atom_list)
     vect_list = []
     for i in range(N_atoms):
-        spinvect = atom_list[i].s
+        spinvect = atom_list[i].spin
         vect_list.append(spinvect[0])
         vect_list.append(spinvect[1])
         vect_list.append(spinvect[2])
@@ -165,9 +157,9 @@ def gen_anisotropy(atom_list):
     N_atoms = len(atom_list)
     anis_vect = []
     for i in range(N_atoms):
-        anis_vect.append(atom_list[i].anisotropy[0])
-        anis_vect.append(atom_list[i].anisotropy[1])
-        anis_vect.append(atom_list[i].anisotropy[2])
+        anis_vect.append(atom_list[i].Dx)
+        anis_vect.append(atom_list[i].Dy)
+        anis_vect.append(atom_list[i].Dz)
     anis_vect = np.array(anis_vect)
     return anis_vect
 
@@ -211,14 +203,14 @@ def local_optimizer(interfile, spinfile):
 
     # Get atoms list, jmats from the interaction and spin files
     atom_list, jnums, jmats,N_atoms_uc=rf.readFiles(interfile,spinfile,allAtoms=True)
-    return opt_aux(atom_list, jnums, jmats)
-
-
+    
+    return opt_aux(atom_list, jmats)
 
 def opt_aux(atom_list, jmats):
-    """This function separates the functionality of the optimizer from the
-    files.  This method assumes that jmats is in the correct order. 
-    ie. jnums looks like [0,1,2,3...]"""
+    """This method separates the functionality of the local optimization from
+    the files.  jmats is assumed to be in order of index here, ie. jnums is of
+    the form [0,1,2,3...]
+    atomlist is a list of atoms as defined in spinwavecalc.readfiles"""
     N_atoms = len(atom_list)
     # Generate the Jij and anisotropy arrays
     Jij = gen_Jij(atom_list,jmats)
@@ -226,7 +218,7 @@ def opt_aux(atom_list, jmats):
     # Get the spin magnitudes from the atoms in atom list
     spin_mags = []
     for i in range(len(atom_list)):
-        spin_mags.append(atom_list[i].spinMag)
+        spin_mags.append(atom_list[i].spinMagnitude)
     spin_mags = np.array(spin_mags)
     
     # hamiltonian method
@@ -304,10 +296,10 @@ def opt_aux(atom_list, jmats):
     thetas = []
     phis = []
     for i in range(N_atoms):
-        sx = atom_list[i].s[0]
-        sy = atom_list[i].s[1]
-        sz = atom_list[i].s[2]
-        s  = atom_list[i].spinMag
+        sx = atom_list[i].spin[0]
+        sy = atom_list[i].spin[1]
+        sz = atom_list[i].spin[2]
+        s  = atom_list[i].spinMagnitude
         
         theta = arcsin(sz/s)
         phi   = np.arctan2(sy,sx)
@@ -343,6 +335,13 @@ def opt_aux(atom_list, jmats):
 
 def optimization_driver(interfile, spinfile):
     """ runs the local optimization routine given just an interactionfile and spinfile. this should be called by the GUI """
+    atom_list, jnums, jmats, N_atoms_uc = rf.readFiles(interfile,spinfile,allAtoms=True)
+    N_atoms = len(atom_list)
+    jij = gen_Jij(atom_list,jmats)
+    anis = gen_anisotropy(atom_list)
+    sij = gen_spinVector(atom_list)
+    Ham = calculate_Ham(sij, anis, jij)
+    
     return local_optimizer(interfile, spinfile)
     
 

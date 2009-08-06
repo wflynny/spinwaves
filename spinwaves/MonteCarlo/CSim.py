@@ -9,7 +9,7 @@ import wx
 #import pylab
 
 from simple import readFile, Timer, simpleAtom
-from localOpt import optimization_driver, opt_aux
+from localOpt import opt_aux
 import spinwaves.spinwavecalc.readfiles as rf
 from spinwaves.spinwavecalc.readfiles import get_tokenized_line
 
@@ -232,7 +232,7 @@ def write_to_file(outFilePath, atoms, spins):
     
     outFile.close()
 
-def simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath):
+def simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath, tol = 1e-6):
     """Runs the monte carlo simulation written in C.
 
     k is the number of steps per temperature.
@@ -241,54 +241,17 @@ def simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath):
     i.e. .9 would be a good factor."""
     
     atoms, jMatrices = readFile(inFilePath)#simple atom class defined in simple
-
     spins = get_ground_state(k, tMax, tMin, tFactor, atoms, jMatrices)
     write_to_file(outFilePath, atoms, spins)
 
-def get_ground_state(k, tMax, tMin, tFactor, atoms, jMatrices):
+
+def get_ground_state(k, tMax, tMin, tFactor, atoms, jMatrices, tol = 1e-6):
     """This method performs the monte carlo simulation and then locally
     optimizes the results without the use of files."""
-    print atoms
     spins = Sim_Aux(k, tMax, tMin, tFactor, atoms, jMatrices)
-    
-    #atoms is a list of simple atoms as defined in simple.py
-    #the new localOpt method uses the atom class defined in spinwavecalc.readfiles
-#    atom_list = []
-#    for i in range(len(atoms)):
-#        a = atoms[i]
-#        nbrs = []
-#        ints= []
-#        for interaction in a.interactions:
-#            nbrs.append(interaction[0])
-#            ints.append(interaction[1])
-#            
-#        atom_list.append(rf.atom(spinMag = a.spinMag, pos = a.pos, neighbors = nbrs,
-#                                 interactions = ints, Dx = a.anisotropy[0],
-#                                 Dy = a.anisotropy[1], Dz = a.anisotropy[2],
-#                                 spin = spins[i]))
-#    
-#    return opt_aux(atom_list, jMatrices)
-    return spins
-    
-def local_opt(atoms, jmats, spins):
-    atom_list = []
-    for i in range(len(atoms)):
-        a = atoms[i]
-        nbrs = []
-        ints= []
-        for interaction in a.interactions:
-            nbrs.append(interaction[0])
-            ints.append(interaction[1])
-            
-        atom_list.append(rf.atom(spinMag = a.spinMag, pos = a.pos, neighbors = nbrs,
-                                 interactions = ints, Dx = a.anisotropy[0],
-                                 Dy = a.anisotropy[1], Dz = a.anisotropy[2],
-                                 spin = spins[i]))
-    
-    return opt_aux(atom_list, jmats)
-    
-    
-    
+    opt_spins = opt_aux(atoms, jMatrices, spins, tol)
+    return opt_spins
+
   
 def passAtoms(atoms):
     """Pass the list of atoms to the C Library so that the ground state can be
