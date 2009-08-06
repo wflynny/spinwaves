@@ -15,6 +15,7 @@ from matplotlib._pylab_helpers import Gcf
 import sys
 #from sympy import latex
 import matplotlib.pyplot as plt
+import cross_section.util.printing as printing
 
 #translations=[[0,0,0],
 #              [0,0,1],[0,0,-1]
@@ -700,7 +701,7 @@ def Sapplycommutation(atom_list,Sfou,k):
     
     return Sfou
 def driver1(spinfile,interactionfile):
-    "generates Hsave"
+    """generates Hsave"""
     atom_list, jnums, jmats,N_atoms_uc=readfiles.readFiles(interactionfile,spinfile)
     N_atoms=len(atom_list)
 
@@ -717,7 +718,7 @@ def driver1(spinfile,interactionfile):
     return Hsave
 
 def driver2(Hsave,direction, steps, kMin, kMax):
-    "plots"
+    """plots"""
 #    myfilestr=spinfile#r'c:\spins.txt'
 #    myspins=readfiles.read_spins(myfilestr)#Returns all spins from file in array form
 #    spins=readfiles.find_collinear(myspins)#This is actually a list of Rotation matrices
@@ -766,6 +767,9 @@ def driver2(Hsave,direction, steps, kMin, kMax):
     for wrange1 in wrange:
         ax.plot(qrange, wrange1)
         plt.hold(True)
+    plt.title('Dispersion')
+    plt.xlabel('q || (%i,%i,%i)'%(direction['kx'],direction['ky'],direction['kz']))
+    plt.ylabel(r'$\omega$')
     plt.show()
     
     
@@ -804,9 +808,9 @@ if __name__=='__main__':
         #spinfile=r'C:/Documents and Settings/wflynn/My Documents/workspace/spinwaves/spinwaves/spinwavecalc/tests/spins_sc.txt'
         #interactionfile=r'C:/Documents and Settings/wflynn/My Documents/workspace/spinwaves/spinwaves/spinwavecalc/tests/montecarlo_sc.txt'
         
-        #simple cubic afm
-        spinfile=r'C:/test_Spins.txt'
-        interactionfile=r'C:/test_montecarlo.txt'
+        #NEED TO CHANGE THESE! SPECIFIC TO BILL"S MACHINE
+        spinfile=r'C:/eig_test_Spins.txt'
+        interactionfile=r'C:/eig_test_montecarlo.txt'
         
         steps=100
         data={}
@@ -815,6 +819,9 @@ if __name__=='__main__':
         data['kz']=0.
         direction=data
         Hsave = driver1(spinfile,interactionfile)
+        eigs = Hsave.eigenvals().keys()
+        print eigs
+        printing.generate_output(eigs)
         driver2(Hsave,direction,steps,0,2*N.pi)
         #atom_list, jnums, jmats=readfiles.read_interactions(myfilestr,spins)
         #N_atoms=len(atom_list)
