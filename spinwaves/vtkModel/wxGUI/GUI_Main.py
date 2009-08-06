@@ -35,8 +35,8 @@ import copy
 
 from spinwaves.vtkModel.BondClass import JParam
 from spinwaves.vtkModel.Parameter_Manager import Fitter
-from spinwaves.utilities.fitting import fitting
-gc.enable()
+from spinwaves.utilities.fitting import ShowFittingFrame
+#gc.enable()
 #Atom and cell info window
 
 class atomPanel(wx.Panel):
@@ -1812,6 +1812,7 @@ class Frame(wx.Frame):
 #        outputSnapshotsMenuItem = monteCarloMenu.Append(wx.NewId(), "Output snapshots")
         calculateSpinwavesMenuItem=monteCarloMenu.Append(wx.NewId(), "Perform Spinwave Calculation")
         crossSectionMenuItem = monteCarloMenu.Append(wx.NewId(), "Perform Cross Section Calculation")
+        fittingMenuItem = monteCarloMenu.Append(wx.NewId(), "Fit Parameters")
         #This is not yet working
         #fitParametersMenuItem = monteCarloMenu.Append(wx.NewId(), "Fit Parameters")
         menuBar.Append(monteCarloMenu, "Monte Carlo")
@@ -1845,6 +1846,7 @@ class Frame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnLaunchSim, runSimulationMenuItem)
         self.Bind(wx.EVT_MENU, self.OnLaunchSpinWave, calculateSpinwavesMenuItem)
         self.Bind(wx.EVT_MENU, self.OnLaunchCrossSection, crossSectionMenuItem)
+        self.Bind(wx.EVT_MENU, self.OnFitParameters, fittingMenuItem)
         #Doesn't work yet
 #        self.Bind(wx.EVT_MENU, self.OnFitParameters, fitParametersMenuItem)
           
@@ -1899,7 +1901,7 @@ class Frame(wx.Frame):
             
     
     def OnFitParameters(self, evt):
-        print ''
+        ShowFittingFrame(self.session)
 #        #domain = []
 #        #test case
 #        domain = [(0,0,0,),

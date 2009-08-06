@@ -149,19 +149,19 @@ class ParamManager():
 
 
 class Fitter():
-    def __init__(self, session, spinwave_domain = [], size=3, k = 100,
-                 tFactor = .95):
+    def __init__(self, session, spinwave_domain = [], size=3, k = 100, tMin = .0001, tMax = 20, tFactor = .95, MCeveryTime = True):
         """The optimizer will read min_range_list, max_range_list, and change
         fit_list values to be between the minimum and maximum values at the
         same index.  Then GetResult() is called to return the list of
         eigenvalues.
         -spinwave_domain is a list of tuples (kx,ky,kz)"""
+        self._runMCeveryTime = MCeveryTime
         self._run = 0
         self.spins = []
         self.spinwave_domain = spinwave_domain
         self._k = k
-        self.tMin = .01
-        self.tMax = 10
+        self._tMin = tMin
+        self._tMax = tMax
         self._tFactor = tFactor
         self._interactionCellDimensions = (session.MagCell.Na, session.MagCell.Nb, session.MagCell.Nc)
         #matrices is a list of 2D numpy arrays of JParam objects
@@ -232,22 +232,23 @@ class Fitter():
         
         #Run the monteCarlo simulation
         #temporary (bad) method of picking tMin/tMax
-        jAvg = 0
-        for mat in monteCarloMats:
-            jSum = 0
-            for i in range(3):
-                for j in range(3):
-                    val = abs(mat[i][j])
-                    jSum += val
-            jAvg += jSum/9
+#        jAvg = 0
+#        for mat in monteCarloMats:
+#            jSum = 0
+#            for i in range(3):
+#                for j in range(3):
+#                    val = abs(mat[i][j])
+#                    jSum += val
+#            jAvg += jSum/9
+#        
+#        self._tMax = jAvg*12
+#        self._tMin = jAvg/10000
+#        self._tMax = 10
+#        self._tMin = 1E-6
         
-        self._tMax = jAvg*12
-        self._tMin = jAvg/10000
-        self._tMax = 10
-        self._tMin = 1E-6
         
-        
-        if self._run ==0:
+        if self._runMCeveryTime or self._run == 0:
+            print "\n\n\n\n\n\here\nsdfs\nsdfsd\n\n\n\n\n\n"
             self.spins = get_ground_state(self._k, self._tMax, self._tMin, self._tFactor,
                         self._simpleAtoms, monteCarloMats)
         else:
