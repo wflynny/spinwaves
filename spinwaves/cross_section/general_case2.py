@@ -431,7 +431,8 @@ def generate_cross_section(interactionfile, spinfile, lattice, arg,
     eig_list=[]
 #    print qlist
     for q in qlist:
-        eigs = calc_eigs_direct(Hsave,q[:,0],q[:,1],q[:,2])
+        #eigs = calc_eigs_direct(Hsave,q[:,0],q[:,1],q[:,2])
+        eigs = Hsave.eigenvals().keys()
         eig_list.append(eigs)
     print "Calculated: Eigenvalues"
     
@@ -494,14 +495,14 @@ def generate_cross_section(interactionfile, spinfile, lattice, arg,
  
     
     csection=sp.powsimp(csection)
-    csection = (csection * exp(-I*w*t) * exp(I*kap*L)).expand()
+    csection = (csection * exp(-I*w*t) * exp(I*kap*L)).expand(deep = False)
     print 'intermediate'
     #print csection
     csection= sp.powsimp(csection)
     csection = sub_in(csection,exp(I*t*A + I*t*B + I*C + I*D + I*K),sp.DiracDelta(A*t + B*t + C + D + K))
-    #csection = sub_in(csection,sp.DiracDelta(A*t + B*t + C*L + D*L ),sp.DiracDelta(A*hbar + B*hbar)*sp.simplify(sp.DiracDelta(C + D  - tau)))  #This is correct
-    csection = sub_in(csection,sp.DiracDelta(A*t + B*t + C*L + D*L ),sp.simplify(lifetime*sp.DiracDelta(C + D  - tau)*
-                                                                                 sp.Pow((A-B)**2+lifetime**2,-1)))
+    csection = sub_in(csection,sp.DiracDelta(A*t + B*t + C*L + D*L ),sp.DiracDelta(A*hbar + B*hbar)*sp.simplify(sp.DiracDelta(C + D  - tau)))  #This is correct
+    #csection = sub_in(csection,sp.DiracDelta(A*t + B*t + C*L + D*L ),sp.simplify(lifetime*sp.DiracDelta(C + D  - tau)*
+                                                                                 #sp.Pow((A-B)**2+lifetime**2,-1)))
     print "Applied: Delta Function Conversion"
    # print csection
     print 'done'
@@ -523,7 +524,6 @@ def generate_cross_section(interactionfile, spinfile, lattice, arg,
 ##            print '5', arg[i][j]
             
     print "Applied: Delta Function Conversion"
-
 
     # Subs the actual values for kx,ky,kz, omega_q and n_q into the operator combos
     # The result is basically a nested list:
@@ -646,9 +646,7 @@ def eval_cross_section(N_atoms_uc, csection, kaprange, qlist, tau_list, eig_list
         csdata.append(temp1)
 
 
-   # print csdata
-
-  #  sys.exit()
+    #print csdata
 
     # Front constants and stuff for the cross-section
     front_constant = 1.0#(gamr0)**2#/(2*pi*hbar)
@@ -659,6 +657,9 @@ def eval_cross_section(N_atoms_uc, csection, kaprange, qlist, tau_list, eig_list
     for g in range(nqpts):
         for k in range(len(tau_list)):
             cstemp.append(csdata[k][g][0].subs(lifetime,sp.S(.1)))
+            
+    print cstemp
+    sys.exit()
     
     qtlist=np.array(qlist,'Float64').reshape((nqpts*len(tau_list),3))[:,0]
     xi=qtlist
@@ -833,6 +834,8 @@ def run_cross_section(interactionfile, spinfile):
         N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist = generate_cross_section(interactionfile, spinfile, lattice, ops, 
                                                                                                      tau_list, h_list, k_list, l_list, w_list,
                                                                                                      temperature, steps, eief, efixed)
+        print csection
+
         return N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist
     end = clock()
     print "\nFinished %i atoms in %.2f seconds" %(N_atoms,end-start)
@@ -846,11 +849,18 @@ def run_eval_cross_section(N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,
 
 if __name__=='__main__':
     
-    interfile = 'c:/test_montecarlo.txt'
-    spinfile = 'c:/test_Spins.txt'    
+    interfile = 'c:/eig_test_montecarlo.txt'
+    spinfile = 'c:/eig_test_Spins.txt'    
     
     N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist = run_cross_section(interfile,spinfile)
-    run_eval_cross_section(N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist)
+    left_conn, right_conn = Pipe()
+    p = Process(target = create_latex, args = (right_conn, csection, "Cross-Section"))
+    p.start()
+    eig_frame = printing.LaTeXDisplayFrame(self.parent, p.pid, left_conn.recv(), 'Cross-Section')
+    self.process_list.append(p)
+    p.join()
+    p.terminate()
+    #run_eval_cross_section(N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist)
 
 
     ### THINGS LEFT TO DO

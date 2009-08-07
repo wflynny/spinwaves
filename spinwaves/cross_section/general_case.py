@@ -202,9 +202,6 @@ def generate_possible_combinations(atom_list, alist):
     wqp = sp.Symbol('wqp', real = True)
 
     alista = [[subelement.subs(t, 0) for subelement in element] for element in alist]
-    for ele in alista:
-        for sub in ele:
-            sub = sub.subs(L,0)
 
     for i in range(len(alist)):
         for j in range(len(alist)):
@@ -342,13 +339,13 @@ def replace_bdb(atom_list, arg):
                     arg[k][i] = (arg[k][i].subs((bj*bg), 0))
                     arg[k][i] = (arg[k][i].subs((bdg*nj), 0))
                     arg[k][i] = (arg[k][i].subs((bg*nj), 0))
-            print '1', arg[k][i]
+#            print '1', arg[k][i]
             q = sp.Symbol('q', real = True)
             qp = sp.Symbol('qp', real = True)
             wq = sp.Symbol('wq', real = True)
             wqp = sp.Symbol('wqp', real = True)
             arg[k][i] = arg[k][i].subs(qp,q).subs(wqp,wq)
-            print '2', arg[k][i]
+#            print '2', arg[k][i]
     print "Applied: bdq*bq Replacement"
     return arg
 
@@ -623,29 +620,22 @@ def eval_cross_section(interactionfile, spinfile, lattice, arg,
                 for g in range(len(qrange[k])):
                     pvalue = tau_list[k] + kapvect[g] + qrange[k][g]
                     mvalue = tau_list[k] + kapvect[g] - qrange[k][g]
-
                     if pvalue[0] == 0 and pvalue[1] == 0 and pvalue[2] == 0:
                         arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau+q),sp.DiracDelta(0))
                     else: arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau+q),0)
                     if mvalue[0] == 0 and mvalue[1] == 0 and mvalue[2] == 0:
                         arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau-q),sp.DiracDelta(0))
-                    else: arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau-q),0)
-#                    arg[i][j] = arg[i][j].subs(q,qrange[k][g])
-#                    arg[i][j] = arg[i][j].subs(kap,kapvect[g])
-#                    arg[i][j] = arg[i][j].subs(tau,tau_list[k])                   
-                    
+                    else: arg[i][j] = arg[i][j].subs(sp.DiracDelta(kap+tau-q),0)               
                     wq = sp.Symbol('wq', real = True)
                     nq = sp.Symbol('n%i'%(k,), commutative = False)
-
-                    
                     arg[i][j] = arg[i][j].subs(wq,wrange[k][g])
                     arg[i][j] = arg[i][j].subs(w,w_calc[k][g])
                     n = sp.Pow( sp.exp(hbar*wrange[k][g]/boltz*temperature) - 1 ,-1)
                     arg[i][j] = arg[i][j].subs(nq,n)
-                temp3.append(arg[i][j])
-            temp2.append(temp3)
-        temp1.append(temp2)
-    csdata.append(temp1)
+                    temp3.append(arg[i][j])
+                temp2.append(temp3)
+            temp1.append(temp2)
+        csdata.append(temp1)
 ##            print arg[i][j]
 #            for g in range(len(kaprange)):
 #                arg[i][j] = arg[i][j].subs(kap, kaprange[g])
@@ -743,13 +733,13 @@ def run_cross_section(interactionfile, spinfile):
     (b,bd) = generate_b_bd_operators(atom_list)
 #    list_print(b)
     (a,ad) = generate_a_ad_operators(atom_list, k, b, bd)
-#    list_print(a)
+    list_print(a)
     (Sp,Sm) = generate_Sp_Sm_operators(atom_list, a, ad)
-#    list_print(Sp)
+    list_print(Sp)
     (Sa,Sb,Sn) = generate_Sa_Sb_Sn_operators(atom_list, Sp, Sm)
 #    list_print(Sa)
     (Sx,Sy,Sz) = generate_Sx_Sy_Sz_operators(atom_list, Sa, Sb, Sn)
-#    list_print(Sx)
+    list_print(Sx)
     print ''
     
     #Ham = generate_Hamiltonian(N_atoms, atom_list, b, bd)

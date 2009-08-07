@@ -91,8 +91,8 @@ def eig_process(mat):
     elif isinstance(mat, sp.matrices.Matrix):
         # Currently, sympy's quartic/cubic polynomial solvers suck so this is currently out of commission. 
         #print mat.eigenvals().keys()
-        #return mat.eigenvals().keys()
-        return 1
+        return mat.eigenvals().keys()
+        #return 1
 
 def process_info(title):
     """ This method just prints process names and IDs """
@@ -126,7 +126,7 @@ def generate_output(output, out = ".dvi"):
         Then, using latex.exe, it compiles the .tex file
         and displays it using Yap
     """
-    
+    print 'hi', output
     # Standard tex inputs required for compiling .tex file
     filename = os.path.join("c:","output")
     tex = ".tex"; pdf = ".pdf"; dvi = ".dvi"; ps = ".ps"
@@ -138,19 +138,19 @@ def generate_output(output, out = ".dvi"):
     
     pieces = []
     # Crappy method to find out the type of the input, and then LaTeXify it
-    if not isinstance(input, str):
+    if not isinstance(output, str):
         
         # Input is a list. Break it up and try to LaTeXify each piece
-        if isinstance(input, list):
+        if isinstance(output, list):
             try:
                 print 'list'
-                for i in range(len(input)):
-                    pieces.append(sp.latex(input[i]))
+                for i in range(len(output)):
+                    pieces.append(sp.latex(output[i]))
             except: e
         # Input is probably just a sympy expression
         else:
             try:
-                output = sp.latex(input)+"\n"
+                output = sp.latex(output)+"\n"
             except: 
                 e
                 print e
@@ -166,6 +166,7 @@ def generate_output(output, out = ".dvi"):
         if output.find(',') > 0:
             output = '\n'.join(output.split(','))
 
+    print output
     # Create file and write to it
     FILE = open(filename+tex, "w")
     FILE.writelines(begin)

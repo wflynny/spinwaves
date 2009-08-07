@@ -1,7 +1,7 @@
+import sys
+sys.path.append('c:\python25\lib\site-packages\sympy')
 import sympy as sp
 from sympy import exp,log,sin,cos,oo,Sum,sympify,Symbol,symbols,Wild,simplify,Rational
-
-from sub_in import sub_in
 
 from sympy import legendre, Symbol, hermite, chebyshevu, chebyshevt, \
         chebyshevt_root, chebyshevu_root, assoc_legendre, Rational,  \
@@ -29,7 +29,7 @@ def test_chebyshev():
             z = chebyshevu_root(n, k)
             assert simplify(chebyshevu(n, z)) == 0
             
-test_chebyshev()
+#test_chebyshev()
 print 'pass'
 
 def test_heurisch_radicals():
@@ -81,6 +81,7 @@ def subs_test():
     """ COMMUTATIVE TESTS """
     print '\n','COMMUTATIVE TESTS'
     assert (a*b    ).subs(a*b,K) == K,'Failed'; print '.'
+    print (a*b*a*b).subs(a*b,K)
     assert (a*b*a*b).subs(a*b,K) == K**2,'Failed'; print '.'
     assert (a*b*c*d).subs(a*b*c,K) == d*K,'Failed'; print '.'
     assert (a*b**c ).subs(a,K) == K*b**c, 'Failed'; print '.'
