@@ -661,7 +661,7 @@ def gen_cube(body = False, face = False, anti = False):
     return ats
 
 #calculate_dispersion(atom_list,N_atoms_uc,N_atoms,Jij,showEigs=False):
-def run_dispersion(lattice, num_uc = 1, eigs = False):
+def run_dispersion(lattice, num_uc = 1, eigs = False, eigsP = False):
     num = len(lattice)
 
     inters = [item for atom in lattice for item in atom.interactions]
@@ -680,7 +680,7 @@ def run_dispersion(lattice, num_uc = 1, eigs = False):
         Hsave = calculate_dispersion(lattice, num_uc, num, Jij , showEigs =eigs)
         return Hsave
 
-def run_dispersion_from_file(interactionfile,spinfile, eigs=False):
+def run_dispersion_from_file(interactionfile,spinfile, eigs=False, eigsP = (False,None)):
     atom_list, jnums, jmats,N_atoms_uc=rf.readFiles(interactionfile,spinfile)
     N_atoms=len(atom_list)
     Hsave = calculate_dispersion(atom_list,N_atoms_uc,N_atoms,jmats,showEigs=eigs)
@@ -709,25 +709,25 @@ if __name__ == "__main__":
         unittest.main()    
     
     # Run Dispersion from files
-    if 1:   
+    if 0:   
         interfile = 'C:/montecarlo_cube.txt'
         spinfile = 'C:/Spins_cube.txt'    
         
         run_dispersion_from_file(interfile,spinfile)
     
     # Ferromagnetic Cases
-    if 0:
+    if 1:
         chain3 = gen_chain(3)
         sq = square()
         cube = gen_cube()
         bcc = gen_cube(body = True)
         fcc = gen_cube(face = True)
         
-        Hchain3 = run_dispersion(chain3, num_uc = 1, eigs=True)
-        Hsq = run_dispersion(sq, num_uc = 1, eigs=True)
-        Hcube = run_dispersion(cube, num_uc = 1, eigs=True)
-        Hbcc = run_dispersion(bcc, num_uc = 1, eigs=True)
-        Hfcc = run_dispersion(fcc, num_uc = 1, eigs=True)
+        Hchain3 = run_dispersion(chain3, num_uc = 1, eigs=True, eigsP = (True, "FM Chain"))
+        Hsq = run_dispersion(sq, num_uc = 1, eigs=True, eigsP = (True, "FM Square"))
+        Hcube = run_dispersion(cube, num_uc = 1, eigs=True, eigsP = (True, "FM Cube"))
+        Hbcc = run_dispersion(bcc, num_uc = 1, eigs=True, eigsP = (True, "FM Body Centered Cube"))
+        Hfcc = run_dispersion(fcc, num_uc = 1, eigs=True, eigsP = (True, "FM Face Centered Cube"))
     
         print '\nFerro'
         print '\nchain3', 
