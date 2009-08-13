@@ -3,7 +3,7 @@ import copy
 import xml.dom.minidom
 #import xml.dom.ext
 import wx.grid
-from wx.py.dispatcher import send
+from wx.py.dispatcher import send, connect
 import spinwaves.vtkModel.CifFile
 #import vtkModel.CifFile as CifFile
 from spinwaves.vtkModel import SpaceGroups
@@ -32,6 +32,12 @@ class Session():
         self.atomTable = atomTable()
         self.MagCell = None
         #For now the magnetic cell class will be used for the cutoff cell
+        #receive message from the fitresultwindow to copy the fit parameters in the bondTable
+        connect(self.OnUseFitData, signal = "Use Fit Data")
+        
+    def OnUseFitData(self, bondTable):
+        self.bondTable = bondTable
+        self.bondTable.GetView()
         
     def getAtomTable(self):
         return self.atomTable
@@ -47,9 +53,10 @@ class Session():
     def getCutoffCell(self):
         return self.MagCell
     
-    def openXMLSession(self, filename):
-        doc = xml.dom.minidom.parse(filename)
-        
+    def loadXMLStr(self, str, notifyGUI = False):
+        """this loads all the information in an xml string to the model."""
+        doc = xml.dom.minidom.parseString(str)
+    
         #Get Main node
         nodes = doc.getElementsByTagName('Spinwaves_Session')
         if len(nodes) == 1:
@@ -118,12 +125,15 @@ class Session():
             
             self.atomTable.SetValue(i, 0, name)
             self.atomTable.SetValue(i, 1, atomicNum)
-            self.atomTable.SetValue(i, 2, x)
-            self.atomTable.SetValue(i, 3, y)
-            self.atomTable.SetValue(i, 4, z)
-            self.atomTable.SetValue(i, 5, Dx)
-            self.atomTable.SetValue(i, 6, Dy)
-            self.atomTable.SetValue(i, 7, Dz)
+            self.atomTable.SetValue(i, 2, valence)
+            self.atomTable.SetValue(i, 3, x)
+            self.atomTable.SetValue(i, 4, y)
+            self.atomTable.SetValue(i, 5, z)
+            self.atomTable.SetValue(i, 6, Dx)
+            self.atomTable.SetValue(i, 7, Dy)
+            self.atomTable.SetValue(i, 8, Dz)
+            self.atomTable.SetValue(i, 9, spinMag)
+
         
         bondNodes = bondsNode.getElementsByTagName('bond')
 #        bondData = []
@@ -234,16 +244,24 @@ class Session():
             self.bondTable.SetValue(i, 8, mat)
 
         
-        self.cellChange(spaceGroupInt, a, b, c, alpha, beta, gamma, Na, Nb, Nc, Na, Nb, Nc, atomData)
+        self.cellChange(spaceGroupInt, a, b, c, alpha, beta, gamma, Na, Nb, Nc, Na, Nb, Nc, atomData, notifyGUI)
+        
+        return spaceGroupInt, a, b, c, alpha, beta, gamma, Na, Nb, Nc, Na, Nb, Nc, atomData
+        
+    def openXMLSession(self, filename):
+        """This loads an xml session file by calling loadXMLStr and then notifying the GUI."""
+        #doc = xml.dom.minidom.parse(filename)
+        handle = open(filename)
+        xmlStr = handle.read()
+        
+        spaceGroupInt, a, b, c, alpha, beta, gamma, Na, Nb, Nc, Na, Nb, Nc, atomData = self.loadXMLStr(xmlStr, notifyGUI = True)
         
         #Send Message to GUI
         send(signal = "File Load", sender = "Session", spaceGroup = spaceGroupInt, a = a, b = b, c = c, alpha = alpha, beta = beta, gamma = gamma, magNa = Na, magNb = Nb, magNc = Nc, cutNa = Na, cutNb = Nb, cutNc = Nc)
         
-        for i in manager.parameters:
-            print i
              
                 
-    def changeBonds(self, bondData):
+    def changeBonds(self, bondData, notifyGUI = True):
         """This method is called when the bonds need to be changed in the model,
         such as when info is entered in the GUI or when a file is loaded."""
         self.MagCell.clearAllBonds()
@@ -263,10 +281,11 @@ class Session():
                     if not self.MagCell.hasBond(atom1, atom2):
                         self.MagCell.addBond(atom1, atom2)
                         
-        send(signal = "Model Change", sender = "Session")
+        if notifyGUI:
+            send(signal = "Model Change", sender = "Session")
                     
         
-    def cellChange(self,spaceGroupInt,a,b,c,alpha, beta, gamma, magNa, magNb, magNc, cutNa, cutNb, cutNc, atomData):
+    def cellChange(self,spaceGroupInt,a,b,c,alpha, beta, gamma, magNa, magNb, magNc, cutNa, cutNb, cutNc, atomData, notifyGUI = True):
         """This method is called when a change needs to be made to the
         crystallographic or cutoff(or magnetic) cells or the atoms in them, such
         as when the user enters info in the GUI or when a file is loaded."""
@@ -292,7 +311,7 @@ class Session():
         self.MagCell = MagneticCell(unitcell, cutNa, cutNb, cutNc, spaceGroup)
         
         #Regenerate Bonds as well
-        self.changeBonds(self.bondTable.data)
+        self.changeBonds(self.bondTable.data, notifyGUI)
     
     
     def openCif(self, filename):
@@ -362,6 +381,15 @@ class Session():
 
     def saveSessionToXML(self, filename):
         """Saves all the information needed to reconstruct the model in an xml file."""
+        xmlStr = self.createXMLStr()
+        
+        #Write to the file
+        #xml.dom.ext.PrettyPrint(doc, open(filename, 'w'))
+        xmlFile = open(filename, 'w')
+        xmlFile.write(xmlStr)
+        xmlFile.close()
+        
+    def createXMLStr(self):
         #Create the document
         doc = xml.dom.minidom.Document()
         
@@ -451,14 +479,7 @@ class Session():
         #Write to screen
         #xml.dom.ext.PrettyPrint(doc)
         xmlStr = doc.toprettyxml("    ")
-        
-        #Write to the file
-        #xml.dom.ext.PrettyPrint(doc, open(filename, 'w'))
-        xmlFile = open(filename, 'w')
-        xmlFile.write(xmlStr)
-        xmlFile.close()
-        
-       
+        return xmlStr
        
     #Not used by me, but may be useful for other people, should add this to GUi  
     def export(self, filename):

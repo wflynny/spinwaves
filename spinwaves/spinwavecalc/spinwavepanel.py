@@ -10,6 +10,7 @@ from sympy import pi
 import spinwaves.cross_section.util.printing as printing
 from multiprocessing import Process, Pipe
 import copy
+from spinwaves.utilities.Processes import ProcessManager
 
 class MyApp(wx.App):
     def __init__(self, redirect=False, filename=None, useBestVisual=False, clearSigInt=True):
@@ -132,9 +133,10 @@ class RichTextFrame(wx.Frame):
 
 
 class FormDialog(sc.SizedPanel):
-    def __init__(self, parent, id):
+    def __init__(self, parent, id, procManager):
         self.parent = parent
-        self.process_list = []
+        #self.process_list = []
+        self.processManager = procManager
         
         #valstyle=wx.WS_EX_VALIDATE_RECURSIVELY
         sc.SizedPanel.__init__(self, parent, -1,
@@ -285,39 +287,14 @@ class FormDialog(sc.SizedPanel):
         print self.data['step']
         print self.interactionfile
         print self.spinfile
-        
-        Hsave = spinwave_calc_file.driver1(self.spinfile,self.interactionfile)
-        myeigs=printing.eig_process(copy.deepcopy(Hsave))
-        # TO RUN MULTIPROCESSING, COMMENT OUT THE FOLLOWING LINE AND UNCOMMENT THE BLOCK COMMENT BELOW
-        spinwave_calc_file.driver2(Hsave,self.data,self.data['step'], float(self.kRange['kMin'])*pi, float(self.kRange['kMax'])*pi))
 
-        """
-        left_conn, right_conn = Pipe()
-        p = Process(target = printing.create_latex, args = (right_conn, myeigs, "eigs"))
-        p.start()
-        eig_frame = printing.LaTeXDisplayFrame(self.parent, p.pid, left_conn.recv(), 'Dispersion Eigenvalues')
-        self.process_list.append(p)
+        self.processManager.startAnalyticDispersion(self.interactionfile, self.spinfile)
+        self.processManager.startNumericDispersion(self.interactionfile, self.spinfile, self.data, float(self.kRange['kMin'])*pi, float(self.kRange['kMax'])*pi, self.data['step'])
         
+
         
-        printing.process_info('main line')
-        q = Process(target = spinwave_calc_file.driver2, args = (Hsave,self.data,self.data['step'], float(self.kRange['kMin'])*pi, float(self.kRange['kMax'])*pi))
-        #button click event is not passed on, so the window does not close when OK is clicked
-        q.start()
-        p.join()
-        
-        if eig_frame.PID == p.pid:
-            eig_frame.Show()
-            self.process_list.remove(p)
-            p.terminate()
-        else:
-            if p.pid in self.process_list:
-                p.terminate()
-                raise Exception('process messed up')
-        
-        p.terminate()
-        q.join()
-        q.terminate()
-        """
+        #Hsave = spinwave_calc_file.driver1(self.spinfile,self.interactionfile)
+        #myeigs=printing.eig_process(copy.deepcopy(Hsave))
         
         
     def EvtSpinCtrl(self,evt):
@@ -416,11 +393,10 @@ class FormDialog(sc.SizedPanel):
         dlg.Destroy()
 
 
-
 if __name__=='__main__':
     app=MyApp()
     frame1 = wx.Frame(None, -1, "Spinwaves")
-    dlg=FormDialog(parent=frame1,id=-1)
+    dlg=FormDialog(parent=frame1,id=-1, procManager = ProcessManager(frame1))
     frame1.Show()
     if 0:
         frame1 = wx.Frame(None, -1, "Spinwaves")

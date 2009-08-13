@@ -714,6 +714,7 @@ def driver1(spinfile,interactionfile):
     Hsave = calculate_dispersion(atom_list,N_atoms_uc,N_atoms,jmats,showEigs=False)   
     
     print 'driver1: complete'
+    print Hsave
     
     return Hsave
 
@@ -724,7 +725,7 @@ def driver2(Hsave,direction, steps, kMin, kMax):
 #    spins=readfiles.find_collinear(myspins)#This is actually a list of Rotation matrices
 #    print 'driver spins',spins
 
-    #Now that rotation matrices are calculated algebraically, there si no need for
+    #Now that rotation matrices are calculated algebraically, there is no need for
     #find_collinear.  The functionality of read_spins has been put into readFiles
     
     #myfilestr=interactionfile#r'c:\montecarlo.txt'
@@ -750,27 +751,44 @@ def driver2(Hsave,direction, steps, kMin, kMax):
     #(Hsave, charpoly, eigs)=calculate_dispersion(atom_list,N_atoms_uc,N_atoms,jmats,showEigs=True)
     #sys.exit()
     print "driver2"
-    
+    print "Hsave: ", Hsave
+    print "kmin: ", kMin
+    print "kmax: ", kMax
+    print "stapes: ", steps
+    print "kx: ", direction['kx']
+    print "ky: ", direction['ky']
+    print "kz: ", direction['kz']
     qrange = []
     wrange = []
-    for q in N.arange(kMin,kMax,kMax/steps):
+    for q in N.arange(kMin,kMax,(kMax- kMin)/steps):
         wrange.append(calc_eigs(Hsave,q*direction['kx'], q*direction['ky'], q*direction['kz']))
         qrange.append(q)
     
     wrange=N.real(wrange)
     wrange=N.array(wrange)
     wrange=N.real(wrange.T)
+    return qrange, wrange
 
-    print wrange.shape
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    for wrange1 in wrange:
-        ax.plot(qrange, wrange1)
-        plt.hold(True)
-    plt.title('Dispersion')
-    plt.xlabel('q || (%i,%i,%i)'%(direction['kx'],direction['ky'],direction['kz']))
-    plt.ylabel(r'$\omega$')
-    plt.show()
+#<<<<<<< .mine
+    #print wrange.shape
+    #fig = plt.figure()
+    #ax = fig.add_subplot(111)
+    #for wrange1 in wrange:
+        #ax.plot(qrange, wrange1)
+        #plt.hold(True)
+    #plt.show()
+#=======
+    #print wrange.shape
+    #fig = plt.figure()
+    #ax = fig.add_subplot(111)
+    #for wrange1 in wrange:
+        #ax.plot(qrange, wrange1)
+        #plt.hold(True)
+    #plt.title('Dispersion')
+    #plt.xlabel('q || (%i,%i,%i)'%(direction['kx'],direction['ky'],direction['kz']))
+    #plt.ylabel(r'$\omega$')
+    #plt.show()
+#>>>>>>> .r246
     
     
     #direction={}
@@ -785,8 +803,8 @@ def driver2(Hsave,direction, steps, kMin, kMax):
     #for figwin in Gcf.get_all_fig_managers():
     #    figwin.frame.Show()
     #print jmats
-    print direction
-    print steps
+    #print direction
+    #print steps
     #print spinfile
     #print interactionfile
     

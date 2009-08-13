@@ -4,6 +4,7 @@ import numpy as np
 from numpy import pi
 from mpfit import mpfit
 import spinwaves.vtkModel.Parameter_Manager as PM
+from wx.py.dispatcher import send
 
 
 def fitting(session, spinwave_domain, spinwave_range, spinwave_range_Err, size=3, k = 100, tMin = .001, tMax = 15, tFactor = .95, MCeveryTime = True):
@@ -359,28 +360,28 @@ def ShowFittingFrame(session, procManager):
     frame.Show()
     return frame
 
-def showFitResultFrame(data):
+def showFitResultFrame(data, pid):
     """Creates and displays a simple frame containing the FitResultPanel."""
     
     frame = wx.Frame(None, -1, title = "Fit Parameters")
-    FitResultPanel(data, frame, -1)
+    FitResultPanel(data, pid, frame, -1)
     frame.Fit()
     frame.SetMinSize(frame.GetSize())
     frame.Show()
     return frame
 
 
-from spinwaves.vtkModel.wxGUI.GUI_Main import bondPanel
+from spinwaves.vtkModel.wxGUI.GUI_Main import bondListGrid
 class FitResultPanel(wx.Panel):
-    def __init__(self, fitData, *args, **kwds):
+    def __init__(self, fitData, pid, *args, **kwds):
 	self.fitSession = Session()
 	self.fitSession.bondTable.data = fitData
         # begin wxGlade: FitResultPanel.__init__
         kwds["style"] = wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
-        self.pid_label = wx.StaticText(self, -1, " PID: 123")
+        self.pid_label = wx.StaticText(self, -1, " PID: " + str(pid))
         self.use_results_btn = wx.Button(self, -1, "Use Results")
-        self.bond_panel = bondPanel(self, -1, self.fitSession)
+        self.bond_panel = bondListGrid(self, -1, self.fitSession)
 
         self.__set_properties()
         self.__do_layout()
@@ -411,7 +412,8 @@ class FitResultPanel(wx.Panel):
         # end wxGlade
 
     def OnUseResults(self, event): # wxGlade: FitResultPanel.<event_handler>
-        print "Event handler `OnUseResults' not implemented!"
+	#send a message to the current session object(should only effect the one in the same process)
+	send(signal = "Use Fit Data", sender = "fitResultPanel", bondTable = self.fitSession.bondTable)
         event.Skip()
 
 # end of class FitResultPanel
