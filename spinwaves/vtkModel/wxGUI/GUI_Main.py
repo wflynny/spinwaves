@@ -26,7 +26,7 @@ from spinwaves.cross_section.general_case2 import run_cross_section, run_eval_cr
 #It could not find MonteCarlo package (import MonteCarlo.CSim)
 #sys.path.append(mainPath +"\\MonteCarlo")
 import spinwaves.MonteCarlo.CSim as CSim
-import spinwaves.spinwavecalc.spinwavepanel as spinwavepanel
+#import spinwaves.spinwavecalc.spinwavepanel as spinwavepanel
 import spinwaves.spinwavecalc.spinwave_calc_file as spinwave_calc_file
 
 import cross_section.util.printing as printing
@@ -35,7 +35,9 @@ import copy
 
 from spinwaves.vtkModel.BondClass import JParam
 from spinwaves.vtkModel.Parameter_Manager import Fitter
-from spinwaves.utilities.fitting import ShowFittingFrame
+
+from spinwaves.utilities.Processes import ProcessManager
+import spinwaves.cross_section.util.printing as printing
 #gc.enable()
 #Atom and cell info window
 
@@ -1580,6 +1582,9 @@ class vtkPanel(wx.Panel):
         self.bindEvents()
         self.mode = None
         self.picker = None
+        self.procManager = ProcessManager(self)
+        
+        
   
     def initVTKWindow(self):
         #Code from wxRenderWindowInterActor Sample
@@ -1612,8 +1617,13 @@ class vtkPanel(wx.Panel):
         connect(self.OnPick, signal = "Pick Event")
         connect(self.OnModelChange, signal = "Model Change")
         connect(self.OnSaveImage, signal = "Save Image")
+        connect(self.OnAnalyticDispCalc, signal = "Analytic Dispersion Complete")
     
-    
+
+    def OnAnalyticDispCalc(self, answer):
+        eig_frame = printing.LaTeXDisplayFrame(self, answer, 'Dispersion Eigenvalues')
+        eig_frame.Show()
+        
     def OnSaveImage(self, path):
         """Saves a tiff image of the current screen."""
         w2i = vtkWindowToImageFilter()
@@ -1756,7 +1766,7 @@ class BondMode():
 #    print "\nChi^2 = ", chi
 #    return chi
 
-
+from spinwaves.utilities.fitting import ShowFittingFrame
 
 class Frame(wx.Frame):
     """This is the main frame containing the vtkPanel."""
@@ -1765,6 +1775,7 @@ class Frame(wx.Frame):
 
         self.session = session
         self.vtkPanel = vtkPanel(self, -1, session)
+        self.procManager = self.vtkPanel.procManager
         
         #Add Menus
         self.AddMenus()
@@ -1901,7 +1912,7 @@ class Frame(wx.Frame):
             
     
     def OnFitParameters(self, evt):
-        ShowFittingFrame(self.session)
+        ShowFittingFrame(self.session, self.procManager)
 #        #domain = []
 #        #test case
 #        domain = [(0,0,0,),
@@ -1998,7 +2009,7 @@ class Frame(wx.Frame):
         myparent=self
         #myparent=None
         frame1 = wx.Frame(myparent, -1, "Spinwaves")
-        dlg=spinwavepanel.FormDialog(parent=frame1,id=-1)
+        dlg=spinwavepanel.FormDialog(parent=frame1,id=-1, procManager = self.procManager)
         #dlg=spinwavepanel.FormDialog(parent=None,id=-1)
         self.SetExtraStyle(wx.WS_EX_VALIDATE_RECURSIVELY)
 #No longer modal

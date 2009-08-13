@@ -15,3 +15,6 @@ be unneccessary since it must exist as an internal-cellular bond to have transla
 
 -inter-cellular bonds are not generated for the monte carlo if the original cut-off cell does not include them,
 ie. if the cutoff cell has one or more dimensions of just one unit cell.
+
+-refactor code to remove circular imports.  Right now, there is an import from fitting in the middle of the GUI Main file.
+There are also impotrs in the middle of the fitting and processes files.

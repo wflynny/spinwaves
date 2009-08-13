@@ -1,4 +1,5 @@
 import string
+import copy
 import xml.dom.minidom
 #import xml.dom.ext
 import wx.grid
@@ -14,6 +15,7 @@ import datetime
 from spinwaves.vtkModel.BondClass import JParam
 from spinwaves.vtkModel.Parameter_Manager import ParamManager
 import spinwaves.vtkModel.CifFile as CifFile
+#from spinwaves.utilities.Processes import ProcessManager
 
 class Session():
     """Stores information about a user session
@@ -201,6 +203,7 @@ class Session():
         for i in range(len(manager.parameters)):
             manager.parameters[i].tieToMany(tiedLists[i])
         self.parameter_manager = manager
+        self.bondTable.paramManager = manager
         
         #now construct the matrices with the appropriate JParam objects
         numMatrices = len(allParamNodes)/9
@@ -357,8 +360,6 @@ class Session():
         #set the values in the tables
 #        self.atomTable.SetValue(i, 0, atomData)
 
-
-    #Need to add anisotropy to this
     def saveSessionToXML(self, filename):
         """Saves all the information needed to reconstruct the model in an xml file."""
         #Create the document
@@ -1479,6 +1480,67 @@ class bondTable(wx.grid.PyGridTableBase):
         #to be notified.
         self.param_panel = None
     
+    def __deepcopy__(self):
+        print self.data[0][8]
+        for param in self.paramManager.parameters:
+            print param.fit
+        newParamManager = ParamManager()
+        newTable = bondTable(newParamManager)#This will add 9 new JParam objects to the manager
+        newParamManager = ParamManager()
+        newTable.paramManager = newParamManager
+        newTable.data = []
+        numParams = len(self.paramManager.parameters)
+        #Add all the new Parameters to the new manager
+        for i in range(numParams):
+            oldParam = self.paramManager.parameters[i]
+            JParam(newParamManager, fit = oldParam.fit, value = oldParam.value, min = oldParam.min, max = oldParam.max, default = oldParam.default)
+        #Now tie the appropriate parameters
+        print "oldParams:\n"
+        for param in self.paramManager.parameters:
+            print param.group
+        print "\n\nnewParams:", len(newParamManager.parameters), "\n\n"
+        for index in range(numParams):
+            newParam = newParamManager.parameters[index]
+            oldParam = self.paramManager.parameters[index]
+            for otherParam in oldParam.tied:#These are indices and should match between new and old lists
+                newParam.tieTo(otherParam)
+        print "\n\nnewParams:", len(newParamManager.parameters), "\n\n"
+        #duplicate the data list
+        for i in range(len(self.data)):
+            newTable.data.append(['','','','','','','','','',''])
+            newTable.SetValue(i,1, self.data[i][1])
+            newTable.SetValue(i,2, self.data[i][2])
+            newTable.SetValue(i,3, self.data[i][3])
+            newTable.SetValue(i,4, self.data[i][4])
+            newTable.SetValue(i,5, self.data[i][5])
+            newTable.SetValue(i,6, self.data[i][6])
+            newTable.SetValue(i,7, self.data[i][7])
+            newTable.SetValue(i,9, self.data[i][9])
+            #Create Matrices with the new parameters in the appropriate positions
+            j11 = newParamManager.parameters[self.data[i][8][0][0].GetIndex()]
+            j12 = newParamManager.parameters[self.data[i][8][0][1].GetIndex()]
+            j13 = newParamManager.parameters[self.data[i][8][0][2].GetIndex()]
+            j21 = newParamManager.parameters[self.data[i][8][1][0].GetIndex()]
+            print "\n\nnewParams:", len(newParamManager.parameters), "\n\n"
+            j22 = newParamManager.parameters[self.data[i][8][1][1].GetIndex()]
+            j23 = newParamManager.parameters[self.data[i][8][1][2].GetIndex()]
+            j31 = newParamManager.parameters[self.data[i][8][2][0].GetIndex()]
+            j32 = newParamManager.parameters[self.data[i][8][2][1].GetIndex()]
+            j33 = newParamManager.parameters[self.data[i][8][2][2].GetIndex()]
+            print "\n\nnewParams:", len(newParamManager.parameters), "\n\n"
+            newTable.SetValue(i,8,numpy.array([[j11,j12,j13],
+                                               [j21,j22,j23],
+                                               [j31,j32,j33]]))
+            
+        print "\n\nnewParams:", len(newParamManager.parameters), "\n\n"
+        for param in newParamManager.parameters:
+            print param.group
+        print "original data:\n", self.data
+        print "\n\nnewdata:\n", newTable.data
+        print "old groups: ", self.paramManager.groups
+        print "new groups: ", newParamManager.groups
+        return newTable
+    
     def GetNumberRows(self):
         return len(self.data)
     def AppendRows(self, num):
@@ -1558,11 +1620,12 @@ class bondTable(wx.grid.PyGridTableBase):
                                                             [JParam(self.paramManager),JParam(self.paramManager),JParam(self.paramManager)]])
 
         # tell the grid we've added a row
-        msg = wx.grid.GridTableMessage(self,            # The table
-                wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED, # what we did to it
-                1                                       # how many
-                )
-        self.GetView().ProcessTableMessage(msg)
+        if self.GetView() != None:
+            msg = wx.grid.GridTableMessage(self,            # The table
+                    wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED, # what we did to it
+                    1                                       # how many
+                    )
+            self.GetView().ProcessTableMessage(msg)
         
         if self.param_panel:
             self.param_panel.AddRow(self.GetNumberRows()-1)

@@ -27,7 +27,7 @@ from multiprocessing import Process
 #---------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------
 
-def create_latex(conn, input, name = None):
+def create_latex(input, name = None):
     """ This method creates LaTeXified output given:
              - a sympy expression
              - a list of sympy expressions
@@ -35,6 +35,7 @@ def create_latex(conn, input, name = None):
         It is currently compatible with the multiprocessing module, hence the 'conn' argument it takes.
         Arguments:
              - conn - connection from a multiprocessing pipe. probably needs to be reworked to accept a queue instead of a pipe
+             -conn has been removed.  the output is now just returned
              - input - a sympy expression, a list of sympy expressions or a string
              - name - name for the LaTeX \section{} command
     """
@@ -78,9 +79,10 @@ def create_latex(conn, input, name = None):
         output = '\section{'+ name + '}' +'\n\n'+ output
         
     # Send the output through the pipe
-    conn.send(output)
-    conn.close()
-    print "Output OUT"
+    #conn.send(output)
+    #conn.close()
+    print "\n\n\n\noutput:\n", output
+    return output
 
 def eig_process(mat):
     """ This method takes a matrix and returns the eigenvalues from the matrix""" 
@@ -102,12 +104,14 @@ def process_info(title):
     
 class LaTeXDisplayFrame(wx.Frame):
     """ Basic text box frame class """
-    def __init__(self, parent, ID, input_text, title):
-        self.parent = parent
-        self.PID = ID
-        self.input = input_text
-
+    def __init__(self, parent, input_text, title):#originally included pid as third arg
         wx.Frame.__init__(self, parent, -1, title, size=(300,250))
+        self.parent = parent
+        #self.PID = ID
+        self.input = input_text
+        self.input  ="HI!"
+
+        
         panel = wx.Panel(self,-1)
         multiLabel = wx.StaticText(panel, -1, "Analytic")
         multiText = wx.TextCtrl(panel, -1, self.input, size=(225,200), style=wx.TE_MULTILINE)

@@ -55,8 +55,7 @@ class MagneticCell():
 
         #Recording bonds that are mapped back onto themselves by a symOp
         self.bondConstraints = []
-
-
+        
     def addBond(self, Atom1, Atom2, jMatrix = None):     
         """Adds a bond and all symmettry equivalent bonds within the magnetic Cell
         

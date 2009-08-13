@@ -4,7 +4,7 @@ import numpy as np
 from numpy import pi
 from mpfit import mpfit
 import spinwaves.vtkModel.Parameter_Manager as PM
-from spinwaves.vtkModel.wxGUI.Session import Session
+
 
 def fitting(session, spinwave_domain, spinwave_range, spinwave_range_Err, size=3, k = 100, tMin = .001, tMax = 15, tFactor = .95, MCeveryTime = True):
 
@@ -62,7 +62,9 @@ def fitting(session, spinwave_domain, spinwave_range, spinwave_range_Err, size=3
         else:
             parinfo[i]['limited'][1] = 0
 
-    # Run mpfit on fitlist with all the jazz. 
+    # Run mpfit on fitlist with all the jazz.
+    print "params: ", p0
+    print "parinfo: ", parinfo
     m = mpfit(myfunc, p0, parinfo=parinfo, functkw = fa)
     # Bare Bones Run for when the above (especially keywords x) breaks instantly
     #m = mpfit(myfunc, fit.fitlist)
@@ -122,8 +124,9 @@ def fitFromFile(fileName, session, size = 3 , k = 100, tMin = .001, tMax = 15, t
 
 
 class FitPanel(wx.Panel):
-    def __init__(self, session, *args, **kwds):
+    def __init__(self, session, procManager, *args, **kwds):
 	self.session = session
+	self.procManager = procManager
         # begin wxGlade: FitPanel.__init__
         kwds["style"] = wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -237,7 +240,9 @@ class FitPanel(wx.Panel):
         if not failed:
 	    useMC =  self.monteCarlo_checkbox.GetValue() 
 	    fileName = self.pathCtrl.GetValue() #Not checked right now since most people will browse
-	    fitFromFile(fileName, self.session, k = k, tMax = tmax, tMin = tmin, size = size, tFactor = tfactor, MCeveryTime = useMC)
+	    self.procManager.startFit(self.session, fileName, k, tmin, tmax, size, tfactor, useMC)
+	    #ans = fitFromFile(fileName, self.session, k = k, tMax = tmax, tMin = tmin, size = size, tFactor = tfactor, MCeveryTime = useMC)
+	    #print "ans =\n", ans[1]
     
         
     def validate(self):
@@ -344,19 +349,80 @@ class FitPanel(wx.Panel):
 
 # end of class FitPanel
 
-
-        
-def ShowFittingFrame(session):
+def ShowFittingFrame(session, procManager):
     """Creates and displays a simple frame containing the FitPanel."""
     
     frame = wx.Frame(None, -1, title = "Parameter Fitting")
-    FitPanel(session, frame, -1)
+    FitPanel(session, procManager, frame, -1)
+    frame.Fit()
+    frame.SetMinSize(frame.GetSize())
+    frame.Show()
+    return frame
+
+def showFitResultFrame(data):
+    """Creates and displays a simple frame containing the FitResultPanel."""
+    
+    frame = wx.Frame(None, -1, title = "Fit Parameters")
+    FitResultPanel(data, frame, -1)
     frame.Fit()
     frame.SetMinSize(frame.GetSize())
     frame.Show()
     return frame
 
 
+from spinwaves.vtkModel.wxGUI.GUI_Main import bondPanel
+class FitResultPanel(wx.Panel):
+    def __init__(self, fitData, *args, **kwds):
+	self.fitSession = Session()
+	self.fitSession.bondTable.data = fitData
+        # begin wxGlade: FitResultPanel.__init__
+        kwds["style"] = wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.pid_label = wx.StaticText(self, -1, " PID: 123")
+        self.use_results_btn = wx.Button(self, -1, "Use Results")
+        self.bond_panel = bondPanel(self, -1, self.fitSession)
+
+        self.__set_properties()
+        self.__do_layout()
+
+        self.Bind(wx.EVT_BUTTON, self.OnUseResults, self.use_results_btn)
+        # end wxGlade
+
+    def __set_properties(self):
+        # begin wxGlade: FitResultPanel.__set_properties
+        pass
+        # end wxGlade
+
+    def __do_layout(self):
+        # begin wxGlade: FitResultPanel.__do_layout
+        grid_sizer_1 = wx.FlexGridSizer(2, 1, 0, 0)
+        grid_sizer_1_copy = wx.FlexGridSizer(1, 2, 0, 0)
+        grid_sizer_1_copy.Add(self.pid_label, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 0)
+        grid_sizer_1_copy.Add(self.use_results_btn, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 0)
+        grid_sizer_1_copy.AddGrowableRow(0)
+        grid_sizer_1_copy.AddGrowableCol(0)
+        grid_sizer_1_copy.AddGrowableCol(1)
+        grid_sizer_1.Add(grid_sizer_1_copy, 1, wx.EXPAND, 3)
+        grid_sizer_1.Add(self.bond_panel, 1, wx.EXPAND, 0)
+        self.SetSizer(grid_sizer_1)
+        grid_sizer_1.Fit(self)
+        grid_sizer_1.AddGrowableRow(1)
+        grid_sizer_1.AddGrowableCol(0)
+        # end wxGlade
+
+    def OnUseResults(self, event): # wxGlade: FitResultPanel.<event_handler>
+        print "Event handler `OnUseResults' not implemented!"
+        event.Skip()
+
+# end of class FitResultPanel
+
+
+        
+
+
+
+
+from spinwaves.vtkModel.wxGUI.Session import Session
 
 class App(wx.App):
     """Just to show the frame.  This will not actually work for fitting since fitting requires
@@ -369,16 +435,16 @@ class App(wx.App):
         return True
 
 
-if __name__ == '__main__':       
-    app = App(False)
-    app.MainLoop()
+#if __name__ == '__main__':       
+#    app = App(False)
+#    app.MainLoop()
     
     
-#if __name__ == '__main__':
-    #sess = Session()
-    #sess.openXMLSession('C:\\testsess.xml')
-    #stat, params, err =  fitFromFile('C:\\data.txt', sess)
-    #print '\n\n\nans:\n', params
+if __name__ == '__main__':
+    sess = Session()
+    sess.openXMLSession('C:\\testsess.xml')
+    stat, params, err =  fitFromFile('C:\\data.txt', sess, MCeveryTime = False)
+    print '\n\n\nans:\n', params
     
     
       #print 'start'

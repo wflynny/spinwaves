@@ -232,7 +232,7 @@ def write_to_file(outFilePath, atoms, spins):
     
     outFile.close()
 
-def simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath, tol = 1e-6):
+def simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath, tol = 1e-12):
     """Runs the monte carlo simulation written in C.
 
     k is the number of steps per temperature.
@@ -245,7 +245,7 @@ def simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath, tol = 1e-6):
     write_to_file(outFilePath, atoms, spins)
 
 
-def get_ground_state(k, tMax, tMin, tFactor, atoms, jMatrices, tol = 1e-6):
+def get_ground_state(k, tMax, tMin, tFactor, atoms, jMatrices, tol = 1e-16):
     """This method performs the monte carlo simulation and then locally
     optimizes the results without the use of files."""
     spins = Sim_Aux(k, tMax, tMin, tFactor, atoms, jMatrices)

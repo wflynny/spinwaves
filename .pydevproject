@@ -3,10 +3,10 @@
 
 <pydev_project>
 <pydev_pathproperty name="org.python.pydev.PROJECT_SOURCE_PATH">
-<path>/spinwaves</path>
-<path>/spinwaves/spinwaves/cross_section</path>
-<path>/spinwaves/spinwaves/spinwavecalc</path>
-<path>/spinwaves/spinwaves/cross_section/util</path>
+<path>/SpinwaveApp</path>
+<path>/SpinwaveApp/spinwaves/cross_section</path>
+<path>/SpinwaveApp/spinwaves/spinwavecalc</path>
+<path>/SpinwaveApp/spinwaves/cross_section/util</path>
 </pydev_pathproperty>
 <pydev_property name="org.python.pydev.PYTHON_PROJECT_VERSION">python 2.5</pydev_property>
 <pydev_property name="org.python.pydev.PYTHON_PROJECT_INTERPRETER">Default</pydev_property>

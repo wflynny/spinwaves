@@ -7,7 +7,8 @@ import pylab
 from sympy import pi
 from numpy import PINF, NINF
 from spinwaves.MonteCarlo.simple import simpleAtom
-from spinwaves.MonteCarlo.CSim import get_ground_state, local_opt
+from spinwaves.MonteCarlo.CSim import get_ground_state
+from spinwaves.MonteCarlo.localOpt import opt_aux
 from spinwaves.spinwavecalc.readfiles import findmat, atom as SpinwaveAtom
 from spinwaves.spinwavecalc.spinwave_calc_file import calculate_dispersion, calc_eigs
 
@@ -155,6 +156,7 @@ class Fitter():
         same index.  Then GetResult() is called to return the list of
         eigenvalues.
         -spinwave_domain is a list of tuples (kx,ky,kz)"""
+        self._handle = open("C:\\spintest.txt", 'w')
         self._runMCeveryTime = MCeveryTime
         self._run = 0
         self.spins = []
@@ -167,6 +169,7 @@ class Fitter():
         #matrices is a list of 2D numpy arrays of JParam objects
         #allAtoms is a list of simpleAtoms as defined in the method Export_Aux
         self._matrices, allAtoms = session.Export_Aux(size)
+        print "_matrics: ", self._matrices
         #convert to the form used by the monteCarlo simulation
         self._simpleAtoms = []
         for atom in allAtoms:
@@ -183,7 +186,7 @@ class Fitter():
         print "\ngrouplist: ", groupList
         for group in groupList:
             param = group[0]
-            print "\nfit = ", param.fit
+            print "fit = ", param.fit, " def: ", param.default, " val: " , param.value
             if param.fit:
                 self._paramGroupList.append(group)
                 self.fit_list.append(param.default)
@@ -198,9 +201,11 @@ class Fitter():
         
     
     def GetResult(self):
+        print "fit list: ", self.fit_list
         #Propagate any value changes through all tied parameters
         for i in range(len(self.fit_list)):
             group = self._paramGroupList[i]
+            print "group: ", group
             for param in group:
                 #This will change the values in the matrices
                 param.value = self.fit_list[i]
@@ -208,6 +213,7 @@ class Fitter():
         #Used later for spinwave calculation
         jnums = []
         jmats = []
+        print "matrices[0]: ", self._matrices[0].tolist()
         for i in range(len(self._matrices)):
             j11 = self._matrices[i][0][0].value
             j12 = self._matrices[i][0][1].value
@@ -245,14 +251,21 @@ class Fitter():
 #        self._tMin = jAvg/10000
 #        self._tMax = 10
 #        self._tMin = 1E-6
-        
+        print "\n\n\nmonte Carlo Mats:\n", monteCarloMats
         
         if self._runMCeveryTime or self._run == 0:
-            print "\n\n\n\n\n\here\nsdfs\nsdfsd\n\n\n\n\n\n"
             self.spins = get_ground_state(self._k, self._tMax, self._tMin, self._tFactor,
                         self._simpleAtoms, monteCarloMats)
         else:
-            self.spins = local_opt(self._simpleAtoms, monteCarloMats, self.spins)
+            self.spins = opt_aux(self._simpleAtoms, monteCarloMats, self.spins)
+        #self.spins = opt_aux(self._simpleAtoms, monteCarloMats, self.spins)
+        
+        #print "\n\n\n\nspins:\n", self.spins
+        self._handle.write("\n\n\n\nparam:\n\n")
+        self._handle.write(str(self.fit_list))
+        self._handle.write("\n\nspins:\n\n")
+        self._handle.write(str(self.spins))
+        self._handle.flush()
         
         
         def inUnitCell(atom):
@@ -350,6 +363,9 @@ class Fitter():
         #    pylab.plot(qrange,wrange1,'s')
         #pylab.show()
         self._run+=1
+        
+        self._handle.write("\n\ndispersion:\n\n")
+        self._handle.write(str(wrange[0]))
         
         return wrange[0]#for now just one set
 

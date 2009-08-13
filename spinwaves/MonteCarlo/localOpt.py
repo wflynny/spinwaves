@@ -119,7 +119,7 @@ def calculate_Ham(sij, anis, jij, dsij = None):
 
     return Ham
 
-def opt_aux(atom_list, jmats, spins, tol = 1.0e-6):
+def opt_aux(atom_list, jmats, spins, tol = 1.0e-12):
     """This function separates the functionality of the optimizer from the
     files.  This method assumes that jmats is in the correct order. 
     ie. jnums looks like [0,1,2,3...]"""
@@ -241,6 +241,7 @@ def opt_aux(atom_list, jmats, spins, tol = 1.0e-6):
     
     # call minimizing function
     m = fmin_l_bfgs_b(hamiltonian, p0, fprime = deriv, args = (Jij, spin_mags, anis), pgtol=tol)#bounds = limits
+    #m = fmin_l_bfgs_b(hamiltonian, p0, fprime = deriv, args = (Jij, spin_mags, anis))
 
     # grab returned parameters
     # thetas are the first half of the list, phis are the second half
