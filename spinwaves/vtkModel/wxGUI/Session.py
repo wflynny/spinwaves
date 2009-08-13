@@ -36,8 +36,9 @@ class Session():
         connect(self.OnUseFitData, signal = "Use Fit Data")
         
     def OnUseFitData(self, bondTable):
-        self.bondTable = bondTable
-        self.bondTable.GetView()
+        self.bondTable.data = bondTable.data
+        print self.bondTable.data[0][8][0][0].value
+        send(signal = "Model Change", sender = "Session")
         
     def getAtomTable(self):
         return self.atomTable

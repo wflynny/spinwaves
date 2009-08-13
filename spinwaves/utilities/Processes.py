@@ -14,7 +14,7 @@ from spinwaves.vtkModel.wxGUI.Session import Session
 
     
 class ProcessManager():
-    def __init__(self, parentWindow):
+    def __init__(self, parentWindow = None):
         """All results will be displayed in windows which are direct children of parentWindow.  This should probably be the main GUI Frame."""
         self.parent = parentWindow
         #Threads to poll the process Queues
@@ -54,13 +54,7 @@ class ProcessManager():
 
     
     def startFit(self, session, fileName, k, tmin, tmax, size, tfactor, useMC):
-        #bondTable = deepcopy(session.bondTable)
-        #It's easier just to copy the session although it is less memory efficient
-        #sess = deepcopy(session)
-        #wx objects are not picklable, so only the data list from the bondata will be sent
-        #bondTable = session.bondTable.__deepcopy__()
         sessXML = session.createXMLStr()
-        #FitFunc(self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC)
         p = Process(target = FitFunc, args = (self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC))
         self._fitProcesses.append(p)
         p.start()
@@ -72,7 +66,68 @@ class ProcessManager():
     def startAnalyticCrossSection(self):
         print "method stub"
 
+
+
+class ProcessManagerPanel(wx.Panel):
+    def __init__(self, procManager, *args, **kwds):
+        # begin wxGlade: ProcessManagerPanel.__init__
+        kwds["style"] = wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.info_btn = wx.Button(self, -1, "Get Info")
+        self.kill_btn = wx.Button(self, -1, "Kill")
+        self.process_list_ctrl = wx.ListCtrl(self, -1, style=wx.LC_REPORT|wx.SUNKEN_BORDER)
+
+        self.__set_properties()
+        self.__do_layout()
+
+        self.Bind(wx.EVT_BUTTON, self.OnGetInfo, self.info_btn)
+        # end wxGlade
+
+    def __set_properties(self):
+        # begin wxGlade: ProcessManagerPanel.__set_properties
+        pass
+        # end wxGlade
+
+    def __do_layout(self):
+        # begin wxGlade: ProcessManagerPanel.__do_layout
+        grid_sizer_1 = wx.FlexGridSizer(2, 1, 0, 0)
+        grid_sizer_2 = wx.FlexGridSizer(1, 2, 0, 0)
+        grid_sizer_2.Add(self.info_btn, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 0)
+        grid_sizer_2.Add(self.kill_btn, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 0)
+        grid_sizer_2.AddGrowableRow(0)
+        grid_sizer_2.AddGrowableCol(0)
+        grid_sizer_2.AddGrowableCol(1)
+        grid_sizer_1.Add(grid_sizer_2, 1, wx.EXPAND, 0)
+        grid_sizer_1.Add(self.process_list_ctrl, 1, wx.EXPAND, 0)
+        self.SetSizer(grid_sizer_1)
+        grid_sizer_1.Fit(self)
+        grid_sizer_1.AddGrowableRow(1)
+        grid_sizer_1.AddGrowableCol(0)
+        # end wxGlade
+        self.process_list_ctrl.InsertColumn(0,"PID", format = wx.LIST_FORMAT_CENTER, width = -1)
+        self.process_list_ctrl.InsertColumn(1,"Calculation", format = wx.LIST_FORMAT_CENTER, width = -1)
+        self.process_list_ctrl.InsertColumn(2,"Status", format = wx.LIST_FORMAT_CENTER, width = -1)
+
+    def OnGetInfo(self, event): # wxGlade: ProcessManagerPanel.<event_handler>
+        print "Event handler `OnGetInfo' not implemented!"
+        event.Skip()
+
+# end of class ProcessManagerPanel
+
+
+def ShowProcessesFrame(procManager):
+    """Creates and displays a simple frame containing the ProcessManagerPanel."""
+    
+    frame = wx.Frame(procManager.parent, -1, title = "Processes")
+    ProcessManagerPanel(procManager, frame, -1)
+    frame.Fit()
+    frame.SetMinSize(frame.GetSize())
+    frame.Show()
+    return frame
         
+    
+        
+#----Analytic Dispersion-----------------------------------------------------------   
 class AnalyticDispersionThread(Thread):
    def __init__ (self, parentWindow, queue):
       Thread.__init__(self)
@@ -89,13 +144,21 @@ class AnalyticDispersionThread(Thread):
            
            #eig_frame = printing.LaTeXDisplayFrame(self.parent, ans, 'Dispersion Eigenvalues')
            #eig_frame.Show()
-           
+
+def AnalyticDispFunc(queue, int_file, spin_file):
+    #Since calculating Hsave is most of what the numeric process does, it might be better not to do this twice.
+    Hsave = spinwave_calc_file.driver1(spin_file, int_file)
+    myeigs=printing.eig_process(deepcopy(Hsave))
+    queue.put(printing.create_latex(myeigs, "eigs"))         
+     
 def showAnalyticEigs(ans):
     eig_frame = printing.LaTeXDisplayFrame(None, ans, 'Dispersion Eigenvalues')
     eig_frame.Show()
-    
 
-      
+    
+    
+    
+#----Numeric Dispersion-------------------------------------------------------------   
 class NumericDispersionThread(Thread):
     def __init__ (self, parentWindow, queue):
       Thread.__init__(self)
@@ -113,7 +176,16 @@ class NumericDispersionThread(Thread):
                 ax.plot(qrange, wrange1)
                 plt.hold(True)
             plt.show()
-
+            
+        
+def NumericDispFunc(queue, int_file, spin_file, direction, k_min, k_max, steps):
+    Hsave = spinwave_calc_file.driver1(spin_file, int_file)
+    qrange, wranges = spinwave_calc_file.driver2(Hsave, direction, steps, k_min, k_max)
+    queue.put((qrange, wranges))
+    
+    
+            
+#----Fitting---------------------------------------------------------------------
 from spinwaves.utilities.fitting import showFitResultFrame, fitFromFile
 class FitThread(Thread):
     def __init__ (self, parentWindow, queue):
@@ -130,27 +202,6 @@ class FitThread(Thread):
             pid = result[0]
             wx.CallAfter(showFitResultFrame,data, pid)
 
-
-
-
-class AnalyticCrossSectionThread(Thread):
-    def __init__ (self):
-        Thread.__init__(self)
-      
-    def run(self):
-        print "method stub"
-        
-def AnalyticDispFunc(queue, int_file, spin_file):
-    #Since calculating Hsave is most of what the numeric process does, it might be better not to do this twice.
-    Hsave = spinwave_calc_file.driver1(spin_file, int_file)
-    myeigs=printing.eig_process(deepcopy(Hsave))
-    queue.put(printing.create_latex(myeigs, "eigs"))
-        
-def NumericDispFunc(queue, int_file, spin_file, direction, k_min, k_max, steps):
-    Hsave = spinwave_calc_file.driver1(spin_file, int_file)
-    qrange, wranges = spinwave_calc_file.driver2(Hsave, direction, steps, k_min, k_max)
-    queue.put((qrange, wranges))
-
 def FitFunc(queue, sessionXML, fileName, k, tmin, tmax, size, tfactor, useMC):
     sess = Session()
     sess.loadXMLStr(sessionXML)
@@ -158,3 +209,39 @@ def FitFunc(queue, sessionXML, fileName, k, tmin, tmax, size, tfactor, useMC):
     #The session which contains the fitted parameters is more useful
     pid = os.getpid()
     queue.put((pid, sess.bondTable.data))
+
+
+    
+#----Analytic Cross Section-------------------------------------------------
+class AnalyticCrossSectionThread(Thread):
+    def __init__ (self):
+        Thread.__init__(self)
+      
+    def run(self):
+        print "method stub"
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+#for testing   
+class App(wx.App):
+    """Just to show the frame."""
+    def __init__(self, redirect = False, filename = None):
+        wx.App.__init__(self, redirect, filename)
+    
+    def OnInit(self):
+        self.SetTopWindow(ShowProcessesFrame(ProcessManager()))
+        return True
+
+
+if __name__ == '__main__':       
+    app = App(False)
+    app.MainLoop()
+    
+
