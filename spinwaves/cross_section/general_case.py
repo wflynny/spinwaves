@@ -13,9 +13,9 @@ matplotlib.use('WXAgg')
 import pylab
 from matplotlib._pylab_helpers import Gcf
 
-from list_manipulation import *
-from subin import sub_in
-from printing import *
+from util.list_manipulation import *
+from util.subin import sub_in
+from util.printing import *
 from spinwaves.spinwavecalc.readfiles import atom, readFiles
 from spinwaves.spinwavecalc.spinwave_calc_file import calculate_dispersion, calc_eigs
 from periodictable import elements

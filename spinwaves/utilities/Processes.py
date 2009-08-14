@@ -10,6 +10,7 @@ import spinwaves.spinwavecalc.spinwave_calc_file as spinwave_calc_file
 import spinwaves.cross_section.util.printing as printing
 from spinwaves.MonteCarlo.CSim import ShowSimulationFrame
 from spinwaves.vtkModel.wxGUI.Session import Session
+from spinwaves.cross_section.general_case2 import run_cross_section
 
 
     
@@ -33,13 +34,27 @@ class ProcessManager():
         self._fitProcesses= []
         self._analyticCrossSecProcesses= []
         
+        #Create a View
+        frame = wx.Frame(self.parent, -1, title = "Processes")
+        self.view = ProcessManagerPanel(self, frame, -1)
+        frame.Fit()
+        frame.SetMinSize(frame.GetSize())
+        frame.Show()
+        
+    
+    def processDone(self, pid):
+        """This method should be called by the thread receiving the data from the process when data is received,
+        i.e. when the process is done executing."""
+        self.view.removeProcess(pid)
+        
     def startAnalyticDispersion(self, interaction_file, spin_file):
         p = Process(target=AnalyticDispFunc, args=(self._analyticDispQueue, interaction_file, spin_file))
         self._analyticDispProcesses.append(p)
         p.start()
+        self.view.AddProcess(p.pid, "Analytic Dispersion", "running")
         #AnalyticDispFunc(self._analyticDispQueue, interaction_file, spin_file)
         if self._analyticDispThread == None:
-            self._analyticDispThread = AnalyticDispersionThread(self.parent, self._analyticDispQueue)
+            self._analyticDispThread = AnalyticDispersionThread(self.parent, self._analyticDispQueue, self)
             self._analyticDispThread.start()
        
     
@@ -47,9 +62,10 @@ class ProcessManager():
         p = Process(target = NumericDispFunc, args = (self._numericDispQueue, interaction_file, spin_file, direction, k_min, k_max, steps))
         self._numericDispProcesses.append(p)
         p.start()
+        self.view.AddProcess(p.pid, "Numerical Dispersion", "running")
         #NumericDispFunc(self._numericDispQueue, interaction_file, spin_file, direction, k_min, k_max, steps)
         if self._numericDispThread == None:
-            self._numericDispThread = NumericDispersionThread(self.parent, self._numericDispQueue)
+            self._numericDispThread = NumericDispersionThread(self.parent, self._numericDispQueue, self)
             self._numericDispThread.start()
 
     
@@ -58,13 +74,22 @@ class ProcessManager():
         p = Process(target = FitFunc, args = (self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC))
         self._fitProcesses.append(p)
         p.start()
+        self.view.AddProcess(p.pid, "Fitting", "running")
         if self._fitThread == None:
-            self._fitThread = FitThread(self.parent, self._fitQueue)
+            self._fitThread = FitThread(self.parent, self._fitQueue, self)
             self._fitThread.start()
         
         
-    def startAnalyticCrossSection(self):
-        print "method stub"
+    def startAnalyticCrossSection(self, interaction_file, spin_file):
+        #AnalyticCrossSectionFunc(self._analyticCrossSecQueue, interaction_file, spin_file)
+        p = Process(target = AnalyticCrossSectionFunc, args = (self._analyticCrossSecQueue, interaction_file, spin_file))
+        self._analyticCrossSecProcesses.append(p)
+        p.start()
+        self.view.AddProcess(p.pid, "Analytic Cross Section", "running")
+        if self._analyticCrossSecThread == None:
+            self._analyticCrossSecThread = AnalyticCrossSectionThread(self.parent, self._analyticCrossSecQueue, self)
+            self._analyticCrossSecThread.start()
+
 
 
 
@@ -82,6 +107,7 @@ class ProcessManagerPanel(wx.Panel):
 
         self.Bind(wx.EVT_BUTTON, self.OnGetInfo, self.info_btn)
         # end wxGlade
+        self.itemMapping = []
 
     def __set_properties(self):
         # begin wxGlade: ProcessManagerPanel.__set_properties
@@ -108,8 +134,23 @@ class ProcessManagerPanel(wx.Panel):
         self.process_list_ctrl.InsertColumn(1,"Calculation", format = wx.LIST_FORMAT_CENTER, width = -1)
         self.process_list_ctrl.InsertColumn(2,"Status", format = wx.LIST_FORMAT_CENTER, width = -1)
 
+    def AddProcess(self, pid, typeStr, statusStr, infoCallBack = None):
+        item = self.process_list_ctrl.InsertStringItem(0, str(pid))
+        self.process_list_ctrl.SetStringItem(0,1, typeStr)
+        self.process_list_ctrl.SetStringItem(0,2, statusStr)
+        self.itemMapping.append((pid,item))
+    
+    def removeProcess(self, pid):
+        #Find the item number for the given pid
+        for i in range(len(self.itemMapping)):
+            pair = self.itemMapping[i]
+            if pair[0] == pid:
+                self.process_list_ctrl.DeleteItem(pair[1])
+                self.itemMapping.pop(i)
+
     def OnGetInfo(self, event): # wxGlade: ProcessManagerPanel.<event_handler>
         print "Event handler `OnGetInfo' not implemented!"
+        print self.process_list_ctrl.GetChildren()
         event.Skip()
 
 # end of class ProcessManagerPanel
@@ -119,7 +160,7 @@ def ShowProcessesFrame(procManager):
     """Creates and displays a simple frame containing the ProcessManagerPanel."""
     
     frame = wx.Frame(procManager.parent, -1, title = "Processes")
-    ProcessManagerPanel(procManager, frame, -1)
+    panel = ProcessManagerPanel(procManager, frame, -1)
     frame.Fit()
     frame.SetMinSize(frame.GetSize())
     frame.Show()
@@ -129,15 +170,19 @@ def ShowProcessesFrame(procManager):
         
 #----Analytic Dispersion-----------------------------------------------------------   
 class AnalyticDispersionThread(Thread):
-   def __init__ (self, parentWindow, queue):
+   def __init__ (self, parentWindow, queue, procManager):
       Thread.__init__(self)
       self.parent = parentWindow
       self.queue = queue
+      self.procManager = procManager
     
    def run(self):
        while(True):
-           ans = self.queue.get()
+           result = self.queue.get()
+           pid = result[0]
+           ans = result[1]
            wx.CallAfter(showAnalyticEigs, ans)
+           self.procManager.processDone(pid)
            #send(signal = "Analytic Dispersion Complete", answer = ans)
            #evt = AnalyticDispCompleteEvent(myAnalyticDispEvt, None)
            #evt.SetAns(ans)
@@ -149,7 +194,7 @@ def AnalyticDispFunc(queue, int_file, spin_file):
     #Since calculating Hsave is most of what the numeric process does, it might be better not to do this twice.
     Hsave = spinwave_calc_file.driver1(spin_file, int_file)
     myeigs=printing.eig_process(deepcopy(Hsave))
-    queue.put(printing.create_latex(myeigs, "eigs"))         
+    queue.put((os.getpid(), printing.create_latex(myeigs, "eigs")))         
      
 def showAnalyticEigs(ans):
     eig_frame = printing.LaTeXDisplayFrame(None, ans, 'Dispersion Eigenvalues')
@@ -160,14 +205,18 @@ def showAnalyticEigs(ans):
     
 #----Numeric Dispersion-------------------------------------------------------------   
 class NumericDispersionThread(Thread):
-    def __init__ (self, parentWindow, queue):
+    def __init__ (self, parentWindow, queue, procManager):
       Thread.__init__(self)
       self.parent = parentWindow
       self.queue = queue
+      self.procManager = procManager
       
     def run(self):
         while(True):
-            ans = self.queue.get()
+            result = self.queue.get()
+            pid = result[0]
+            ans = result[1]
+            self.procManager.processDone(pid)
             qrange = ans[0]
             wrange = ans[1]
             fig = plt.figure()
@@ -181,17 +230,18 @@ class NumericDispersionThread(Thread):
 def NumericDispFunc(queue, int_file, spin_file, direction, k_min, k_max, steps):
     Hsave = spinwave_calc_file.driver1(spin_file, int_file)
     qrange, wranges = spinwave_calc_file.driver2(Hsave, direction, steps, k_min, k_max)
-    queue.put((qrange, wranges))
+    queue.put((os.getpid(),(qrange, wranges)))
     
     
             
 #----Fitting---------------------------------------------------------------------
 from spinwaves.utilities.fitting import showFitResultFrame, fitFromFile
 class FitThread(Thread):
-    def __init__ (self, parentWindow, queue):
+    def __init__ (self, parentWindow, queue, procManager):
        Thread.__init__(self)
        self.parent = parentWindow
        self.queue = queue
+       self.procManager = procManager
     
     def run(self):
         #poll the fit queue while there are still fitting processes running
@@ -200,6 +250,7 @@ class FitThread(Thread):
             result = self.queue.get()
             data = result[1]
             pid = result[0]
+            self.procManager.processDone(pid)
             wx.CallAfter(showFitResultFrame,data, pid)
 
 def FitFunc(queue, sessionXML, fileName, k, tmin, tmax, size, tfactor, useMC):
@@ -214,17 +265,29 @@ def FitFunc(queue, sessionXML, fileName, k, tmin, tmax, size, tfactor, useMC):
     
 #----Analytic Cross Section-------------------------------------------------
 class AnalyticCrossSectionThread(Thread):
-    def __init__ (self):
+    def __init__ (self, parent, queue, procManager):
         Thread.__init__(self)
+        self.queue = queue
+        self.parent = parent
+        self.procManager = procManager
       
     def run(self):
-        print "method stub"
+        while(True):
+            result = self.queue.get()
+            data = result[1]
+            pid = result[0]
+            self.procManager.processDone(pid)
+            wx.CallAfter(showAnalyticCrossSectionFrame, self.parent, data, pid)
         
+            
+def AnalyticCrossSectionFunc(queue, int_file, spin_file):
+        N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist = run_cross_section(int_file, spin_file)
+        queue.put((os.getpid(),printing.create_latex(csection, "eigs")))  #(PID, answer)
         
-        
-        
-        
-        
+def showAnalyticCrossSectionFrame(parent, ans, pid):
+    #Almost the same as showAnalyticEigs()
+    eig_frame = printing.LaTeXDisplayFrame(parent, ans, 'CrossSection Eigenvalues, PID: ' + str(pid))
+    eig_frame.Show()
         
         
         

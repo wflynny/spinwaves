@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-
 import time
 import gc
 
@@ -2036,7 +2035,7 @@ class Frame(wx.Frame):
         myparent = self
         #frame_1 = wx.Frame(myparent, -1, "Cross-section")
         #dlg = Cross_Section(parent = frame_1,id=-1)
-        frame_1 = Cross_Section(self, -1, "")
+        frame_1 = Cross_Section(self.procManager, self, -1, "")
         #self.SetExtraStyle(wx.WS_EX_VALIDATE_RECURSIVELY)
         frame_1.Show()
         frame_1.Refresh()
@@ -2098,7 +2097,7 @@ class Frame(wx.Frame):
 
 
 class Cross_Section(wx.Frame):
-    def __init__(self, *args, **kwds):
+    def __init__(self, processManager, *args, **kwds):
     #def __init__(self, parent, id):
         #wx.Panel.__init__(self, parent, id)
          #begin wxGlade: Cross_Section.__init__
@@ -2111,7 +2110,8 @@ class Cross_Section(wx.Frame):
         self.text_ctrl_2 = wx.TextCtrl(self, -1, "")
         self.button_1 = wx.Button(self, -1, "Browse")
         self.launchButton = wx.Button(self, -1, "Launch")
-        self.process_list = []
+        #self.process_list = []
+        self.procManager = processManager
 
         
         
@@ -2159,12 +2159,11 @@ class Cross_Section(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.OnBrowseInteractions, self.interactionsFileBrowse)
         self.Bind(wx.EVT_BUTTON, self.OnBrowseSpins, self.button_1)
         self.Bind(wx.EVT_BUTTON, self.OnLaunch, self.launchButton)
-        self.Bind(wx.EVT_CLOSE,  self.OnCloseWindow)
 
-    def OnCloseWindow(self, evt):
-        for pro in self.process_list:
-            pro.terminate()
-        self.Destroy()
+    #def OnCloseWindow(self, evt):
+        #for pro in self.process_list:
+            #pro.terminate()
+        #self.Destroy()
         
     def OnBrowseInteractions(self, evt):
         confBase = wx.ConfigBase.Create()
@@ -2211,50 +2210,52 @@ class Cross_Section(wx.Frame):
         #check to see if the two files paths are openable files.
         try:
             f = open(self.text_ctrl_1.GetValue())
+            f.close()
         except:
             wx.MessageBox("The interactions file cannot be opened.")
             return
-        f.close();
+        
         
         try:
             f = open(self.text_ctrl_2.GetValue())
+            f.close()
         except:
             wx.MessageBox("The spins file cannot be opened.")
             return
-        f.close()
         
-        N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist = run_cross_section(self.text_ctrl_1.GetValue(), self.text_ctrl_2.GetValue())
+        self.procManager.startAnalyticCrossSection(self.text_ctrl_1.GetValue(), self.text_ctrl_2.GetValue())
+        #N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist = run_cross_section(self.text_ctrl_1.GetValue(), self.text_ctrl_2.GetValue())
         
-        print 'create pipe'
-        left_conn, right_conn = Pipe()
-        p = Process(target = printing.create_latex, args = (right_conn, csection, "eigs"))
-        print 'process starting'
-        p.start()
-        print 'process started'
-        self.process_list.append(p)
+        #print 'create pipe'
+        #left_conn, right_conn = Pipe()
+        #p = Process(target = printing.create_latex, args = (right_conn, csection, "eigs"))
+        #print 'process starting'
+        #p.start()
+        #print 'process started'
+        #self.process_list.append(p)
 
-        printing.process_info('main line')
-        #q = Process(target = run_eval_cross_section, args = (N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist))
-        run_eval_cross_section(N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist)
-        #q.start()
+        #printing.process_info('main line')
+        ##q = Process(target = run_eval_cross_section, args = (N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist))
+        #run_eval_cross_section(N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist)
+        ##q.start()
         
-        p.join()
-        print 'displaying window'
-        eig_frame = printing.LaTeXDisplayFrame(None, p.pid, left_conn.recv(), 'Cross-section')
-        if eig_frame.PID == p.pid:
-            eig_frame.Show()
-            self.process_list.remove(p)
-            p.terminate()
-        else:
-            if p in self.process_list:
-                p.terminate()
-                raise Exception('process messed up')
-        p.terminate()
-        print 'p terminated'
-        #q.join()
-        #print 'q done'
-        #q.terminate()
-        print 'q terminated'
+        #p.join()
+        #print 'displaying window'
+        #eig_frame = printing.LaTeXDisplayFrame(None, p.pid, left_conn.recv(), 'Cross-section')
+        #if eig_frame.PID == p.pid:
+            #eig_frame.Show()
+            #self.process_list.remove(p)
+            #p.terminate()
+        #else:
+            #if p in self.process_list:
+                #p.terminate()
+                #raise Exception('process messed up')
+        #p.terminate()
+        #print 'p terminated'
+        ##q.join()
+        ##print 'q done'
+        ##q.terminate()
+        #print 'q terminated'
 # end of class Cross_Section
 
 

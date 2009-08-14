@@ -81,7 +81,6 @@ def create_latex(input, name = None):
     # Send the output through the pipe
     #conn.send(output)
     #conn.close()
-    print "\n\n\n\noutput:\n", output
     return output
 
 def eig_process(mat):

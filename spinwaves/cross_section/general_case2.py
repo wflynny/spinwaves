@@ -440,17 +440,19 @@ def generate_cross_section(interactionfile, spinfile, lattice, arg,
  #   print len(eig_list[0])
 #    sys.exit()
     # Grab Form Factors
-    ff_list = []
-    s = sp.Symbol('s')
-    for i in range(N_atoms):
-        el = elements[atom_list[i].atomicNum]
-        val = atom_list[i].valence
-        if val != None:
-            Mq = el.magnetic_ff[val].M_Q(kaprange)
-        else:
-            Mq = el.magnetic_ff[0].M_Q(kaprange)
-        ff_list.append(Mq)
-    print "Calculated: Form Factors"
+#----Commented out 9/14/09 by Tom becuase of magnetic_ff error--------------
+    #ff_list = []
+    #s = sp.Symbol('s')
+    #for i in range(N_atoms):
+        #el = elements[atom_list[i].atomicNum]
+        #val = atom_list[i].valence
+        #if val != None:
+            #Mq = el.magnetic_ff[val].M_Q(kaprange)
+        #else:
+            #Mq = el.magnetic_ff[0].M_Q(kaprange)
+        #ff_list.append(Mq)
+    #print "Calculated: Form Factors"
+#--------------------------------------------------------------------------
 
     # Other Constants
     gamr0 = 2*0.2695e-12 #sp.Symbol('gamma', commutative = True)
