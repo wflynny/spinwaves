@@ -69,14 +69,23 @@ class ProcessManager():
             self._numericDispThread.start()
 
     
-    def startFit(self, session, fileName, k, tmin, tmax, size, tfactor, useMC):
+    def startFit(self, session, fileName, k, tmin, tmax, size, tfactor, useMC, fitType = 0):
+        """fitType: 0 is mp_fit, and 1 is simulated annealing"""
+        print fitType
         sessXML = session.createXMLStr()
-        p = Process(target = FitFunc, args = (self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC))
+        if fitType == 0:
+            p = Process(target = FitFunc, args = (self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC))
+            
+        if fitType == 1:
+            #AnnealFitFunc(self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC)
+            p = Process(target = AnnealFitFunc, args = (self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC))
+
         self._fitProcesses.append(p)
         p.start()
         self.view.AddProcess(p.pid, "Fitting", "running")
         if self._fitThread == None:
             self._fitThread = FitThread(self.parent, self._fitQueue, self)
+            
             self._fitThread.start()
         
         
@@ -102,11 +111,19 @@ class ProcessManagerPanel(wx.Panel):
         self.kill_btn = wx.Button(self, -1, "Kill")
         self.process_list_ctrl = wx.ListCtrl(self, -1, style=wx.LC_REPORT|wx.SUNKEN_BORDER)
 
+        
         self.__set_properties()
         self.__do_layout()
 
         self.Bind(wx.EVT_BUTTON, self.OnGetInfo, self.info_btn)
         # end wxGlade
+        self.process_list_ctrl.InsertColumn(0,"PID", format = wx.LIST_FORMAT_CENTER, width = -1)
+        self.process_list_ctrl.InsertColumn(1,"Calculation", format = wx.LIST_FORMAT_CENTER, width = -1)
+        self.process_list_ctrl.InsertColumn(2,"Status", format = wx.LIST_FORMAT_CENTER, width = -1)
+        size = self.process_list_ctrl.GetSize()
+        size[0] = self.process_list_ctrl.GetColumnWidth(0)*self.process_list_ctrl.GetColumnCount() + 10#frame borders
+        self.GetParent().SetMinSize(size)
+
         self.itemMapping = []
 
     def __set_properties(self):
@@ -130,15 +147,16 @@ class ProcessManagerPanel(wx.Panel):
         grid_sizer_1.AddGrowableRow(1)
         grid_sizer_1.AddGrowableCol(0)
         # end wxGlade
-        self.process_list_ctrl.InsertColumn(0,"PID", format = wx.LIST_FORMAT_CENTER, width = -1)
-        self.process_list_ctrl.InsertColumn(1,"Calculation", format = wx.LIST_FORMAT_CENTER, width = -1)
-        self.process_list_ctrl.InsertColumn(2,"Status", format = wx.LIST_FORMAT_CENTER, width = -1)
+
 
     def AddProcess(self, pid, typeStr, statusStr, infoCallBack = None):
         item = self.process_list_ctrl.InsertStringItem(0, str(pid))
         self.process_list_ctrl.SetStringItem(0,1, typeStr)
         self.process_list_ctrl.SetStringItem(0,2, statusStr)
         self.itemMapping.append((pid,item))
+        self.GetParent().Fit()
+        print "list size: ", self.process_list_ctrl.GetSize()
+        print "frame size: " , self.GetParent().GetSize()
     
     def removeProcess(self, pid):
         #Find the item number for the given pid
@@ -147,10 +165,10 @@ class ProcessManagerPanel(wx.Panel):
             if pair[0] == pid:
                 self.process_list_ctrl.DeleteItem(pair[1])
                 self.itemMapping.pop(i)
+                break
 
     def OnGetInfo(self, event): # wxGlade: ProcessManagerPanel.<event_handler>
         print "Event handler `OnGetInfo' not implemented!"
-        print self.process_list_ctrl.GetChildren()
         event.Skip()
 
 # end of class ProcessManagerPanel
@@ -182,7 +200,7 @@ class AnalyticDispersionThread(Thread):
            pid = result[0]
            ans = result[1]
            wx.CallAfter(showAnalyticEigs, ans)
-           self.procManager.processDone(pid)
+           wx.CallAfter(self.procManager.processDone,pid)
            #send(signal = "Analytic Dispersion Complete", answer = ans)
            #evt = AnalyticDispCompleteEvent(myAnalyticDispEvt, None)
            #evt.SetAns(ans)
@@ -216,7 +234,7 @@ class NumericDispersionThread(Thread):
             result = self.queue.get()
             pid = result[0]
             ans = result[1]
-            self.procManager.processDone(pid)
+            wx.CallAfter(self.procManager.processDone, pid)
             qrange = ans[0]
             wrange = ans[1]
             fig = plt.figure()
@@ -235,7 +253,7 @@ def NumericDispFunc(queue, int_file, spin_file, direction, k_min, k_max, steps):
     
             
 #----Fitting---------------------------------------------------------------------
-from spinwaves.utilities.fitting import showFitResultFrame, fitFromFile
+from spinwaves.utilities.fitting import showFitResultFrame, fitFromFile, annealFitFromFile
 class FitThread(Thread):
     def __init__ (self, parentWindow, queue, procManager):
        Thread.__init__(self)
@@ -250,7 +268,7 @@ class FitThread(Thread):
             result = self.queue.get()
             data = result[1]
             pid = result[0]
-            self.procManager.processDone(pid)
+            wx.CallAfter(self.procManager.processDone,pid)
             wx.CallAfter(showFitResultFrame,data, pid)
 
 def FitFunc(queue, sessionXML, fileName, k, tmin, tmax, size, tfactor, useMC):
@@ -260,6 +278,18 @@ def FitFunc(queue, sessionXML, fileName, k, tmin, tmax, size, tfactor, useMC):
     #The session which contains the fitted parameters is more useful
     pid = os.getpid()
     queue.put((pid, sess.bondTable.data))
+
+def AnnealFitFunc(queue, sessionXML, fileName, k, tmin, tmax, size, tfactor, useMC):
+    sess = Session()
+    sess.loadXMLStr(sessionXML)
+    ans = annealFitFromFile(fileName, sess, k = k, tMax = tmax, tMin = tmin, size = size, tFactor = tfactor, MCeveryTime = useMC)
+    #The session which contains the fitted parameters is more useful
+    pid = os.getpid()
+    queue.put((pid, sess.bondTable.data))
+
+    
+def chisq_an(p):
+    annealingFitFromFile()
 
 
     
@@ -276,7 +306,7 @@ class AnalyticCrossSectionThread(Thread):
             result = self.queue.get()
             data = result[1]
             pid = result[0]
-            self.procManager.processDone(pid)
+            wx.CallAfter(self.procManager.processDone,pid)
             wx.CallAfter(showAnalyticCrossSectionFrame, self.parent, data, pid)
         
             
