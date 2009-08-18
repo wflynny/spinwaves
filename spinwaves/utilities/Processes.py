@@ -11,6 +11,7 @@ import spinwaves.cross_section.util.printing as printing
 from spinwaves.MonteCarlo.CSim import ShowSimulationFrame
 from spinwaves.vtkModel.wxGUI.Session import Session
 from spinwaves.cross_section.general_case2 import run_cross_section
+from spinwaves.utilities.fitting import showFitResultFrame, fitFromFile, annealFitFromFile
 
 tmpDir = os.path.join(os.path.split(os.path.split(os.path.dirname(__file__))[0])[0], "spinwaves_temp")
 print "temp directory: ", tmpDir
@@ -258,7 +259,6 @@ def NumericDispFunc(queue, int_file, spin_file, direction, k_min, k_max, steps):
     
             
 #----Fitting---------------------------------------------------------------------
-from spinwaves.utilities.fitting import showFitResultFrame, fitFromFile, annealFitFromFile
 class FitThread(Thread):
     def __init__ (self, parentWindow, queue, procManager):
        Thread.__init__(self)

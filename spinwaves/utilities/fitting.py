@@ -7,6 +7,8 @@ from mpfit import mpfit
 import spinwaves.vtkModel.Parameter_Manager as PM
 from wx.py.dispatcher import send
 from anneal import anneal
+from spinwaves.vtkModel.wxGUI.Session import Session
+from spinwaves.vtkModel.BondClass import bondListGrid
 
 
 def fitting(session, spinwave_domain, spinwave_range, spinwave_range_Err, size=3, k = 100, tMin = .001, tMax = 15, tFactor = .95, MCeveryTime = True):
@@ -651,7 +653,6 @@ def showFitResultFrame(data, pid):
     return frame
 
 
-from spinwaves.vtkModel.wxGUI.GUI_Main import bondListGrid
 class FitResultPanel(wx.Panel):
     def __init__(self, fitData, pid, *args, **kwds):
 	self.fitSession = Session()
@@ -704,7 +705,7 @@ class FitResultPanel(wx.Panel):
 
 
 
-from spinwaves.vtkModel.wxGUI.Session import Session
+
 
 class App(wx.App):
     """Just to show the frame.  This will not actually work for fitting since fitting requires

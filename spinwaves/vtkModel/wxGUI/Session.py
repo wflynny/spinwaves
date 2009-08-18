@@ -15,7 +15,6 @@ import datetime
 from spinwaves.vtkModel.BondClass import JParam
 from spinwaves.vtkModel.Parameter_Manager import ParamManager
 import spinwaves.vtkModel.CifFile as CifFile
-from spinwaves.utilities.Processes import ProcessManager
 
 class Session():
     """Stores information about a user session
@@ -31,7 +30,6 @@ class Session():
         #Stores atom information
         self.atomTable = atomTable()
         self.MagCell = None
-        self.procManager = ProcessManager()
         #For now the magnetic cell class will be used for the cutoff cell
         #receive message from the fitresultwindow to copy the fit parameters in the bondTable
         connect(self.OnUseFitData, signal = "Use Fit Data")
