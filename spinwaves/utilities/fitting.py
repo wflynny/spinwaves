@@ -78,30 +78,40 @@ def fitting(session, spinwave_domain, spinwave_range, spinwave_range_Err, size=3
 def annealFit(session, spinwave_domain, spinwave_range, spinwave_range_Err, size=3, k = 100, tMin = .001, tMax = 15, tFactor = .95, MCeveryTime = True):
     # Create fitter
     fitter = PM.Fitter(session, spinwave_domain, size, k, tMin, tMax, tFactor, MCeveryTime)
+    testFile = open("C:\\testOutput.txt", 'w')
     
     # Helper function for GetResult
     def myfunc(p, y=None, err=None):
-	"""returns Chi Squared to be minimized."""
+        """returns Chi Squared to be minimized."""
+        
         fitter.fit_list = p
         model = fitter.GetResult()
         print 'y:\n', y, '\n\nmodel:\n', model
+	testFile.write('\n')
+	for i in range(len(y)):
+	    testFile.write("  p: p %3.5f y %3.5f model %3.5f err %3.5f"%(p,y[i],model[i],err[i]) )
         result = (y-model)/err
-	chi_sq = 0
-	for entry in result:
-	    chi_sq += math.pow(entry, 2)
+    	chi_sq = 0
+    	for entry in result:
+    	    chi_sq += math.pow(entry, 2)
         print '\n\nresult:\n', result
+    	testFile.write("\nchi_sq: " + str(chi_sq))
+	testFile.flush()
         return chi_sq
 
     # Function Keywords
     y = spinwave_range
     err = spinwave_range_Err
     p0 = fitter.fit_list
+    testFile.write("initial p: " + str(p0))
 
 
     result=anneal(myfunc,p0,args=(y,err), schedule='simple',lower=fitter.min_range_list,upper=fitter.max_range_list,
                   maxeval=None, maxaccept=None,dwell=500,maxiter=2000)
     
     print "annealing result: ", result
+    testFile.write("\nresult: " + str(result))
+    testFile.close()
     p = result[0]
     return p
 

@@ -12,7 +12,20 @@ from spinwaves.MonteCarlo.CSim import ShowSimulationFrame
 from spinwaves.vtkModel.wxGUI.Session import Session
 from spinwaves.cross_section.general_case2 import run_cross_section
 
-    
+tmpDir = os.path.join(os.path.split(os.path.split(os.path.dirname(__file__))[0])[0], "spinwaves_temp")
+print "temp directory: ", tmpDir
+
+def createFileCopy(fileName, pid):
+    """Creates a copy of the file in tmpDir with a unique name using the pid and returns the new path."""
+    newPath = os.path.join(tmpDir, fileName + "_" + str(pid))
+    f2 = open(newPath, 'w')
+    f1 = open(fileName, 'r')
+    f2.write(f1.read())
+    f1.close()
+    f2.close()
+    return newPath
+
+
 class ProcessManager():
     def __init__(self, parentWindow = None):
         """All results will be displayed in windows which are direct children of parentWindow.  This should probably be the main GUI Frame."""
@@ -47,6 +60,8 @@ class ProcessManager():
         self.view.removeProcess(pid)
         
     def startAnalyticDispersion(self, interaction_file, spin_file):
+        interaction_file = createFileCopy(interaction_file)
+        spin_file = createFileCopy(spin_file)
         p = Process(target=AnalyticDispFunc, args=(self._analyticDispQueue, interaction_file, spin_file))
         self._analyticDispProcesses.append(p)
         p.start()
@@ -58,6 +73,8 @@ class ProcessManager():
        
     
     def startNumericDispersion(self, interaction_file, spin_file, direction, k_min, k_max, steps): 
+        interaction_file = createFileCopy(interaction_file)
+        spin_file = createFileCopy(spin_file)
         p = Process(target = NumericDispFunc, args = (self._numericDispQueue, interaction_file, spin_file, direction, k_min, k_max, steps))
         self._numericDispProcesses.append(p)
         p.start()
@@ -68,18 +85,25 @@ class ProcessManager():
             self._numericDispThread.start()
 
     
-    def startFit(self, session, fileName, k, tmin, tmax, size, tfactor, useMC):
+    def startFit(self, session, fileName, k, tmin, tmax, size, tfactor, useMC, fitType = 0):
+        """if fitType is 0, mp_fit is used, if it is 1, simulated annealing is used."""
         sessXML = session.createXMLStr()
-        p = Process(target = FitFunc, args = (self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC))
-        self._fitProcesses.append(p)
-        p.start()
-        self.view.AddProcess(p.pid, "Fitting", "running")
+        if fitType == 0:
+            p = Process(target = FitFunc, args = (self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC))
+        if fitType == 1:
+            AnnealFitFunc(self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC)
+            #p = Process(target = AnnealFitFunc, args = (self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC))
+        #self._fitProcesses.append(p)
+        #p.start()
+        #self.view.AddProcess(p.pid, "Fitting", "running")
         if self._fitThread == None:
             self._fitThread = FitThread(self.parent, self._fitQueue, self)
             self._fitThread.start()
         
         
     def startAnalyticCrossSection(self, interaction_file, spin_file):
+        interaction_file = createFileCopy(interaction_file)
+        spin_file = createFileCopy(spin_file)
         #AnalyticCrossSectionFunc(self._analyticCrossSecQueue, interaction_file, spin_file)
         p = Process(target = AnalyticCrossSectionFunc, args = (self._analyticCrossSecQueue, interaction_file, spin_file))
         self._analyticCrossSecProcesses.append(p)
@@ -234,7 +258,7 @@ def NumericDispFunc(queue, int_file, spin_file, direction, k_min, k_max, steps):
     
             
 #----Fitting---------------------------------------------------------------------
-from spinwaves.utilities.fitting import showFitResultFrame, fitFromFile
+from spinwaves.utilities.fitting import showFitResultFrame, fitFromFile, annealFitFromFile
 class FitThread(Thread):
     def __init__ (self, parentWindow, queue, procManager):
        Thread.__init__(self)
@@ -256,6 +280,14 @@ def FitFunc(queue, sessionXML, fileName, k, tmin, tmax, size, tfactor, useMC):
     sess = Session()
     sess.loadXMLStr(sessionXML)
     ans = fitFromFile(fileName, sess, k = k, tMax = tmax, tMin = tmin, size = size, tFactor = tfactor, MCeveryTime = useMC)
+    #The session which contains the fitted parameters is more useful
+    pid = os.getpid()
+    queue.put((pid, sess.bondTable.data))
+    
+def AnnealFitFunc(queue, sessionXML, fileName, k, tmin, tmax, size, tfactor, useMC):
+    sess = Session()
+    sess.loadXMLStr(sessionXML)
+    ans = annealFitFromFile(fileName, sess, k = k, tMax = tmax, tMin = tmin, size = size, tFactor = tfactor, MCeveryTime = useMC)
     #The session which contains the fitted parameters is more useful
     pid = os.getpid()
     queue.put((pid, sess.bondTable.data))

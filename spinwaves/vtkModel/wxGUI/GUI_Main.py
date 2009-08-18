@@ -35,7 +35,6 @@ import copy
 from spinwaves.vtkModel.BondClass import JParam
 from spinwaves.vtkModel.Parameter_Manager import Fitter
 
-from spinwaves.utilities.Processes import ProcessManager
 import spinwaves.cross_section.util.printing as printing
 #gc.enable()
 #Atom and cell info window
@@ -1581,7 +1580,9 @@ class vtkPanel(wx.Panel):
         self.bindEvents()
         self.mode = None
         self.picker = None
-        self.procManager = ProcessManager(self)
+        #self.procManager = ProcessManager(self)
+        self.procManager = self.session.procManager
+        
         
         
   
