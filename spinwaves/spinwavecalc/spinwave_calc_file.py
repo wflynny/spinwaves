@@ -15,7 +15,7 @@ from matplotlib._pylab_helpers import Gcf
 import sys
 #from sympy import latex
 import matplotlib.pyplot as plt
-import cross_section.util.printing as printing
+import spinwaves.cross_section.util.printing as printing
 
 #translations=[[0,0,0],
 #              [0,0,1],[0,0,-1]

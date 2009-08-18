@@ -10,7 +10,7 @@ The spinwaves module does spinwave stuff.
 import os
 import sys
 
-DESCRIPTION         = 'Spinwave calculator'
+DESCRIPTION         = 'Spinwave Calculator'
 LONG_DESCRIPTION    = descr
 MAINTAINER          = ''
 MAINTAINER_EMAIL    = ''

@@ -15,7 +15,7 @@ from simple import readFile
 import spinwaves.spinwavecalc.readfiles as rf
 import numpy as np
 import sympy as sp
-from scipy.sparse import bsr_matrix
+#from scipy.sparse import bsr_matrix
 from scipy.optimize import fmin_l_bfgs_b
 
 def gen_Jij(atom_list,jmats):

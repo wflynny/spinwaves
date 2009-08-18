@@ -20,7 +20,7 @@ from spinwaves.cross_section.util.subin import sub_in
 from spinwaves.cross_section.util.printing import *
 from spinwaves.spinwavecalc.readfiles import atom, readFiles
 from spinwaves.spinwavecalc.spinwave_calc_file import calculate_dispersion, calc_eigs_direct
-from periodictable import elements
+#from periodictable import elements
 sys.path.append('C:/tripleaxisproject-local/ tripleaxisproject/trunk/eclipse/src')
 from rescalculator.lattice_calculator import Lattice, Orientation
 
