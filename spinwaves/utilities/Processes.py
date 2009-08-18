@@ -1,4 +1,5 @@
 import os
+import signal
 from multiprocessing import Process, Queue
 from threading import Thread
 from copy import deepcopy
@@ -14,11 +15,18 @@ from spinwaves.cross_section.general_case2 import run_cross_section
 from spinwaves.utilities.fitting import showFitResultFrame, fitFromFile, annealFitFromFile
 
 tmpDir = os.path.join(os.path.split(os.path.split(os.path.dirname(__file__))[0])[0], "spinwaves_temp")
+if not os.path.exists(tmpDir):
+    os.mkdir(tmpDir)
 print "temp directory: ", tmpDir
 
-def createFileCopy(fileName, pid):
-    """Creates a copy of the file in tmpDir with a unique name using the pid and returns the new path."""
-    newPath = os.path.join(tmpDir, fileName + "_" + str(pid))
+def createFileCopy(fileName, pid, type):
+    """Creates a copy of the file in tmpDir with a unique name using the pid and returns the new path.
+    type is 0 for an interaction file and 1 for a spin file.
+    The file name is of the form:
+    int_pid   ...or...   spin_pid
+    By having a predictable file name, the files can easilly found outside of the process that created them."""
+    newPath = os.path.join(tmpDir, os.path.split(fileName)[1] + "_" + str(pid))
+    print "\n\n\n\n\n\nnewpath: " , newPath
     f2 = open(newPath, 'w')
     f1 = open(fileName, 'r')
     f2.write(f1.read())
@@ -42,10 +50,11 @@ class ProcessManager():
         self._fitQueue = Queue()
         self._analyticCrossSecQueue = Queue()
         
-        self._analyticDispProcesses= []
-        self._numericDispProcesses= []
-        self._fitProcesses= []
-        self._analyticCrossSecProcesses= []
+        #self._analyticDispProcesses= []
+        #self._numericDispProcesses= []
+        #self._fitProcesses= []
+        #self._analyticCrossSecProcesses= []
+        self.processes = []
         
         #Create a View
         frame = wx.Frame(self.parent, -1, title = "Processes")
@@ -60,11 +69,21 @@ class ProcessManager():
         i.e. when the process is done executing."""
         self.view.removeProcess(pid)
         
+    def killProcess(self, pid):
+        """Currently the terminate() method is called whihc runs the risk of corrupting a queue if it is being accessed
+        when the process is killed."""
+        for p in self.processes:
+            if p.pid == pid:
+                p.terminate()
+                break
+        
+        
     def startAnalyticDispersion(self, interaction_file, spin_file):
         interaction_file = createFileCopy(interaction_file)
         spin_file = createFileCopy(spin_file)
         p = Process(target=AnalyticDispFunc, args=(self._analyticDispQueue, interaction_file, spin_file))
-        self._analyticDispProcesses.append(p)
+        #self._analyticDispProcesses.append(p)
+        self.processes.append(p)
         p.start()
         self.view.AddProcess(p.pid, "Analytic Dispersion", "running")
         #AnalyticDispFunc(self._analyticDispQueue, interaction_file, spin_file)
@@ -77,7 +96,8 @@ class ProcessManager():
         interaction_file = createFileCopy(interaction_file)
         spin_file = createFileCopy(spin_file)
         p = Process(target = NumericDispFunc, args = (self._numericDispQueue, interaction_file, spin_file, direction, k_min, k_max, steps))
-        self._numericDispProcesses.append(p)
+        #self._numericDispProcesses.append(p)
+        self.processes.append(p)
         p.start()
         self.view.AddProcess(p.pid, "Numerical Dispersion", "running")
         #NumericDispFunc(self._numericDispQueue, interaction_file, spin_file, direction, k_min, k_max, steps)
@@ -95,19 +115,20 @@ class ProcessManager():
             AnnealFitFunc(self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC)
             #p = Process(target = AnnealFitFunc, args = (self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC))
         #self._fitProcesses.append(p)
-        #p.start()
-        #self.view.AddProcess(p.pid, "Fitting", "running")
+        self.processes.append(p)
+        p.start()
+        self.view.AddProcess(p.pid, "Fitting", "running")
         if self._fitThread == None:
             self._fitThread = FitThread(self.parent, self._fitQueue, self)
             self._fitThread.start()
         
         
     def startAnalyticCrossSection(self, interaction_file, spin_file):
-        interaction_file = createFileCopy(interaction_file)
-        spin_file = createFileCopy(spin_file)
         #AnalyticCrossSectionFunc(self._analyticCrossSecQueue, interaction_file, spin_file)
         p = Process(target = AnalyticCrossSectionFunc, args = (self._analyticCrossSecQueue, interaction_file, spin_file))
-        self._analyticCrossSecProcesses.append(p)
+        #self._analyticCrossSecProcesses.append(p)
+        self.processes.append(p)
+        print "\n\n\n\n\n\npid: ", p.pid
         p.start()
         self.view.AddProcess(p.pid, "Analytic Cross Section", "running")
         if self._analyticCrossSecThread == None:
@@ -131,7 +152,8 @@ class ProcessManagerPanel(wx.Panel):
 
         self.Bind(wx.EVT_BUTTON, self.OnGetInfo, self.info_btn)
         # end wxGlade
-        self.itemMapping = []
+        self.procManager = procManager
+        self.Bind(wx.EVT_BUTTON, self.OnKill, self.kill_btn)
 
     def __set_properties(self):
         # begin wxGlade: ProcessManagerPanel.__set_properties
@@ -157,25 +179,29 @@ class ProcessManagerPanel(wx.Panel):
         self.process_list_ctrl.InsertColumn(0,"PID", format = wx.LIST_FORMAT_CENTER, width = -1)
         self.process_list_ctrl.InsertColumn(1,"Calculation", format = wx.LIST_FORMAT_CENTER, width = -1)
         self.process_list_ctrl.InsertColumn(2,"Status", format = wx.LIST_FORMAT_CENTER, width = -1)
+        size = self.process_list_ctrl.GetSize()
+        size[0] = self.process_list_ctrl.GetColumnCount() * self.process_list_ctrl.GetColumnWidth(0) + 12
+        self.GetParent().SetMinSize(size)
 
     def AddProcess(self, pid, typeStr, statusStr, infoCallBack = None):
         item = self.process_list_ctrl.InsertStringItem(0, str(pid))
         self.process_list_ctrl.SetStringItem(0,1, typeStr)
         self.process_list_ctrl.SetStringItem(0,2, statusStr)
-        self.itemMapping.append((pid,item))
     
     def removeProcess(self, pid):
         #Find the item number for the given pid
-        for i in range(len(self.itemMapping)):
-            pair = self.itemMapping[i]
-            if pair[0] == pid:
-                self.process_list_ctrl.DeleteItem(pair[1])
-                self.itemMapping.pop(i)
+        self.process_list_ctrl.DeleteItem(self.process_list_ctrl.FindItem(-1, str(pid)))
 
     def OnGetInfo(self, event): # wxGlade: ProcessManagerPanel.<event_handler>
         print "Event handler `OnGetInfo' not implemented!"
         print self.process_list_ctrl.GetChildren()
         event.Skip()
+        
+    def OnKill(self, evt):
+        item = self.process_list_ctrl.GetFocusedItem()
+        pid = int(self.process_list_ctrl.GetItemText(item))
+        self.procManager.killProcess(pid)
+        self.removeProcess(pid)
 
 # end of class ProcessManagerPanel
 
@@ -215,10 +241,13 @@ class AnalyticDispersionThread(Thread):
            #eig_frame.Show()
 
 def AnalyticDispFunc(queue, int_file, spin_file):
+    pid = os.getpid()
+    int_file = createFileCopy(int_file, pid, 0)
+    spin_file = createFileCopy(spin_file, pid, 1)
     #Since calculating Hsave is most of what the numeric process does, it might be better not to do this twice.
     Hsave = spinwave_calc_file.driver1(spin_file, int_file)
     myeigs=printing.eig_process(deepcopy(Hsave))
-    queue.put((os.getpid(), printing.create_latex(myeigs, "eigs")))         
+    queue.put((pid, printing.create_latex(myeigs, "eigs")))         
      
 def showAnalyticEigs(ans):
     eig_frame = printing.LaTeXDisplayFrame(None, ans, 'Dispersion Eigenvalues')
@@ -252,9 +281,12 @@ class NumericDispersionThread(Thread):
             
         
 def NumericDispFunc(queue, int_file, spin_file, direction, k_min, k_max, steps):
+    pid = os.getpid()
+    int_file = createFileCopy(int_file, pid, 0)
+    spin_file = createFileCopy(spin_file, pid, 1)
     Hsave = spinwave_calc_file.driver1(spin_file, int_file)
     qrange, wranges = spinwave_calc_file.driver2(Hsave, direction, steps, k_min, k_max)
-    queue.put((os.getpid(),(qrange, wranges)))
+    queue.put((pid,(qrange, wranges)))
     
     
             
@@ -312,8 +344,12 @@ class AnalyticCrossSectionThread(Thread):
         
             
 def AnalyticCrossSectionFunc(queue, int_file, spin_file):
-        N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist = run_cross_section(int_file, spin_file)
-        queue.put((os.getpid(),printing.create_latex(csection, "eigs")))  #(PID, answer)
+    pid = os.getpid()
+    int_file = createFileCopy(int_file, pid, 0)
+    spin_file = createFileCopy(spin_file, pid, 1)
+    print "\n\n\n\n\n\nint file: ", int_file
+    N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist = run_cross_section(int_file, spin_file)
+    queue.put((pid,printing.create_latex(csection, "eigs")))  #(PID, answer)
         
 def showAnalyticCrossSectionFrame(parent, ans, pid):
     #Almost the same as showAnalyticEigs()
