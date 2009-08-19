@@ -29,7 +29,7 @@ import spinwaves.MonteCarlo.CSim as CSim
 #import spinwaves.spinwavecalc.spinwavepanel as spinwavepanel
 import spinwaves.spinwavecalc.spinwave_calc_file as spinwave_calc_file
 
-import cross_section.util.printing as printing
+import spinwaves.cross_section.util.printing as printing
 
 from spinwaves.vtkModel.BondClass import JParam
 from spinwaves.vtkModel.Parameter_Manager import Fitter
