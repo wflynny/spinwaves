@@ -25,8 +25,12 @@ def createFileCopy(fileName, pid, type):
     The file name is of the form:
     int_pid   ...or...   spin_pid
     By having a predictable file name, the files can easilly found outside of the process that created them."""
-    newPath = os.path.join(tmpDir, os.path.split(fileName)[1] + "_" + str(pid))
-    print "\n\n\n\n\n\nnewpath: " , newPath
+    #newPath = os.path.join(tmpDir, os.path.split(fileName)[1] + "_" + str(pid))
+    if type==0:
+        newName = "int_" + str(pid)
+    if type==1:
+        newName = "spin_" + str(pid)
+    newPath = os.path.join(tmpDir, newName)
     f2 = open(newPath, 'w')
     f1 = open(fileName, 'r')
     f2.write(f1.read())
@@ -50,11 +54,11 @@ class ProcessManager():
         self._fitQueue = Queue()
         self._analyticCrossSecQueue = Queue()
         
-        #self._analyticDispProcesses= []
-        #self._numericDispProcesses= []
-        #self._fitProcesses= []
-        #self._analyticCrossSecProcesses= []
-        self.processes = []
+        self._analyticDispProcesses= []
+        self._numericDispProcesses= []
+        self._fitProcesses= []
+        self._analyticCrossSecProcesses= []
+        #self.processes = []
         
         #Create a View
         frame = wx.Frame(self.parent, -1, title = "Processes")
@@ -72,18 +76,31 @@ class ProcessManager():
     def killProcess(self, pid):
         """Currently the terminate() method is called whihc runs the risk of corrupting a queue if it is being accessed
         when the process is killed."""
-        for p in self.processes:
+        for p in self._analyticDispProcesses:
             if p.pid == pid:
                 p.terminate()
-                break
-        
+                return
+        for p in self._numericDispProcesses:
+            if p.pid == pid:
+                p.terminate()
+                return
+        for p in self._fitProcesses:
+            if p.pid == pid:
+                p.terminate()
+                return
+        for p in self._analyticCrossSecProcesses:
+            if p.pid == pid:
+                p.terminate()
+                return
+            
+    
         
     def startAnalyticDispersion(self, interaction_file, spin_file):
         interaction_file = createFileCopy(interaction_file)
         spin_file = createFileCopy(spin_file)
         p = Process(target=AnalyticDispFunc, args=(self._analyticDispQueue, interaction_file, spin_file))
-        #self._analyticDispProcesses.append(p)
-        self.processes.append(p)
+        self._analyticDispProcesses.append(p)
+        #self.processes.append(p)
         p.start()
         self.view.AddProcess(p.pid, "Analytic Dispersion", "running")
         #AnalyticDispFunc(self._analyticDispQueue, interaction_file, spin_file)
@@ -96,8 +113,8 @@ class ProcessManager():
         interaction_file = createFileCopy(interaction_file)
         spin_file = createFileCopy(spin_file)
         p = Process(target = NumericDispFunc, args = (self._numericDispQueue, interaction_file, spin_file, direction, k_min, k_max, steps))
-        #self._numericDispProcesses.append(p)
-        self.processes.append(p)
+        self._numericDispProcesses.append(p)
+        #self.processes.append(p)
         p.start()
         self.view.AddProcess(p.pid, "Numerical Dispersion", "running")
         #NumericDispFunc(self._numericDispQueue, interaction_file, spin_file, direction, k_min, k_max, steps)
@@ -114,8 +131,8 @@ class ProcessManager():
         if fitType == 1:
             AnnealFitFunc(self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC)
             #p = Process(target = AnnealFitFunc, args = (self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC))
-        #self._fitProcesses.append(p)
-        self.processes.append(p)
+        self._fitProcesses.append(p)
+        #self.processes.append(p)
         p.start()
         self.view.AddProcess(p.pid, "Fitting", "running")
         if self._fitThread == None:
@@ -126,8 +143,8 @@ class ProcessManager():
     def startAnalyticCrossSection(self, interaction_file, spin_file):
         #AnalyticCrossSectionFunc(self._analyticCrossSecQueue, interaction_file, spin_file)
         p = Process(target = AnalyticCrossSectionFunc, args = (self._analyticCrossSecQueue, interaction_file, spin_file))
-        #self._analyticCrossSecProcesses.append(p)
-        self.processes.append(p)
+        self._analyticCrossSecProcesses.append(p)
+        #self.processes.append(p)
         print "\n\n\n\n\n\npid: ", p.pid
         p.start()
         self.view.AddProcess(p.pid, "Analytic Cross Section", "running")
@@ -356,10 +373,9 @@ def showAnalyticCrossSectionFrame(parent, ans, pid):
     eig_frame = printing.LaTeXDisplayFrame(parent, ans, 'CrossSection Eigenvalues, PID: ' + str(pid))
     eig_frame.Show()
         
+           
         
-        
-        
-#for testing   
+#for testing
 class App(wx.App):
     """Just to show the frame."""
     def __init__(self, redirect = False, filename = None):
