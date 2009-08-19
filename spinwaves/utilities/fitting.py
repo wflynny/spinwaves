@@ -85,13 +85,13 @@ def annealFit(session, spinwave_domain, spinwave_range, spinwave_range_Err, size
     # Helper function for GetResult
     def myfunc(p, y=None, err=None):
         """returns Chi Squared to be minimized."""
-        
+        testFile.write('\np: ' + str(p))
+        testFile.flush()
         fitter.fit_list = p
         model = fitter.GetResult()
         print 'y:\n', y, '\n\nmodel:\n', model
-	testFile.write('\n')
-	for i in range(len(y)):
-	    testFile.write("  p: p %3.5f y %3.5f model %3.5f err %3.5f"%(p,y[i],model[i],err[i]) )
+	#for i in range(len(y)):
+	#    testFile.write("  p: p %3.5f y %3.5f model %3.5f err %3.5f"%(p,y[i],model[i],err[i]) )
         result = (y-model)/err
     	chi_sq = 0
     	for entry in result:

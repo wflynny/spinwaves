@@ -9,7 +9,6 @@ import wx.grid
 from wx.py.dispatcher import connect, send
 from scipy.optimize.optimize import fmin, fmin_cg
 from sympy import pi, cos
-import pylab
 import numpy
 
 from picker import Picker
@@ -22,11 +21,8 @@ from spinwaves.vtkModel.CellClass import *
 import spinwaves.vtkModel.SpaceGroups
 from Session import Session
 from spinwaves.cross_section.general_case2 import run_cross_section, run_eval_cross_section
-
-#It could not find MonteCarlo package (import MonteCarlo.CSim)
-#sys.path.append(mainPath +"\\MonteCarlo")
 import spinwaves.MonteCarlo.CSim as CSim
-#import spinwaves.spinwavecalc.spinwavepanel as spinwavepanel
+import spinwaves.spinwavecalc.spinwavepanel as spinwavepanel
 import spinwaves.spinwavecalc.spinwave_calc_file as spinwave_calc_file
 
 import spinwaves.cross_section.util.printing as printing

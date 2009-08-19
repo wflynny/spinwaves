@@ -38,8 +38,14 @@ class base_schedule:
         assert(not self.dims is None)
         lrange = self.lower
         urange = self.upper
-        fmax = -300e8
-        fmin = 300e8
+        #fmax = -300e8
+        #fmin = 300e8
+        #8/19/09
+        #These values are being changed becuase the actual Chi^2 being returned
+        #by my function in this instance is around +/-1e20.  These values seem
+        #to be pretty arbitrary anyway, so I am increasing them.  -Tom
+        fmax = -1e25
+        fmin = 1e25
         for _ in range(self.Ninit):
             x0 = random.uniform(size=self.dims)*(urange-lrange) + lrange
             fval = self.func(x0, *self.args)
@@ -227,6 +233,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     iters  -- Number of cooling iterations
     accept -- Number of tests accepted.
     """
+    
     x0 = asarray(x0)
     lower = asarray(lower)
     upper = asarray(upper)

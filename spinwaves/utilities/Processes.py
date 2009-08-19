@@ -13,6 +13,7 @@ from spinwaves.MonteCarlo.CSim import ShowSimulationFrame
 from spinwaves.vtkModel.wxGUI.Session import Session
 from spinwaves.cross_section.general_case2 import run_cross_section
 from spinwaves.utilities.fitting import showFitResultFrame, fitFromFile, annealFitFromFile
+from spinwaves.spinwavecalc.spinwavepanel import showEditorWindow
 
 tmpDir = os.path.join(os.path.split(os.path.split(os.path.dirname(__file__))[0])[0], "spinwaves_temp")
 if not os.path.exists(tmpDir):
@@ -26,17 +27,24 @@ def createFileCopy(fileName, pid, type):
     int_pid   ...or...   spin_pid
     By having a predictable file name, the files can easilly found outside of the process that created them."""
     #newPath = os.path.join(tmpDir, os.path.split(fileName)[1] + "_" + str(pid))
-    if type==0:
-        newName = "int_" + str(pid)
-    if type==1:
-        newName = "spin_" + str(pid)
-    newPath = os.path.join(tmpDir, newName)
+    newPath = tmpFileName(pid, type)
     f2 = open(newPath, 'w')
     f1 = open(fileName, 'r')
     f2.write(f1.read())
     f1.close()
     f2.close()
     return newPath
+
+def tmpFileName(pid, type):
+    """type is 0 for an interaction file and 1 for a spin file.
+    The file name is of the form:
+    int_pid   ...or...   spin_pid
+    By having a predictable file name, the files can easilly found outside of the process that created them."""
+    if type==0:
+        newName = "int_" + str(pid) + ".txt"
+    if type==1:
+        newName = "spin_" + str(pid) + ".txt"
+    return os.path.join(tmpDir, newName)
 
 
 class ProcessManager():
@@ -93,7 +101,33 @@ class ProcessManager():
                 p.terminate()
                 return
             
-    
+    def getProcessInfo(self, pid):
+        """Returns:
+        process_type, info
+        
+        processType is one of the following strings: 1)AnalyticDisp 2)NumericDisp 3)Fit 4)AnalyticCrossSec
+        
+        if process_type is 'AnalyticDisp', NumericDisp', or 'AnalyticCrossSec', info will be a tuple of:
+        (interaction_file, spin_file)."""
+        processType = ""
+        for p in self._analyticDispProcesses:
+            if p.pid == pid:
+                processType = "AnalyticDisp"
+                return processType, (tmpFileName(pid, 0), tmpFileName(pid, 1))
+        for p in self._numericDispProcesses:
+            if p.pid == pid:
+                processType = "NumericDisp"
+                return processType, (tmpFileName(pid, 0), tmpFileName(pid, 1))
+        for p in self._fitProcesses:
+            if p.pid == pid:
+                processType = "Fit"
+                print "Fit Info structure not yet implemeneted!"
+                return processType, None
+        for p in self._analyticCrossSecProcesses:
+            if p.pid == pid:
+                processType = "AnalyticCrossSec"
+                return processType, (tmpFileName(pid, 0), tmpFileName(pid, 1))
+        
         
     def startAnalyticDispersion(self, interaction_file, spin_file):
         interaction_file = createFileCopy(interaction_file)
@@ -129,8 +163,8 @@ class ProcessManager():
         if fitType == 0:
             p = Process(target = FitFunc, args = (self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC))
         if fitType == 1:
-            AnnealFitFunc(self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC)
-            #p = Process(target = AnnealFitFunc, args = (self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC))
+            #AnnealFitFunc(self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC)
+            p = Process(target = AnnealFitFunc, args = (self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC))
         self._fitProcesses.append(p)
         #self.processes.append(p)
         p.start()
@@ -145,7 +179,6 @@ class ProcessManager():
         p = Process(target = AnalyticCrossSectionFunc, args = (self._analyticCrossSecQueue, interaction_file, spin_file))
         self._analyticCrossSecProcesses.append(p)
         #self.processes.append(p)
-        print "\n\n\n\n\n\npid: ", p.pid
         p.start()
         self.view.AddProcess(p.pid, "Analytic Cross Section", "running")
         if self._analyticCrossSecThread == None:
@@ -210,8 +243,18 @@ class ProcessManagerPanel(wx.Panel):
         self.process_list_ctrl.DeleteItem(self.process_list_ctrl.FindItem(-1, str(pid)))
 
     def OnGetInfo(self, event): # wxGlade: ProcessManagerPanel.<event_handler>
-        print "Event handler `OnGetInfo' not implemented!"
-        print self.process_list_ctrl.GetChildren()
+        """For "AnalyticDisp", "NumericDisp", or "AnalyticCrossSec" type processes, a window like that shown by
+        the spinwave calc panel will be displayed which shows the version of the interaction and spin files that
+        the process is using."""
+        item = self.process_list_ctrl.GetFocusedItem()
+        pid = int(self.process_list_ctrl.GetItemText(item))
+        type, info = self.procManager.getProcessInfo(pid)
+        if type=="AnalyticDisp" or type=="NumericDisp" or type=="AnalyticCrossSec":
+            panel = showEditorWindow(self, "Files being used by process: " + str(pid), allowEditting = False)
+            panel.loadInteractions(info[0])
+            panel.loadSpins(info[1])
+        else:
+            print "Info for this type of process not implemented!"
         event.Skip()
         
     def OnKill(self, evt):
@@ -364,7 +407,6 @@ def AnalyticCrossSectionFunc(queue, int_file, spin_file):
     pid = os.getpid()
     int_file = createFileCopy(int_file, pid, 0)
     spin_file = createFileCopy(spin_file, pid, 1)
-    print "\n\n\n\n\n\nint file: ", int_file
     N_atoms_uc,csection,kaprange,qlist,tau_list,eig_list,kapvect,wtlist = run_cross_section(int_file, spin_file)
     queue.put((pid,printing.create_latex(csection, "eigs")))  #(PID, answer)
         

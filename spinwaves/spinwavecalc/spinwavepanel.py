@@ -10,7 +10,6 @@ from sympy import pi
 import spinwaves.cross_section.util.printing as printing
 from multiprocessing import Process, Pipe
 import copy
-from spinwaves.utilities.Processes import ProcessManager
 
 class MyApp(wx.App):
     def __init__(self, redirect=False, filename=None, useBestVisual=False, clearSigInt=True):
@@ -78,9 +77,9 @@ def WalkTree(parent):
                 WalkTree(child)
 
     
-class RichTextFrame(wx.Frame):
-    def __init__(self, *args, **kw):
-        wx.Frame.__init__(self, *args, **kw)
+class RichTextPanel(wx.Panel):
+    def __init__(self, allowEdit, *args, **kw):
+        wx.Panel.__init__(self, *args, **kw)
 
      #   self.MakeMenuBar()
      #   self.MakeToolBar()
@@ -117,6 +116,10 @@ class RichTextFrame(wx.Frame):
         self.Fit()
         self.SetMinSize(self.GetSize())
         
+        if not allowEdit:
+            self.spinSave.Enable(False)
+            self.interactionSave.Enable(False)
+        
     
     def OnSaveInteractions(self, evt):
         self.interactionsRtc.SaveFile()
@@ -125,12 +128,21 @@ class RichTextFrame(wx.Frame):
         self.spinsRtc.SaveFile()
     
     def loadSpins(self, file):
+        print "\n\n\n\nfilename: " , file
         self.spinsRtc.LoadFile(file)
     
     def loadInteractions(self, file):
+        print "\n\n\n\nfilename: " , file
         self.interactionsRtc.LoadFile(file)
 
-
+def showEditorWindow(parent, title, allowEditting = True):
+    """Creates and displays a simple frame containing the RichTextPanel."""
+    frame = wx.Frame(parent, -1, title, size=(630, 320), style = wx.DEFAULT_FRAME_STYLE)
+    panel = RichTextPanel(allowEditting, frame, -1)
+    #frame.Fit()
+    #frame.SetMinSize(frame.GetSize())
+    frame.Show()
+    return panel
 
 class FormDialog(sc.SizedPanel):
     def __init__(self, parent, id, procManager):
@@ -263,10 +275,11 @@ class FormDialog(sc.SizedPanel):
            
                 
         #Text editor
-        self.editorWin = RichTextFrame(self, -1, "Editor",
-                            size=(620, 250),
-                            style = wx.DEFAULT_FRAME_STYLE)
-        self.editorWin.Show(True)
+        #self.editorWin = RichTextFrame(self, -1, "Editor",
+        #                    size=(620, 250),
+        #                    style = wx.DEFAULT_FRAME_STYLE)
+        #self.editorWin.Show(True)
+        self.editorWin = showEditorWindow(self, "Spinwave File Editor")
 
         
     def OnCancel(self, evt):
@@ -394,6 +407,7 @@ class FormDialog(sc.SizedPanel):
 
 
 if __name__=='__main__':
+    from spinwaves.utilities.Processes import ProcessManager
     app=MyApp()
     frame1 = wx.Frame(None, -1, "Spinwaves")
     dlg=FormDialog(parent=frame1,id=-1, procManager = ProcessManager(frame1))

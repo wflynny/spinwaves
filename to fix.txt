@@ -18,3 +18,6 @@ ie. if the cutoff cell has one or more dimensions of just one unit cell.
 
 -refactor code to remove circular imports.  Right now, there is an import from fitting in the middle of the GUI Main file.
 There are also impotrs in the middle of the fitting and processes files.
+
+-Look into safe ways of killing processes.  Right now, the terminate() method is used, which has the potential to
+corrupt the queue if it is being accessed when the process is terminated.
