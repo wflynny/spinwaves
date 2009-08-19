@@ -2,7 +2,7 @@ import AtomClass
 #from vtk import *
 import numpy
 import wx
-from wx.py.dispatcher import connect
+from wx.py.dispatcher import connect, send
 
 class JParam():
     """This class represents one value in a 3*3 J matrix.  In the simplest case it would
