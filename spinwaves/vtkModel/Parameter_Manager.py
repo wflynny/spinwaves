@@ -254,16 +254,18 @@ class Fitter():
         print "\n\n\nmonte Carlo Mats:\n", monteCarloMats
         
         if self._runMCeveryTime or self._run == 0:
+            self._handle.write("\n\n\n\n\n------------Get Ground State---------------\n\n")
             self.spins = get_ground_state(self._k, self._tMax, self._tMin, self._tFactor,
-                        self._simpleAtoms, monteCarloMats)
+                        self._simpleAtoms, monteCarloMats, debugFile = self._handle)
         else:
-            self.spins = opt_aux(self._simpleAtoms, monteCarloMats, self.spins)
+            self._handle.write("\n\n\n\n\n------------Opt Aux---------------\n\n")
+            self.spins = opt_aux(self._simpleAtoms, monteCarloMats, self.spins, debugFile = self._handle)
         #self.spins = opt_aux(self._simpleAtoms, monteCarloMats, self.spins)
         
-        #print "\n\n\n\nspins:\n", self.spins
+        #print "\nspins:\n", self.spins
         self._handle.write("\n\n\n\nparam:\n\n")
         self._handle.write(str(self.fit_list))
-        self._handle.write("\n\nspins:\n\n")
+        self._handle.write("\n\nSpins After:\n\n")
         self._handle.write(str(self.spins))
         self._handle.flush()
         
