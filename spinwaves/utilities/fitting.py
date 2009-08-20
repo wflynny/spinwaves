@@ -3,7 +3,7 @@ import copy
 import wx
 import numpy as np
 from numpy import pi
-from mpfit import mpfit
+from mpfit.mpfit import mpfit
 import spinwaves.vtkModel.Parameter_Manager as PM
 from wx.py.dispatcher import send
 from anneal import anneal
