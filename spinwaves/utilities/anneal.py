@@ -3,6 +3,7 @@
 
 
 import numpy
+import sys
 from numpy import asarray, tan, exp, ones, squeeze, sign, \
      all, log, sqrt, pi, shape, array, minimum, where
 from numpy import random
@@ -111,6 +112,7 @@ class simple_sa(base_schedule):
         if self.n is None:
             self.n = 1.0
         self.c = self.m * exp(-self.n * self.quench)
+        self.file = open("C:\\randNums.txt", 'w')
 
     def update_guess(self, x0):
         x0 = asarray(x0)
@@ -118,10 +120,16 @@ class simple_sa(base_schedule):
         myFlag=True
         while myFlag:
             u = squeeze(random.uniform(0.0, 1.0, size=self.dims))
+            self.file.write("T: " + str(T))
+            self.file.write('U %3.5f\n'%(u,))
+            
             y = sign(u-0.5)*T*((1+1.0/T)**abs(2*u-1)-1.0)
 #            print 'y= ',y
             xc = y*(self.upper - self.lower)
             xt=x0+xc
+            self.file.write('X %3.5f\n'%(xc,))
+            self.file.write('XT %3.5f\n'%(xt,))
+            self.file.flush()
             indu=where(xt>self.upper)
             indl=where(xt<self.lower)
             if ((indu[0].size==0) & (indl[0].size==0)):

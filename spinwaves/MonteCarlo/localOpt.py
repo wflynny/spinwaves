@@ -119,7 +119,7 @@ def calculate_Ham(sij, anis, jij, dsij = None):
 
     return Ham
 
-def opt_aux(atom_list, jmats, spins, tol = 1.0e-25, debugFile = "C:\\spintest.txt"):
+def opt_aux(atom_list, jmats, spins, tol = 1.0e-25, debugFile = open("C:\\spintest.txt", 'w')):
     """This function separates the functionality of the optimizer from the
     files.  This method assumes that jmats is in the correct order. 
     ie. jnums looks like [0,1,2,3...]"""
@@ -241,7 +241,7 @@ def opt_aux(atom_list, jmats, spins, tol = 1.0e-25, debugFile = "C:\\spintest.tx
             limits.append((0,pi))
     
     # call minimizing function
-    m = fmin_l_bfgs_b(hamiltonian, p0, fprime = deriv, args = (Jij, spin_mags, anis), pgtol=tol)#bounds = limits
+    m = fmin_l_bfgs_b(hamiltonian, p0, fprime = deriv, args = (Jij, spin_mags, anis), factr= 10.0, pgtol=tol)#bounds = limits
     debugFile.write("\n\nSpins Before:\n" + str(spins))
     #debugFile("\n\nHamiltonian before:\n" + str(hamiltonian(p0, Jij, spin_mags, anis))
     #m = fmin_l_bfgs_b(hamiltonian, p0, args = (Jij, spin_mags, anis))#bounds = limits

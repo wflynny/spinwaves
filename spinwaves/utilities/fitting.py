@@ -1,3 +1,4 @@
+import sys
 import math
 import copy
 import wx
@@ -95,8 +96,10 @@ def annealFit(session, spinwave_domain, spinwave_range, spinwave_range_Err, size
         result = (y-model)/err
     	chi_sq = 0
     	for entry in result:
+	    print "entry: ", entry
     	    chi_sq += math.pow(entry, 2)
         print '\n\nresult:\n', result
+	print "\nchi_sq: " + str(chi_sq)
     	testFile.write("\nchi_sq: " + str(chi_sq))
 	testFile.flush()
         return chi_sq
@@ -106,10 +109,34 @@ def annealFit(session, spinwave_domain, spinwave_range, spinwave_range_Err, size
     err = spinwave_range_Err
     p0 = fitter.fit_list
     testFile.write("initial p: " + str(p0))
+    
+    #_______________________ Testing _____________________________
+    #START = -10
+    #STOP = 10
+    #step = .01
+    
+    #FILE = "C:\\CHISQ_points3.txt"
+    
+    ##plot
+    
+    #handle = open(FILE, 'w')
+    ##handle.write("data: "+ str(y))
+    ##handle.flush()
+    #for i in range((STOP-START)/step):
+	#x = START + i*step
+	#val = myfunc([x], y, err)
+	#if i != 0:
+	    #handle.write("\n")
+	#handle.write(str(x) + " " + str(val))
+    #handle.close()
+    #sys.exit()
+	
+	
+    #_____________________________________________________________________
 
 
     result=anneal(myfunc,p0,args=(y,err), schedule='simple',lower=fitter.min_range_list,upper=fitter.max_range_list,
-                  maxeval=None, maxaccept=None,dwell=500,maxiter=2000)
+                  maxeval=None, maxaccept=None,dwell=10, T0 = 1e-8, maxiter=2000)
     
     print "annealing result: ", result
     testFile.write("\nresult: " + str(result))

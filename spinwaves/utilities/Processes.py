@@ -130,8 +130,6 @@ class ProcessManager():
         
         
     def startAnalyticDispersion(self, interaction_file, spin_file):
-        interaction_file = createFileCopy(interaction_file)
-        spin_file = createFileCopy(spin_file)
         p = Process(target=AnalyticDispFunc, args=(self._analyticDispQueue, interaction_file, spin_file))
         self._analyticDispProcesses.append(p)
         #self.processes.append(p)
@@ -144,8 +142,6 @@ class ProcessManager():
        
     
     def startNumericDispersion(self, interaction_file, spin_file, direction, k_min, k_max, steps): 
-        interaction_file = createFileCopy(interaction_file)
-        spin_file = createFileCopy(spin_file)
         p = Process(target = NumericDispFunc, args = (self._numericDispQueue, interaction_file, spin_file, direction, k_min, k_max, steps))
         self._numericDispProcesses.append(p)
         #self.processes.append(p)
@@ -332,12 +328,8 @@ class NumericDispersionThread(Thread):
             self.procManager.processDone(pid)
             qrange = ans[0]
             wrange = ans[1]
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
-            for wrange1 in wrange:
-                ax.plot(qrange, wrange1)
-                plt.hold(True)
-            plt.show()
+            wx.CallAfter(showPlot, qrange, wrange)
+           
             
         
 def NumericDispFunc(queue, int_file, spin_file, direction, k_min, k_max, steps):
@@ -348,7 +340,13 @@ def NumericDispFunc(queue, int_file, spin_file, direction, k_min, k_max, steps):
     qrange, wranges = spinwave_calc_file.driver2(Hsave, direction, steps, k_min, k_max)
     queue.put((pid,(qrange, wranges)))
     
-    
+def showPlot(qrange, wrange):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    for wrange1 in wrange:
+        ax.plot(qrange, wrange1)
+        plt.hold(True)
+    plt.show()
             
 #----Fitting---------------------------------------------------------------------
 class FitThread(Thread):
