@@ -1,5 +1,5 @@
 import wx
-import wxaddons.sized_controls as sc
+#import wxaddons.sized_controls as sc
 import  wx.lib.intctrl
 import  wx.grid as  gridlib
 import numpy as N
@@ -144,21 +144,24 @@ def showEditorWindow(parent, title, allowEditting = True):
     frame.Show()
     return panel
 
-class FormDialog(sc.SizedPanel):
+#class FormDialog(sc.SizedPanel):
+class FormDialog(wx.Panel):
     def __init__(self, parent, id, procManager):
         self.parent = parent
         #self.process_list = []
         self.processManager = procManager
         
         #valstyle=wx.WS_EX_VALIDATE_RECURSIVELY
-        sc.SizedPanel.__init__(self, parent, -1,
-                        style= wx.RESIZE_BORDER)#| wx.WS_EX_VALIDATE_RECURSIVELY)
+        #sc.SizedPanel.__init__(self, parent, -1,
+        #                style= wx.RESIZE_BORDER)#| wx.WS_EX_VALIDATE_RECURSIVELY)
+        wx.Panel(self,parent, -1, style = wx.RESIZE_BORDER)
         self.SetExtraStyle(wx.WS_EX_VALIDATE_RECURSIVELY)
         pane = self
         pane.SetSizerType("vertical")
                
         print 'FormDialog called'
-        FilePane = sc.SizedPanel(pane, -1)
+        #FilePane = sc.SizedPanel(pane, -1)
+        FilePane = wx.Panel(pane, -1)
         FilePane.SetSizerType("vertical")
         FilePane.SetSizerProps(expand=True)
    
@@ -179,12 +182,14 @@ class FormDialog(sc.SizedPanel):
         self.data['kx']=str(0.0)
         self.data['ky']=str(0.0)
         self.data['kz']=str(1.0)
-        DirectionPane = sc.SizedPanel(pane, -1)
+        #DirectionPane = sc.SizedPanel(pane, -1)
+        DirectionPane = wx.Panel(pane, -1)
         DirectionPane.SetSizerType("vertical")
         DirectionPane.SetSizerProps(expand=True)
         wx.StaticText(DirectionPane, -1, "Scan Direction")
         
-        DirectionsubPane = sc.SizedPanel(pane, -1)
+        #DirectionsubPane = sc.SizedPanel(pane, -1
+        DirectionsubPane = wx.Panel(pane, -1)
         DirectionsubPane.SetSizerType("horizontal")
         DirectionsubPane.SetSizerProps(expand=True)
 
@@ -221,7 +226,8 @@ class FormDialog(sc.SizedPanel):
         self.kRange['kMax'] = str(2)
         
         wx.StaticText(pane, -1, "k Range")
-        kRangePane = sc.SizedPanel(pane, -1)
+        #kRangePane = sc.SizedPanel(pane, -1
+        kRangePane = wx.Panel(pane, -1)
         kRangePane.SetSizerType("horizontal")
         
         wx.StaticText(kRangePane, -1, "Min =")
@@ -239,7 +245,8 @@ class FormDialog(sc.SizedPanel):
         #Getting rid of standard button function
         #self.SetButtonSizer(self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL))
         
-        btnPane = sc.SizedPanel(pane, -1)
+        #btnPane = sc.SizedPanel(pane, -1)
+        btnPane = wx.Panel(pane, -1)
         btnPane.SetSizerType("horizontal")
         btnPane.SetSizerProps(expand=True)
         
