@@ -144,6 +144,260 @@ def showEditorWindow(parent, title, allowEditting = True):
     frame.Show()
     return panel
 
+
+
+class SpinwavePanel(wx.Panel):
+    def __init__(self, procManager, *args, **kwds):
+        # begin wxGlade: SpinwavePanel.__init__
+        kwds["style"] = wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.sizer_7_staticbox = wx.StaticBox(self, -1, "Scan Direction")
+        self.int_file_label = wx.StaticText(self, -1, " Interaction File: ")
+        self.int_file_txtCtrl = wx.TextCtrl(self, -1, "")
+        self.int_browse_btn = wx.Button(self, -1, "Browse")
+        self.spin_file_label = wx.StaticText(self, -1, " Spin File: ")
+        self.spin_file_txtCtrl = wx.TextCtrl(self, -1, "")
+        self.spin_browse_btn = wx.Button(self, -1, "Browse")
+        self.static_line_1 = wx.StaticLine(self, -1)
+        self.kMin_label = wx.StaticText(self, -1, "k Min:")
+        self.kMin_txtCtrl = wx.TextCtrl(self, -1, "")
+        self.label_9 = wx.StaticText(self, -1, "*pi")
+        self.kMax_label = wx.StaticText(self, -1, "k Max:")
+        self.kMax_txtCtrl = wx.TextCtrl(self, -1, "")
+        self.label_10 = wx.StaticText(self, -1, "*pi")
+        self.label_7 = wx.StaticText(self, -1, "Steps:")
+        self.steps_spin_ctrl = wx.SpinCtrl(self, -1, "", min=0, max=100)
+        self.kx_label = wx.StaticText(self, -1, "kx:")
+        self.kx_txtCtrl = wx.TextCtrl(self, -1, "")
+        self.ky_label = wx.StaticText(self, -1, "ky:")
+        self.ky_txtCtrl = wx.TextCtrl(self, -1, "")
+        self.kz_label = wx.StaticText(self, -1, "kz:")
+        self.kz_txtCtrl = wx.TextCtrl(self, -1, "")
+        self.ok_btn = wx.Button(self, -1, "Ok")
+        self.cancel_btn = wx.Button(self, -1, "Cancel")
+
+        self.__set_properties()
+        self.__do_layout()
+
+        self.Bind(wx.EVT_BUTTON, self.OnIntFileBrowse, self.int_browse_btn)
+        self.Bind(wx.EVT_BUTTON, self.OnSpinFileBrowse, self.spin_browse_btn)
+        self.Bind(wx.EVT_BUTTON, self.OnOk, self.ok_btn)
+        self.Bind(wx.EVT_BUTTON, self.OnCancel, self.cancel_btn)
+        # end wxGlade
+        self.processManager = procManager
+
+    def __set_properties(self):
+        # begin wxGlade: SpinwavePanel.__set_properties
+        self.int_file_txtCtrl.SetMinSize((180, 27))
+        self.spin_file_txtCtrl.SetMinSize((180, 27))
+        # end wxGlade
+
+    def __do_layout(self):
+        # begin wxGlade: SpinwavePanel.__do_layout
+        sizer_4 = wx.BoxSizer(wx.VERTICAL)
+        sizer_12 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_7 = wx.StaticBoxSizer(self.sizer_7_staticbox, wx.HORIZONTAL)
+        sizer_10 = wx.BoxSizer(wx.VERTICAL)
+        sizer_9 = wx.BoxSizer(wx.VERTICAL)
+        sizer_8 = wx.BoxSizer(wx.VERTICAL)
+        sizer_13 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_11 = wx.BoxSizer(wx.VERTICAL)
+        sizer_21 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_20 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_15 = wx.BoxSizer(wx.VERTICAL)
+        sizer_17 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_19 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_14 = wx.BoxSizer(wx.VERTICAL)
+        sizer_16 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_18 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_6 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_5.Add(self.int_file_label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_5.Add(self.int_file_txtCtrl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_5.Add(self.int_browse_btn, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_4.Add(sizer_5, 2, wx.EXPAND, 0)
+        sizer_6.Add(self.spin_file_label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_6.Add(self.spin_file_txtCtrl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_6.Add(self.spin_browse_btn, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_4.Add(sizer_6, 2, wx.EXPAND, 0)
+        sizer_4.Add(self.static_line_1, 0, wx.EXPAND, 0)
+        sizer_4.Add((15, 15), 0, 0, 0)
+        sizer_13.Add((15, 15), 0, 0, 0)
+        sizer_18.Add(self.kMin_label, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sizer_14.Add(sizer_18, 1, wx.EXPAND, 0)
+        sizer_16.Add(self.kMin_txtCtrl, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_16.Add(self.label_9, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_14.Add(sizer_16, 1, wx.EXPAND, 0)
+        sizer_13.Add(sizer_14, 1, wx.EXPAND, 0)
+        sizer_19.Add(self.kMax_label, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sizer_15.Add(sizer_19, 1, wx.EXPAND, 0)
+        sizer_17.Add(self.kMax_txtCtrl, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_17.Add(self.label_10, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_15.Add(sizer_17, 1, wx.EXPAND, 0)
+        sizer_13.Add(sizer_15, 1, wx.EXPAND, 0)
+        sizer_20.Add(self.label_7, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sizer_11.Add(sizer_20, 1, wx.EXPAND, 0)
+        sizer_21.Add(self.steps_spin_ctrl, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_11.Add(sizer_21, 1, wx.EXPAND, 0)
+        sizer_13.Add(sizer_11, 1, wx.EXPAND, 0)
+        sizer_4.Add(sizer_13, 3, wx.EXPAND, 0)
+        sizer_4.Add((15, 15), 0, 0, 0)
+        sizer_8.Add(self.kx_label, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sizer_8.Add(self.kx_txtCtrl, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sizer_7.Add(sizer_8, 1, wx.EXPAND, 0)
+        sizer_9.Add(self.ky_label, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sizer_9.Add(self.ky_txtCtrl, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sizer_7.Add(sizer_9, 1, wx.EXPAND, 0)
+        sizer_10.Add(self.kz_label, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sizer_10.Add(self.kz_txtCtrl, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sizer_7.Add(sizer_10, 1, wx.EXPAND, 0)
+        sizer_4.Add(sizer_7, 3, wx.EXPAND, 0)
+        sizer_12.Add(self.ok_btn, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sizer_12.Add(self.cancel_btn, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sizer_4.Add(sizer_12, 2, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        self.SetSizer(sizer_4)
+        sizer_4.Fit(self)
+        # end wxGlade
+
+    def OnIntFileBrowse(self, event): # wxGlade: SpinwavePanel.<event_handler>
+        #defaultDir=os.getcwd()
+        confBase = wx.ConfigBase.Create()
+        confBase.SetStyle(wx.CONFIG_USE_LOCAL_FILE)
+        defaultDir=confBase.Get().GetPath()
+        #defaultDir=wx.ConfigBase.Get().GetPath()
+        wildcard="files (*.txt)|*.txt|All files (*.*)|*.*"
+        dlg = wx.FileDialog(
+            self, message="Choose an Interaction file",
+            defaultDir=defaultDir,
+            defaultFile="",
+            wildcard=wildcard,
+            style=wx.OPEN | wx.CHANGE_DIR
+            )
+
+        # Show the dialog and retrieve the user response. If it is the OK response,
+        # process the data.
+        if dlg.ShowModal() == wx.ID_OK:
+            # This returns a Python list of files that were selected.
+            paths = dlg.GetPaths()
+            #self.log.WriteText('You selected %d files:' % len(paths))
+            interactionfile=paths[0].encode('ascii')
+            self.int_file_txtCtrl.SetValue(interactionfile)
+            #display in richtextcontrol
+            self.editorWin.loadInteractions(interactionfile)
+
+        dlg.Destroy()
+
+    def OnSpinFileBrowse(self, event): # wxGlade: SpinwavePanel.<event_handler>
+        #defaultDir=os.getcwd()
+        confBase = wx.ConfigBase.Create()
+        confBase.SetStyle(wx.CONFIG_USE_LOCAL_FILE)
+        defaultDir=confBase.Get().GetPath()
+        wildcard="files (*.txt)|*.txt|All files (*.*)|*.*"
+        dlg = wx.FileDialog(
+            self, message="Choose a spin configuration file",
+            defaultDir=defaultDir,
+            defaultFile="",
+            wildcard=wildcard,
+            style=wx.OPEN | wx.CHANGE_DIR
+            )
+
+        # Show the dialog and retrieve the user response. If it is the OK response,
+        # process the data.
+        if dlg.ShowModal() == wx.ID_OK:
+            # This returns a Python list of files that were selected.
+            paths = dlg.GetPaths()
+            spinfile=paths[0].encode('ascii')
+            self.spin_file_txtCtrl.SetValue(spinfile)
+            #display in richtextcontrol
+            self.editorWin.loadSpins(spinfile)
+        
+        dlg.Destroy()
+
+    def OnCancel(self, evt):
+        """Closes window"""
+        self.GetParent().Close()
+        
+    def OnOk(self, event):
+        #Formerly, when this was modal, this would be done in calling function
+        failed, data, kMin, kMax = self.Validate()
+        
+        if not failed:
+            int_file = self.int_file_txtCtrl.GetValue()
+            spin_file = self.spin_file_txtCtrl.GetValue()
+            self.processManager.startAnalyticDispersion(int_file, spin_file)
+            self.processManager.startNumericDispersion(int_file, spin_file, data, kMin*pi, kMax*pi, data['step'])
+    
+    def Validate(self):
+        """Checks that all values are the right type. Any field that is not of the right
+        type will be turned pink.
+        
+        Returns failed, data, kMin, kMax
+        failed is True if validation fails and false otherwise."""
+        kx = self.kx_txtCtrl.GetValue()
+        ky = self.ky_txtCtrl.GetValue()
+        kz = self.kz_txtCtrl.GetValue()
+        kMin = self.kMin_txtCtrl.GetValue()
+        kMax = self.kMax_txtCtrl.GetValue()
+        
+         
+        bgColor = "pink"
+        failed = False
+        #Validate kx(must be a float)
+        numKx = None
+        try:
+            numKx = float(kx)
+            self.kx_txtCtrl.SetBackgroundColour("white")
+        except:
+            self.kx_txtCtrl.SetBackgroundColour(bgColor)
+            failed = True
+            
+        #Validate ky(must be a float)
+        numKy = None
+        try:
+            numKy = float(ky)
+            self.ky_txtCtrl.SetBackgroundColour("white")
+        except:
+            self.ky_txtCtrl.SetBackgroundColour(bgColor)
+            failed = True
+            
+        #Validate kz(must be a float)
+        numKz = None
+        try:
+            numKz = float(kz)
+            self.kz_txtCtrl.SetBackgroundColour("white")
+        except:
+            self.kz_txtCtrl.SetBackgroundColour(bgColor)
+            failed = True
+        
+        #Validate kMin(must be a float)
+        numKMin = None
+        try:
+            numKMin = float(kMin)
+            self.kMin_txtCtrl.SetBackgroundColour("white")
+        except:
+            self.kMin_txtCtrl.SetBackgroundColour(bgColor)
+            failed = True
+            
+        #Validate kMax(must be a float)
+        numKMax = None
+        try:
+            numKMax = float(kMax)
+            self.kMax_txtCtrl.SetBackgroundColour("white")
+        except:
+            self.kMax_txtCtrl.SetBackgroundColour(bgColor)
+            failed = True
+            
+        
+        data={}
+        data['kx']=numKx
+        data['ky']=numKy
+        data['kz']=numKz
+        data['step']=int(self.steps_spin_ctrl.GetValue())
+        
+        return failed, data, numKMin, numKMax
+        
+# end of class SpinwavePanel
+
 #class FormDialog(sc.SizedPanel):
 class FormDialog(wx.Panel):
     def __init__(self, parent, id, procManager):
@@ -212,7 +466,7 @@ class FormDialog(wx.Panel):
 
 
         wx.StaticText(DirectionsubPane, -1, "Number of divisions")
-        self.data['step']=8
+        
         spinctrl = wx.SpinCtrl(DirectionsubPane, -1, "", (30, 50))
         spinctrl.SetRange(1,100)
         spinctrl.SetValue(self.data['step'])
@@ -289,33 +543,6 @@ class FormDialog(wx.Panel):
         self.editorWin = showEditorWindow(self, "Spinwave File Editor")
 
         
-    def OnCancel(self, evt):
-        """Closes window"""
-        for pro in self.process_list:
-            pro.terminate()
-        self.parent.Close()
-        
-    
-    
-    def OnOk(self, event):
-        #Formerly, when this was modal, this would be done in calling function
-        self.Fit()
-        self.Validate()
-        print "OK"
-        self.TransferDataFromWindow()
-        print 'data',self.data
-        print self.data['step']
-        print self.interactionfile
-        print self.spinfile
-
-        self.processManager.startAnalyticDispersion(self.interactionfile, self.spinfile)
-        self.processManager.startNumericDispersion(self.interactionfile, self.spinfile, self.data, float(self.kRange['kMin'])*pi, float(self.kRange['kMax'])*pi, self.data['step'])
-        
-
-        
-        #Hsave = spinwave_calc_file.driver1(self.spinfile,self.interactionfile)
-        #myeigs=printing.eig_process(copy.deepcopy(Hsave))
-        
         
     def EvtSpinCtrl(self,evt):
         print self.__dict__
@@ -326,48 +553,7 @@ class FormDialog(wx.Panel):
         #self.G
         #self.kx=text
  
-
-
-    def OnOpen(self,event):
-        # Create the dialog. In this case the current directory is forced as the starting
-        # directory for the dialog, and no default file name is forced. This can easilly
-        # be changed in your program. This is an 'open' dialog, and allows multitple
-        # file selections as well.
-        #
-        # Finally, if the directory is changed in the process of getting files, this
-        # dialog is set up to change the current working directory to the path chosen.
-
-        #defaultDir=os.getcwd()
-        #defaultDir=r'C:\polcorrecter\data'
-        confBase = wx.ConfigBase.Create()
-        confBase.SetStyle(wx.CONFIG_USE_LOCAL_FILE)
-        defaultDir=confBase.Get().GetPath()
-        wildcard="files (*.txt)|*.txt|All files (*.*)|*.*"
-        dlg = wx.FileDialog(
-            self, message="Choose a spin configuration file",
-            defaultDir=defaultDir,
-            defaultFile="",
-            wildcard=wildcard,
-            style=wx.OPEN | wx.CHANGE_DIR
-            )
-
-        # Show the dialog and retrieve the user response. If it is the OK response,
-        # process the data.
-        if dlg.ShowModal() == wx.ID_OK:
-            # This returns a Python list of files that were selected.
-            paths = dlg.GetPaths()
-            #self.log.WriteText('You selected %d files:' % len(paths))
-            self.spinfile=paths[0].encode('ascii')
-            self.spinfilectrl.SetLabel("Spin File:%s"%(self.spinfile,))
-            #display in richtextcontrol
-            #self.spinsRtc.LoadFile(paths[0])
-            self.editorWin.loadSpins(paths[0])
-            
-            #wx.StaticText(FilePane, -1, "CellFile:%s"%(self.groupdata['cellfile'],))
-        # Destroy the dialog. Don't do this until you are done with it!
-        # BAD things can happen otherwise!
-        
-        dlg.Destroy()
+       
 
 
     def OnOpenInt(self,event):

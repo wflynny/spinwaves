@@ -964,9 +964,10 @@ class Frame(wx.Frame):
         myparent=self
         #myparent=None
         frame1 = wx.Frame(myparent, -1, "Spinwaves")
-        dlg=spinwavepanel.FormDialog(parent=frame1,id=-1, procManager = self.procManager)
+        dlg=spinwavepanel.SpinwavePanel(procManager = self.procManager, parent=frame1, id=-1)
         #dlg=spinwavepanel.FormDialog(parent=None,id=-1)
         self.SetExtraStyle(wx.WS_EX_VALIDATE_RECURSIVELY)
+        frame1.Fit()
 #No longer modal
 #        result=dlg.ShowModal()
 #        print 'result', result
