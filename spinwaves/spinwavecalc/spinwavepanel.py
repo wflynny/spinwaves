@@ -11,71 +11,6 @@ import spinwaves.cross_section.util.printing as printing
 from multiprocessing import Process, Pipe
 import copy
 
-class MyApp(wx.App):
-    def __init__(self, redirect=False, filename=None, useBestVisual=False, clearSigInt=True):
-        wx.App.__init__(self,redirect,filename,clearSigInt)
-
-
-    def OnInit(self):
-        return True
-    
-    
-class mFormValidator(wx.PyValidator):
-    def __init__(self,data,key):
-        wx.PyValidator.__init__(self)
-        #print 'FormValidator init', key
-        #self.TransferToWindow()
-        self.data=data
-        self.key=key
-    def Clone(self):
-        return mFormValidator(self.data,self.key)
-
-    def Validate(self,win):
-        print 'validating'
-        textCtrl=self.GetWindow()
-        text=textCtrl.GetValue()
-        
-        try:
-            value=float(text)
-            textCtrl.SetBackgroundColour(wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
-            textCtrl.Refresh()
-            return True
-            
-        except ValueError:
-            wx.MessageBox("This field must be a number","error")
-            textCtrl.SetBackgroundColour("pink")
-            textCtrl.SetFocus()
-            textCtrl.Refresh()
-            return False
-        
-
-    def TransferToWindow(self):
-        print 'Form TransferToWindow',self.key
-        
-        textCtrl=self.GetWindow()
-        ##print 'checkctrl',checkctrl
-        print self.__dict__
-
-        textCtrl.SetValue(self.data.get(self.key,""))
-        return True
-
-    def TransferFromWindow(self):
-        print 'TransferFromWindow'
-        textCtrl=self.GetWindow()
-        self.data[self.key]=float(textCtrl.GetValue())
-        #self.qfloat=float(textCtrl.GetValue())
-        return True    
-    
-    
-def WalkTree(parent):
-        print 'walking', parent
-        parent.SetExtraStyle(wx.WS_EX_VALIDATE_RECURSIVELY)
-        for child in parent.GetChildren():
-            if child==None:
-                print 'child',child.size
-            else:
-                WalkTree(child)
-
     
 class RichTextPanel(wx.Panel):
     def __init__(self, allowEdit, *args, **kw):
@@ -191,6 +126,12 @@ class SpinwavePanel(wx.Panel):
         self.int_file_txtCtrl.SetMinSize((180, 27))
         self.spin_file_txtCtrl.SetMinSize((180, 27))
         # end wxGlade
+        
+        self.kx_txtCtrl.SetValue(str(0))
+        self.ky_txtCtrl.SetValue(str(0))
+        self.kz_txtCtrl.SetValue(str(1))
+        self.kMin_txtCtrl.SetValue(str(0))
+        self.kMax_txtCtrl.SetValue(str(2))
 
     def __do_layout(self):
         # begin wxGlade: SpinwavePanel.__do_layout
@@ -598,6 +539,15 @@ class FormDialog(wx.Panel):
         # BAD things can happen otherwise!
         dlg.Destroy()
 
+
+class MyApp(wx.App):
+    def __init__(self, redirect=False, filename=None, useBestVisual=False, clearSigInt=True):
+        wx.App.__init__(self,redirect,filename,clearSigInt)
+
+
+    def OnInit(self):
+        return True
+    
 
 if __name__=='__main__':
     from spinwaves.utilities.Processes import ProcessManager

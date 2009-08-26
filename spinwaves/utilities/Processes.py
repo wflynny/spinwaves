@@ -12,7 +12,7 @@ import spinwaves.cross_section.util.printing as printing
 from spinwaves.MonteCarlo.CSim import ShowSimulationFrame
 from spinwaves.vtkModel.wxGUI.Session import Session
 from spinwaves.cross_section.general_case2 import run_cross_section
-from spinwaves.utilities.fitting import showFitResultFrame, fitFromFile, annealFitFromFile
+from spinwaves.utilities.fitting import showFitResultFrame, fitFromFile, annealFitFromFile, showParamListFrame
 from spinwaves.spinwavecalc.spinwavepanel import showEditorWindow
 
 tmpDir = os.path.join(os.path.split(os.path.split(os.path.dirname(__file__))[0])[0], "spinwaves_temp")
@@ -36,14 +36,16 @@ def createFileCopy(fileName, pid, type):
     return newPath
 
 def tmpFileName(pid, type):
-    """type is 0 for an interaction file and 1 for a spin file.
+    """type is 0 for an interaction file, 1 for a spin file, and 2 for fitting Record.
     The file name is of the form:
-    int_pid   ...or...   spin_pid
+    int_pid.txt   ...or...   spin_pid.txt   ...or...   fitRecord_pid.txt
     By having a predictable file name, the files can easilly found outside of the process that created them."""
     if type==0:
         newName = "int_" + str(pid) + ".txt"
     if type==1:
         newName = "spin_" + str(pid) + ".txt"
+    if type==2:
+        newName = "fitRecord_" + str(pid) + ".txt"
     return os.path.join(tmpDir, newName)
 
 
@@ -68,6 +70,11 @@ class ProcessManager():
         self._analyticCrossSecProcesses= []
         #self.processes = []
         
+        #Storing snapshots of the current fitting state
+        self._fitSnapshots = {}#pid to param list mapping
+        self._fitInfoThread = None
+        self._fitRecordQueue = Queue()
+        
         #Create a View
         frame = wx.Frame(self.parent, -1, title = "Processes")
         self.view = ProcessManagerPanel(self, frame, -1)
@@ -80,9 +87,27 @@ class ProcessManager():
         """This method should be called by the thread receiving the data from the process when data is received,
         i.e. when the process is done executing."""
         self.view.removeProcess(pid)
+        for i in range(len(self._analyticDispProcesses)):
+            if self._analyticDispProcesses[i].pid == pid:
+                del self._analyticDispProcesses[i]
+                return
+        for i in range(len(self._numericDispProcesses)):
+            if self._numericDispProcesses[i].pid == pid:
+                del self._numericDispProcesses[i]
+                return
+        for i in range(len(self._analyticCrossSecProcesses)):
+            if self._analyticCrossSecProcesses[i].pid == pid:
+                del self._analyticCrossSecProcesses[i]
+                return
+        for i in range(len(self._fitProcesses)):
+            if self._fitProcesses[i].pid == pid:
+                del self._fitProcesses[i]
+                del self._fitSnapshots[pid]
+                return
+        
         
     def killProcess(self, pid):
-        """Currently the terminate() method is called whihc runs the risk of corrupting a queue if it is being accessed
+        """Currently the terminate() method is called which runs the risk of corrupting a queue if it is being accessed
         when the process is killed."""
         for p in self._analyticDispProcesses:
             if p.pid == pid:
@@ -100,7 +125,10 @@ class ProcessManager():
             if p.pid == pid:
                 p.terminate()
                 return
-            
+    
+    def updateFit(self, pid, data):
+        self._fitSnapshots[pid] = data
+    
     def getProcessInfo(self, pid):
         """Returns:
         process_type, info
@@ -121,8 +149,7 @@ class ProcessManager():
         for p in self._fitProcesses:
             if p.pid == pid:
                 processType = "Fit"
-                print "Fit Info structure not yet implemeneted!"
-                return processType, None
+                return processType, self._fitSnapshots[pid]
         for p in self._analyticCrossSecProcesses:
             if p.pid == pid:
                 processType = "AnalyticCrossSec"
@@ -157,10 +184,10 @@ class ProcessManager():
         """if fitType is 0, mp_fit is used, if it is 1, simulated annealing is used."""
         sessXML = session.createXMLStr()
         if fitType == 0:
-            p = Process(target = FitFunc, args = (self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC))
+            p = Process(target = FitFunc, args = (self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC, self._fitRecordQueue))
         if fitType == 1:
             #AnnealFitFunc(self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC)
-            p = Process(target = AnnealFitFunc, args = (self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC))
+            p = Process(target = AnnealFitFunc, args = (self._fitQueue, sessXML, fileName, k, tmin, tmax, size, tfactor, useMC, self._fitRecordQueue))
         self._fitProcesses.append(p)
         #self.processes.append(p)
         p.start()
@@ -168,6 +195,9 @@ class ProcessManager():
         if self._fitThread == None:
             self._fitThread = FitThread(self.parent, self._fitQueue, self)
             self._fitThread.start()
+        if self._fitInfoThread == None:
+            self._fitInfoThread = FitSnapshotThread(self._fitRecordQueue, self)
+            self._fitInfoThread.start()
         
         
     def startAnalyticCrossSection(self, interaction_file, spin_file):
@@ -249,6 +279,8 @@ class ProcessManagerPanel(wx.Panel):
             panel = showEditorWindow(self, "Files being used by process: " + str(pid), allowEditting = False)
             panel.loadInteractions(info[0])
             panel.loadSpins(info[1])
+        if type=="Fit":
+            showParamListFrame(info, str(pid) + " Fit Snapshot")
         else:
             print "Info for this type of process not implemented!"
         event.Skip()
@@ -365,21 +397,89 @@ class FitThread(Thread):
             pid = result[0]
             self.procManager.processDone(pid)
             wx.CallAfter(showFitResultFrame,data, pid)
+            
+class FitSnapshotThread(Thread):
+    def __init__(self, queue, procManager):
+        Thread.__init__(self)
+        self.procManager = procManager
+        self.queue = queue
+        
+    def run(self):
+        while(True):
+            print "\n\n\n\n\nRunninG!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n\n"
+            result = self.queue.get()
+            data = result[1]
+            pid = result[0]
+            self.procManager.updateFit(pid, data)
+            
 
-def FitFunc(queue, sessionXML, fileName, k, tmin, tmax, size, tfactor, useMC):
+class RecordKeeper():
+    def __init__(self, pid, queue, queueFreq = 1, file = None, fileFreq =1):
+        """Pid is the process ID of the fitting Process.  Queue is the queue
+        to which the fitting process will add the parameter for th main process to read.
+        The file is where the history of the parameter values will be recorded.  The two
+        freq values are how often the parameter is processed, 1 being every time, 2 being
+        every other time..."""
+        if fileFreq < 1:
+            fileFreq = 1
+        if queueFreq < 1:
+            queueFreq = 1
+        
+        self.pid = pid
+        self.queue = queue
+        self.queueFreq = queueFreq
+        self.file = None
+        if file:
+            self.file = open(file, 'w')
+        self.fileFreq = fileFreq
+        self.qCount = 0
+        self.fCount = 0
+    
+    def record(self, params):
+        """This is a callback function called by the fitting routines 
+        to track the progress of the fitters.  This function assumes
+        the list of parameters, p is in order (p0,p1,p2) and assigns
+        names accordingly."""
+        #Create a list of tuples [(name, value), (name, value)...]
+        list = []
+        for i in range(len(params)):
+            list.append(('p' + str(i), params[i]))
+            
+        if self.qCount < self.queueFreq:
+            self.qCount += 1
+        else:
+            self.qCount = 0
+            self.queue.put((self.pid,list))
+            
+        if self.file:
+            if self.fCount < self.fileFreq:
+                self.fCount += 1
+            else:
+                count = 0
+                self.file.write("\n")
+                for entry in list:
+                    self.file.write(entry[0] + ": " + str(entry[1]) + "\n")
+                self.file.flush()#In case the user wants to read while it is still being written to
+           
+
+def FitFunc(queue, sessionXML, fileName, k, tmin, tmax, size, tfactor, useMC, recordQueue):
+    pid = os.getpid()
     sess = Session()
     sess.loadXMLStr(sessionXML)
-    ans = fitFromFile(fileName, sess, k = k, tMax = tmax, tMin = tmin, size = size, tFactor = tfactor, MCeveryTime = useMC)
+    recordFile = tmpFileName(pid, 2)
+    recordKeeper = RecordKeeper(pid, recordQueue, file = recordFile)
+    ans = fitFromFile(fileName, sess, k = k, tMax = tmax, tMin = tmin, size = size, tFactor = tfactor, MCeveryTime = useMC, recordKeeper = recordKeeper.record)
     #The session which contains the fitted parameters is more useful
-    pid = os.getpid()
     queue.put((pid, sess.bondTable.data))
     
-def AnnealFitFunc(queue, sessionXML, fileName, k, tmin, tmax, size, tfactor, useMC):
+def AnnealFitFunc(queue, sessionXML, fileName, k, tmin, tmax, size, tfactor, useMC, recordQueue):
+    pid = os.getpid()
     sess = Session()
     sess.loadXMLStr(sessionXML)
-    ans = annealFitFromFile(fileName, sess, k = k, tMax = tmax, tMin = tmin, size = size, tFactor = tfactor, MCeveryTime = useMC)
+    recordFile = tmpFileName(pid, 2)
+    recordKeeper = RecordKeeper(pid, recordQueue, file = recordFile)
+    ans = annealFitFromFile(fileName, sess, k = k, tMax = tmax, tMin = tmin, size = size, tFactor = tfactor, MCeveryTime = useMC, recordKeeper = recordKeeper.record)
     #The session which contains the fitted parameters is more useful
-    pid = os.getpid()
     queue.put((pid, sess.bondTable.data))
 
 

@@ -1243,9 +1243,10 @@ class App(wx.App):
         frame2.Show()
 
         return True
-    
+
 
 def main():
+
     app = App(False)
     app.MainLoop()
 

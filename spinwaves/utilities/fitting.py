@@ -12,13 +12,15 @@ from spinwaves.vtkModel.wxGUI.Session import Session
 from spinwaves.vtkModel.BondClass import bondListGrid
 
 
-def fitting(session, spinwave_domain, spinwave_range, spinwave_range_Err, size=3, k = 100, tMin = .001, tMax = 15, tFactor = .95, MCeveryTime = True):
+def fitting(session, spinwave_domain, spinwave_range, spinwave_range_Err, size=3, k = 100, tMin = .001, tMax = 15, tFactor = .95, MCeveryTime = True, recordKeeperCallback = None):
 
     # Create fitter
     fitter = PM.Fitter(session, spinwave_domain, size, k, tMin, tMax, tFactor, MCeveryTime)
     
     # Helper function for GetResult
-    def myfunc(p, fjac=None, y=None, err=None):
+    def myfunc(p, fjac=None, y=None, err=None, callback = None):
+        if callback:
+            callback(p)
         fitter.fit_list = p
         model = fitter.GetResult()
         status = 0
@@ -47,7 +49,7 @@ def fitting(session, spinwave_domain, spinwave_range, spinwave_range_Err, size=3
     #err = [errVal]*len(y)
     err = spinwave_range_Err
     #fa = {'x':x, 'y':y, 'err':err}
-    fa = {'y':y, 'err':err}
+    fa = {'y':y, 'err':err, 'callback':recordKeeperCallback}
     
     # Set parinfo with the limits and such. Probably don't need
     parbase={'value':0., 'limited':[0,0], 'limits':[0.,0.]}
@@ -78,30 +80,33 @@ def fitting(session, spinwave_domain, spinwave_range, spinwave_range_Err, size=3
     #Return the parameters
     return (m.status, m.params, m.perror)
 
-def annealFit(session, spinwave_domain, spinwave_range, spinwave_range_Err, size=3, k = 100, tMin = .001, tMax = 15, tFactor = .95, MCeveryTime = True):
+def annealFit(session, spinwave_domain, spinwave_range, spinwave_range_Err, size=3, k = 100, tMin = .001, tMax = 15, tFactor = .95, MCeveryTime = True, recordKeeperCallback = None):
     # Create fitter
     fitter = PM.Fitter(session, spinwave_domain, size, k, tMin, tMax, tFactor, MCeveryTime)
     testFile = open("C:\\testOutput.txt", 'w')
     
     # Helper function for GetResult
-    def myfunc(p, y=None, err=None):
+    def myfunc(p, y=None, err=None, callback = None):
         """returns Chi Squared to be minimized."""
-        testFile.write('\np: ' + str(p))
-        testFile.flush()
+        if callback:
+            callback(p)
+            
+        #testFile.write('\np: ' + str(p))
+        #testFile.flush()
         fitter.fit_list = p
         model = fitter.GetResult()
-        print 'y:\n', y, '\n\nmodel:\n', model
-	#for i in range(len(y)):
-	#    testFile.write("  p: p %3.5f y %3.5f model %3.5f err %3.5f"%(p,y[i],model[i],err[i]) )
+        #print 'y:\n', y, '\n\nmodel:\n', model
+        #for i in range(len(y)):
+        #    testFile.write("  p: p %3.5f y %3.5f model %3.5f err %3.5f"%(p,y[i],model[i],err[i]) )
         result = (y-model)/err
-    	chi_sq = 0
-    	for entry in result:
-	    print "entry: ", entry
-    	    chi_sq += math.pow(entry, 2)
-        print '\n\nresult:\n', result
-	print "\nchi_sq: " + str(chi_sq)
-    	testFile.write("\nchi_sq: " + str(chi_sq))
-	testFile.flush()
+        chi_sq = 0
+        for entry in result:
+            #print "entry: ", entry
+            chi_sq += math.pow(entry, 2)
+        #print '\n\nresult:\n', result
+        #print "\nchi_sq: " + str(chi_sq)
+        #testFile.write("\nchi_sq: " + str(chi_sq))
+        #testFile.flush()
         return chi_sq
 
     # Function Keywords
@@ -135,7 +140,7 @@ def annealFit(session, spinwave_domain, spinwave_range, spinwave_range_Err, size
     #_____________________________________________________________________
 
 
-    result=anneal(myfunc,p0,args=(y,err), schedule='simple',lower=fitter.min_range_list,upper=fitter.max_range_list,
+    result=anneal(myfunc,p0,args=(y,err, recordKeeperCallback), schedule='simple',lower=fitter.min_range_list,upper=fitter.max_range_list,
                   maxeval=None, maxaccept=None,dwell=10, T0 = 1e-8, maxiter=2000)
     
     print "annealing result: ", result
@@ -163,14 +168,14 @@ def readDataFile(fileName):
     
     return hklPoints, hklErr, wVals, wErr
 
-def fitFromFile(fileName, session, size = 3 , k = 100, tMin = .001, tMax = 15, tFactor = .95, MCeveryTime = True):
+def fitFromFile(fileName, session, size = 3 , k = 100, tMin = .001, tMax = 15, tFactor = .95, MCeveryTime = True, recordKeeper = None):
     domain, xErr, w, wErr = readDataFile(fileName)
-    return fitting(session, domain, w, wErr, size = size, k = k, tMin = tMin, tMax = tMax, tFactor = tFactor, MCeveryTime = MCeveryTime)
+    return fitting(session, domain, w, wErr, size = size, k = k, tMin = tMin, tMax = tMax, tFactor = tFactor, MCeveryTime = MCeveryTime, recordKeeperCallback = recordKeeper)
 
-def annealFitFromFile(fileName, session, size = 3 , k = 100, tMin = .001, tMax = 15, tFactor = .95, MCeveryTime = True):
+def annealFitFromFile(fileName, session, size = 3 , k = 100, tMin = .001, tMax = 15, tFactor = .95, MCeveryTime = True, recordKeeper = None):
     domain, xErr, w, wErr = readDataFile(fileName)
     print "\n\n\n\n\nAnnealing!\n\n\n\n"
-    return annealFit(session, domain, w, wErr, size = size, k = k, tMin = tMin, tMax = tMax, tFactor = tFactor, MCeveryTime = MCeveryTime)
+    return annealFit(session, domain, w, wErr, size = size, k = k, tMin = tMin, tMax = tMax, tFactor = tFactor, MCeveryTime = MCeveryTime, recordKeeperCallback = recordKeeper)
 #Not dealing with domain err
 #def propogate_uncertainty(func, point, err, delt_h = 1E-12, delt_k = 1E-12, delt_l = 1E-12):
     #""" Point is of the formL (h,k,l), and err is of the form: (sigma_h, sigma_k, sigma_l).
@@ -679,6 +684,16 @@ def showFitResultFrame(data, pid):
     frame.Show()
     return frame
 
+def showParamListFrame(rows, title):
+    """Creates a frame with title containing a ParamListPanel displaying
+    the rows data.  Returns the frame."""
+    frame = wx.Frame(None, -1, title = title)
+    ParamListPanel(rows, frame, -1)
+    frame.Fit()
+    frame.SetMinSize(frame.GetSize())
+    frame.Show()
+    return frame
+
 
 class FitResultPanel(wx.Panel):
     def __init__(self, fitData, pid, *args, **kwds):
@@ -727,11 +742,47 @@ class FitResultPanel(wx.Panel):
 # end of class FitResultPanel
 
 
+
+class ParamListPanel(wx.Panel):
+    def __init__(self, rows, *args, **kwds):
+        """This just shows a two column list of parameters and there values.
+        Rows is a list of rows, where each row is a size two tuple or list:
+        rows[n][0] = parameter n label
+        rows[n][1] = parameter n value"""
+        # begin wxGlade: ProcessManagerPanel.__init__
+        kwds["style"] = wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.param_list_ctrl = wx.ListCtrl(self, -1, style=wx.LC_REPORT|wx.SUNKEN_BORDER)
+        self.rows = rows
+        self.__set_properties()
+        self.__do_layout()
+        # end wxGlade
         
 
+    def __set_properties(self):
+        # begin wxGlade: ProcessManagerPanel.__set_properties
+        pass
+        # end wxGlade
 
-
-
+    def __do_layout(self):
+        # begin wxGlade: ProcessManagerPanel.__do_layout
+        grid_sizer_1 = wx.FlexGridSizer(1, 1, 0, 0)
+        grid_sizer_1.Add(self.param_list_ctrl, 1, wx.EXPAND, 0)
+        self.SetSizer(grid_sizer_1)
+        grid_sizer_1.Fit(self)
+        grid_sizer_1.AddGrowableRow(1)
+        grid_sizer_1.AddGrowableCol(0)
+        # end wxGlade
+        self.param_list_ctrl.InsertColumn(0,"Parameter", format = wx.LIST_FORMAT_CENTER, width = -1)
+        self.param_list_ctrl.InsertColumn(1,"Value", format = wx.LIST_FORMAT_CENTER, width = -1)
+        size = self.param_list_ctrl.GetSize()
+        size[0] = self.param_list_ctrl.GetColumnCount() * self.param_list_ctrl.GetColumnWidth(0) + 12
+        self.GetParent().SetMinSize(size)
+        for row in self.rows:
+                #preserve order of rows by insert items to end of list
+                length= self.param_list_ctrl.GetItemCount()
+                item = self.param_list_ctrl.InsertStringItem(length, str(row[0]))
+                self.param_list_ctrl.SetStringItem(length,1, str(row[1]))
 
 
 class App(wx.App):
@@ -741,20 +792,22 @@ class App(wx.App):
         wx.App.__init__(self, redirect, filename)
     
     def OnInit(self):
-        self.SetTopWindow(ShowFittingFrame(Session()))
+        self.SetTopWindow(showParamListFrame([("p0", 0),("p1", 1.1)], "Parameter Snapshot, Process: 123"))
         return True
 
 
-#if __name__ == '__main__':       
-#    app = App(False)
-#    app.MainLoop()
+if __name__ == '__main__':       
+    app = App(False)
+    app.MainLoop()
     
     
-if __name__ == '__main__':
-    sess = Session()
-    sess.openXMLSession('C:\\testsess.xml')
-    stat, params, err =  fitFromFile('C:\\data.txt', sess, MCeveryTime = False)
-    print '\n\n\nans:\n', params
+#if __name__ == '__main__':
+    
+    
+#    sess = Session()
+#    sess.openXMLSession('C:\\testsess.xml')
+#    stat, params, err =  fitFromFile('C:\\data.txt', sess, MCeveryTime = False)
+#    print '\n\n\nans:\n', params
     
     
       #print 'start'
