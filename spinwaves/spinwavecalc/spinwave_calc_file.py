@@ -16,6 +16,7 @@ import sys
 #from sympy import latex
 import matplotlib.pyplot as plt
 import spinwaves.cross_section.util.printing as printing
+from sympy.core.cache import clear_cache
 
 #translations=[[0,0,0],
 #              [0,0,1],[0,0,-1]
@@ -442,6 +443,7 @@ def calculate_dispersion(atom_list,N_atoms_uc,N_atoms,Jij,showEigs=False):
             #print 'eigenvalues', sympy.simplify(eigs[1][0])
             return (Hsave, Hsave.charpoly(x), eigs)
         print 'calc dispersion: complete'
+        clear_cache()
         return Hsave
     
 def calc_eigs(Hsave,kx_val,ky_val,kz_val):
