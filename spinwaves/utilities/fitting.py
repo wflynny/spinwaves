@@ -83,7 +83,8 @@ def fitting(session, spinwave_domain, spinwave_range, spinwave_range_Err, size=3
 def annealFit(session, spinwave_domain, spinwave_range, spinwave_range_Err, size=3, k = 100, tMin = .001, tMax = 15, tFactor = .95, MCeveryTime = True, recordKeeperCallback = None):
     # Create fitter
     fitter = PM.Fitter(session, spinwave_domain, size, k, tMin, tMax, tFactor, MCeveryTime)
-    testFile = open("C:\\testOutput.txt", 'w')
+    #testFile = open("/home/tom/Desktop/annealOutput1.txt", 'w')
+    #testFile = open("C:\\annealOutput1.txt", 'w')
     
     # Helper function for GetResult
     def myfunc(p, y=None, err=None, callback = None):
@@ -113,7 +114,7 @@ def annealFit(session, spinwave_domain, spinwave_range, spinwave_range_Err, size
     y = spinwave_range
     err = spinwave_range_Err
     p0 = fitter.fit_list
-    testFile.write("initial p: " + str(p0))
+    #testFile.write("initial p: " + str(p0))
     
     #_______________________ Testing _____________________________
     #START = -10
@@ -141,13 +142,62 @@ def annealFit(session, spinwave_domain, spinwave_range, spinwave_range_Err, size
 
 
     result=anneal(myfunc,p0,args=(y,err, recordKeeperCallback), schedule='simple',lower=fitter.min_range_list,upper=fitter.max_range_list,
-                  maxeval=None, maxaccept=None,dwell=10, T0 = 1e-8, maxiter=2000)
+                  maxeval=None, maxaccept=None,dwell=50, maxiter=2000, full_output=1)
     
     print "annealing result: ", result
-    testFile.write("\nresult: " + str(result))
-    testFile.close()
     p = result[0]
-    return p
+    myfunc(p, y, err)#To propogate final value
+
+    
+    #----Now Localy optimize with mpfit to fine tune the answer -----------
+    def mpfitfunc(p, fjac=None, y=None, err=None, callback = None):
+        if callback:
+            callback(p)
+	#testFile.write("mpfit: " + str(p))
+        fitter.fit_list = p
+        model = fitter.GetResult()
+        status = 0
+        print 'y:\n', y, '\n\nmodel:\n', model
+        #print '\n\ny-model:\n', (y-model)
+        #print '\n\nerr:\n', err
+        result = (y-model)/err
+        print '\n\nresult:\n', result
+        return [status, result]
+    
+    fa = {'y':y, 'err':err, 'callback':recordKeeperCallback}
+    
+    # Set parinfo with the limits and such. Probably don't need
+    parbase={'value':0., 'limited':[0,0], 'limits':[0.,0.]}
+    parinfo=[]
+    p0 = fitter.fit_list
+    for i in range(len(p0)):
+        parinfo.append(copy.deepcopy(parbase))
+    for i in range(len(p0)):
+        parinfo[i]['value']=p0[i]
+        if(fitter.min_range_list[i] != np.NINF):
+            parinfo[i]['limits'][0]=fitter.min_range_list[i]
+            parinfo[i]['limited'][0] = 1
+        else:
+            parinfo[i]['limited'][0] = 0
+        if fitter.max_range_list[i] != np.PINF:
+            parinfo[i]['limits'][1] = fitter.max_range_list[i]
+            parinfo[i]['limited'][1] = 1
+        else:
+            parinfo[i]['limited'][1] = 0
+
+    # Run mpfit on fitlist with all the jazz.
+    print "params: ", p0
+    print "parinfo: ", parinfo
+    m = mpfit(mpfitfunc, p0, parinfo=parinfo, functkw = fa)
+    #testFile.write("\nresult: " + str(result))
+    #testFile.write("\nm: " + str(m))
+    #testFile.close()
+    return (m.status, m.params, m.perror)
+    #---------------------------------------------------------------------
+    
+#    testFile.write("\nresult: " + str(result))
+#    testFile.close()
+#    return p
 
 def readDataFile(fileName):
     vals = np.loadtxt(fname = fileName, comments = '#')

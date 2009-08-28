@@ -245,11 +245,11 @@ def simulate(k, tMax, tMin, tFactor, inFilePath, outFilePath, tol = 1e-12):
     write_to_file(outFilePath, atoms, spins)
 
 
-def get_ground_state(k, tMax, tMin, tFactor, atoms, jMatrices, tol = 1e-25, debugFile = open("C:\\spintest.txt", 'w')):
+def get_ground_state(k, tMax, tMin, tFactor, atoms, jMatrices, tol = 1e-25):
     """This method performs the monte carlo simulation and then locally
     optimizes the results without the use of files."""
     spins = Sim_Aux(k, tMax, tMin, tFactor, atoms, jMatrices)
-    opt_spins = opt_aux(atoms, jMatrices, spins, tol, debugFile)
+    opt_spins = opt_aux(atoms, jMatrices, spins, tol)
     return opt_spins
 
   

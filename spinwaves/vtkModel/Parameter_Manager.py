@@ -156,7 +156,7 @@ class Fitter():
         same index.  Then GetResult() is called to return the list of
         eigenvalues.
         -spinwave_domain is a list of tuples (kx,ky,kz)"""
-        self._handle = open("C:\\spintest.txt", 'w')
+        #self._handle = open("C:\\spintest.txt", 'w')
         self._runMCeveryTime = MCeveryTime
         self._run = 0
         self.spins = []
@@ -254,20 +254,20 @@ class Fitter():
         print "\n\n\nmonte Carlo Mats:\n", monteCarloMats
         
         if self._runMCeveryTime or self._run == 0:
-            self._handle.write("\n\n\n\n\n------------Get Ground State---------------\n\n")
+            #self._handle.write("\n\n\n\n\n------------Get Ground State---------------\n\n")
             self.spins = get_ground_state(self._k, self._tMax, self._tMin, self._tFactor,
-                        self._simpleAtoms, monteCarloMats, debugFile = self._handle)
+                        self._simpleAtoms, monteCarloMats)
         else:
-            self._handle.write("\n\n\n\n\n------------Opt Aux---------------\n\n")
-            self.spins = opt_aux(self._simpleAtoms, monteCarloMats, self.spins, debugFile = self._handle)
+            #self._handle.write("\n\n\n\n\n------------Opt Aux---------------\n\n")
+            self.spins = opt_aux(self._simpleAtoms, monteCarloMats, self.spins)
         #self.spins = opt_aux(self._simpleAtoms, monteCarloMats, self.spins)
         
         #print "\nspins:\n", self.spins
-        self._handle.write("\n\n\n\nparam:\n\n")
-        self._handle.write(str(self.fit_list))
-        self._handle.write("\n\nSpins After:\n\n")
-        self._handle.write(str(self.spins))
-        self._handle.flush()
+        #self._handle.write("\n\n\n\nparam:\n\n")
+        #self._handle.write(str(self.fit_list))
+        #self._handle.write("\n\nSpins After:\n\n")
+        #self._handle.write(str(self.spins))
+        #self._handle.flush()
         
         
         def inUnitCell(atom):
@@ -366,8 +366,8 @@ class Fitter():
         #pylab.show()
         self._run+=1
         
-        self._handle.write("\n\ndispersion:\n\n")
-        self._handle.write(str(wrange[0]))
+        #self._handle.write("\n\ndispersion:\n\n")
+        #self._handle.write(str(wrange[0]))
         
         return wrange[0]#for now just one set
 

@@ -406,7 +406,6 @@ class FitSnapshotThread(Thread):
         
     def run(self):
         while(True):
-            print "\n\n\n\n\nRunninG!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n\n"
             result = self.queue.get()
             data = result[1]
             pid = result[0]

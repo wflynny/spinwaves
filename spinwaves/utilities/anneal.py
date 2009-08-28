@@ -23,6 +23,8 @@ class base_schedule:
         self.feval = 0
         self.k = 0
         self.T = None
+        #For large functions, simple schedule will not behave correctly so this corrects
+        self.factor = 1
 
     def init(self, **options):
         self.__dict__.update(options)
@@ -58,6 +60,10 @@ class base_schedule:
                 best_state.cost = fval
                 best_state.x = array(x0)
         self.T0 = (fmax-fmin)*1.5
+        #If T is over ~3e15, the value will stick in 'simple' schedule
+        if self.T0 > 1e15:
+            self.factor = self.T0/(1e15)
+            self.T0 = self.T0/self.factor#self.T0 = 1e15 now
         return best_state.x
 
     def accept_test(self, dE):
@@ -234,6 +240,8 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
                 2 : Maximum function evaluations
                 3 : Maximum cooling iterations reached
                 4 : Maximum accepted query locations reached
+                5 : Cooled to a stable point which is not the global minimum
+                (The colling schedule may have been too quick.)
 
     Jmin  -- Minimum value of function found
     T     -- final temperature
@@ -259,7 +267,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
         best_state.cost = 300e8
 
     last_state.x = asarray(x0).copy()
-    fval = func(x0,*args)
+    fval = func(x0,*args)/schedule.factor
     schedule.feval += 1
     last_state.cost = fval
     if last_state.cost < best_state.cost:
@@ -271,7 +279,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     while 1:
         for n in range(dwell):
             current_state.x = schedule.update_guess(last_state.x)
-            current_state.cost = func(current_state.x,*args)
+            current_state.cost = func(current_state.x,*args)/schedule.factor
             schedule.feval += 1
 
             dE = current_state.cost - last_state.cost
@@ -317,7 +325,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
             break
 
     if full_output:
-        return best_state.x, best_state.cost, schedule.T, \
+        return best_state.x, best_state.cost*schedule.factor, schedule.T, \
                schedule.feval, iters, schedule.accepted, retval
     else:
         return best_state.x, retval
