@@ -6,7 +6,7 @@ import numpy as N
 from sympy import exp,I,pi,sin,cos
 import matplotlib
 matplotlib.use('WXAgg')
-import pylab
+#import pylab
 import readfiles
 #from readfiles import atom
 #from sympy import pngview,latex
@@ -26,11 +26,11 @@ from sympy.core.cache import clear_cache
 #              ]
 
 def print_matplotlib(s):
-    pylab.figure()
-    pylab.text(0,0,s)
-    pylab.axis('off')
-    pylab.figure()
-    #pylab.show()
+    #pylab.figure()
+    #pylab.text(0,0,s)
+    #pylab.axis('off')
+    #pylab.figure()
+    ##pylab.show()
     return 
 
 

@@ -3,7 +3,7 @@ import sympy
 import numpy
 import matplotlib
 matplotlib.use('WXAgg')
-import pylab
+#import pylab
 from sympy import pi
 from numpy import PINF, NINF
 from spinwaves.MonteCarlo.simple import simpleAtom

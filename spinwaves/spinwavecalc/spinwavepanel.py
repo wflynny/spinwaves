@@ -119,6 +119,7 @@ class SpinwavePanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.OnOk, self.ok_btn)
         self.Bind(wx.EVT_BUTTON, self.OnCancel, self.cancel_btn)
         # end wxGlade
+        self.editorWin = showEditorWindow(self, "Spinwave File Editor")
         self.processManager = procManager
 
     def __set_properties(self):

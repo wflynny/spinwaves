@@ -27,7 +27,8 @@ def loadLib():
         ext = '.so'
     
     f=open('c:\\trace.txt','w')
-    dllpath=os.path.join(os.path.dirname(__file__),'_monteCarlo'+ext)
+    dllpath=os.path.join(os.path.dirname(__file__),'_monteCarlo'+ext)#if executing .py files
+    dllpath = os.path.join(os.path.dirname(sys.argv[0]), '_monteCarlo'+ext)#py2exe
     #dllpath=os.path.join(os.path.dirname(sys.argv[0]),'_monteCarlo'+ext)
     f.write('dllpath '+dllpath)
     f.close()

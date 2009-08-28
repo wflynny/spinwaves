@@ -16,6 +16,7 @@ from spinwaves.utilities.fitting import showFitResultFrame, fitFromFile, annealF
 from spinwaves.spinwavecalc.spinwavepanel import showEditorWindow
 
 tmpDir = os.path.join(os.path.split(os.path.split(os.path.dirname(__file__))[0])[0], "spinwaves_temp")
+tmpDir = os.path.join(os.getcwd(), "spinwaves_temp")#py2exe
 if not os.path.exists(tmpDir):
     os.mkdir(tmpDir)
 print "temp directory: ", tmpDir
@@ -161,7 +162,8 @@ class ProcessManager():
         self._analyticDispProcesses.append(p)
         #self.processes.append(p)
         p.start()
-        self.view.AddProcess(p.pid, "Analytic Dispersion", "running")
+        if self.view:
+            self.view.AddProcess(p.pid, "Analytic Dispersion", "running")
         #AnalyticDispFunc(self._analyticDispQueue, interaction_file, spin_file)
         if self._analyticDispThread == None:
             self._analyticDispThread = AnalyticDispersionThread(self.parent, self._analyticDispQueue, self)
@@ -173,7 +175,8 @@ class ProcessManager():
         self._numericDispProcesses.append(p)
         #self.processes.append(p)
         p.start()
-        self.view.AddProcess(p.pid, "Numerical Dispersion", "running")
+        if self.view:
+            self.view.AddProcess(p.pid, "Numerical Dispersion", "running")
         #NumericDispFunc(self._numericDispQueue, interaction_file, spin_file, direction, k_min, k_max, steps)
         if self._numericDispThread == None:
             self._numericDispThread = NumericDispersionThread(self.parent, self._numericDispQueue, self)
@@ -191,7 +194,8 @@ class ProcessManager():
         self._fitProcesses.append(p)
         #self.processes.append(p)
         p.start()
-        self.view.AddProcess(p.pid, "Fitting", "running")
+        if self.view:
+            self.view.AddProcess(p.pid, "Fitting", "running")
         if self._fitThread == None:
             self._fitThread = FitThread(self.parent, self._fitQueue, self)
             self._fitThread.start()
@@ -206,7 +210,8 @@ class ProcessManager():
         self._analyticCrossSecProcesses.append(p)
         #self.processes.append(p)
         p.start()
-        self.view.AddProcess(p.pid, "Analytic Cross Section", "running")
+        if self.view:
+            self.view.AddProcess(p.pid, "Analytic Cross Section", "running")
         if self._analyticCrossSecThread == None:
             self._analyticCrossSecThread = AnalyticCrossSectionThread(self.parent, self._analyticCrossSecQueue, self)
             self._analyticCrossSecThread.start()

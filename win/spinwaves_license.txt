@@ -6,7 +6,7 @@ This software was developed at the National Institute of Standards and
 Technology at the NIST Center for Neutron Research by employees of the Federal
 Government in the course of their official duties. Pursuant to title 17 section
 105* of the United States Code this software is not subject to copyright
-protection and is in the public domain. The DAVE software package is an
+protection and is in the public domain. The Spinwaves software package is an
 experimental neutron scattering data reduction, visualization, and analysis
 system. NIST assumes no responsibility whatsoever for its use, and makes no
 guarantees, expressed or implied, about its quality, reliability, or any other
