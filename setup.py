@@ -1,80 +1,30 @@
-#! /usr/bin/env python
-# Last Change: Wed Nov 05 11:00 AM 2008 J
-
-# Copyright (C) 2008 Cournapeau David <cournape@gmail.com>
-
-descr   = """\
-The spinwaves module does spinwave stuff.
-"""
-
-import os
-import sys
-
-DESCRIPTION         = 'Spinwave Calculator'
-LONG_DESCRIPTION    = descr
-MAINTAINER          = ''
-MAINTAINER_EMAIL    = ''
-LICENSE             = 'BSD'
-#URL                 = ''
-#DOWNLOAD_URL        = URL
-VERSION             = '0.2'
-
-classifiers = [
-              'Development Status :: '+VERSION,
-              'Environment :: Console',
-              'Intended Audience :: Developers',
-              'Intended Audience :: Science/Research',
-              'License :: OSI Approved :: BSD License',
-              'Topic :: Scientific/Engineering',
-               'Operating System :: Microsoft :: Windows',
-               'Operating System :: POSIX',
-               'Operating System :: Unix',
-               'Operating System :: MacOS',
-              ]
-
-import setuptools
-from numpy.distutils.core import setup
+"""This is a setup script to install spinwaves with setup tools.
+Author: Tom 9/25/09"""
 from os.path import join
 
-def configuration(parent_package='', top_path=None, package_name='spinwaves'):
-    if os.path.exists('MANIFEST'): os.remove('MANIFEST')
+#Bootstrap setuptools for systems that do not have it installed
+from ez_setup import use_setuptools
+use_setuptools()
 
-    from numpy.distutils.misc_util import Configuration
-    config = Configuration(package_name,
-                           parent_package,
-                           top_path,
-                           #namespace_packages=['scikits'],
-                           version = VERSION,
-                           maintainer  = MAINTAINER,
-                           maintainer_email = MAINTAINER_EMAIL,
-                           description = DESCRIPTION,
-                           license = LICENSE,
-                           #url = URL,
-                           #download_url = DOWNLOAD_URL,
-                           long_description = LONG_DESCRIPTION)
+#For compiling C extensions
+#from distutils.core import Extension
 
-    sources = [join('lib',f) for f in ['main1.c','dSFMT.c']]
-    config.add_extension(join('MonteCarlo','_monteCarlo'),
-                         sources=sources,
-                         define_macros=[('DSFMT_MEXP',19937)])
+from setuptools import setup, find_packages, Extension
+setup(
+	name = "Spinwaves",
+	version = "0.1",
+	url = 'http://spinwaves.googlecode.com',
+	packages = find_packages(exclude = ['sympy_WORKING']),
 
-    scripts = [join('bin',f) for f in ['spinwaves_ui.py']]
-    config.add_scripts(scripts)
-    return config
+	#Add C Extensions
+	ext_modules=[Extension(join('MonteCarlo','_monteCarlo'), [join('lib',f) for f in ['main1.c','dSFMT.c']])],
+	
 
-def main():
-    setup(
-        install_requires = ['numpy'],
-        #namespace_packages = ['scikits'],
-        packages = setuptools.find_packages(),
-        include_package_data = True,
-        #test_suite="nose.collector",
-        zip_safe = False, # the package can run out of an .egg file
-        classifiers = classifiers,
-        platforms = ["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
-        configuration = configuration,
-    )
+	entry_points = {'gui_scripts':['spinwaves = spinwaves.vtkModel.wxGUI.GUI_Main:main']},
 
-if __name__ == "__main__":
-    main()
+	install_requires = ['numpy', 'wxPython', 'sympy'],
 
+	zip_safe = False
+)
+
+#Extension('spinwaves.MonteCarlo._monteCarlo.so', ['main1.c', 'dSFMT.c'], include_dirs=['lib'])
