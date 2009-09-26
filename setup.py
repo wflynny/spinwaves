@@ -22,7 +22,7 @@ setup(
 
 	entry_points = {'gui_scripts':['spinwaves = spinwaves.vtkModel.wxGUI.GUI_Main:main']},
 
-	install_requires = ['numpy', 'wxPython', 'sympy >= 6.5'],
+	install_requires = ['numpy', 'wxPython', 'sympy', 'matplotlib'],
 
 	zip_safe = False
 )
